@@ -1,5 +1,7 @@
 # Vulnetix | Belai
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Vulnetix/belai)
+
 A safer LLM coding harness.
 
 Every delimiter carries a cryptographic nonce and integrity hash, untrusted content is sanitised, and a role manager classifies untrusted inputs while segmenting benign tasks from risky agentic actions.
