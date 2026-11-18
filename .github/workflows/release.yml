@@ -267,7 +267,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
-    uses: Vulnetix/cli/.github/workflows/slsa-provenance.yml@397ab8905b860c351d75a8fea222de8413989fbc
+    uses: Vulnetix/cli/.github/workflows/slsa-provenance.yml@18edc73599060b4050c321546dfa65c230ad7da5
     with:
       subjects_artifact: release-subjects
       version: ${{ needs.release.outputs.version }}
