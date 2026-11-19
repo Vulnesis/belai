@@ -2,8 +2,9 @@
 post go test ./internal/agentprofile -run TestBuiltinsIndexIsCurrent -update-index
 # The User-Agent carries the repo URL (moved); the test matches it as a substring.
 rewrite strings.Contains(ua, "github.com/Vulnetix/belai") => strings.Contains(ua, "github.com/Vulnesis/belai")
-# Shared with the website (src/shared/attribution-cases.json): byte-identical data.
-imports-only internal/attribution/testdata/attribution-cases.json
+# Commit trailers are data shared with the website and the vdb-site API (both keep
+# them as in Vulnetix); the package and its fixture stay byte-identical.
+imports-only internal/attribution/*
 # A transferred Pages site keeps its one custom domain (vulnes.is via a proxy):
 # belai.vulnetix.com stays the site's real host in CNAME, pages.yml and tests.
 keep belai.vulnetix.com
