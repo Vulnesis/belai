@@ -2,7 +2,7 @@
 
 People often state permissions in plain words: "never run Bash in this repo",
 "don't send customer emails to the model", "only use the GitHub MCP". When a
-prompt states a permission the Vulnesis AI Firewall can enforce, belai writes
+prompt states a permission the Vulnetix AI Firewall can enforce, belai writes
 guardrail rules for it. It shows them on a card in the thread, and applies them
 to your organisation's AI Firewall only when you click **Apply**.
 
@@ -37,11 +37,11 @@ organisation, whichever harness sent it.
 
 ## When it runs
 
-- Only while the Vulnesis CLI is signed in. Before the startup probe answers,
+- Only while the Vulnetix CLI is signed in. Before the startup probe answers,
   belai reads the CLI's local credentials instead. Signed out, nothing happens:
   no model is asked and no card appears.
 - Whether or not `firewall.enabled` is on. A rule is org policy, written through
-  the Vulnesis CLI; it does not route this session's traffic.
+  the Vulnetix CLI; it does not route this session's traffic.
 - Only on a prompt you typed that the role manager admitted. It never runs on a
   refused prompt, a fleet card, a teleport replay, a subagent, steering, a
   clarify answer, a slash command or a `!` shell line. Headless, ACP and fleet
@@ -106,7 +106,7 @@ the rules live at that moment.
 
 The card uses `ColorPolicy`. It shows the summary, then one line per rule: its
 type, action, pattern, and which variant it is (on or off). Under each rule is
-the intent in your words, and under all the rules is the first Vulnesis CLI
+the intent in your words, and under all the rules is the first Vulnetix CLI
 command it runs.
 
 - **`[ apply ]`** on a rule, or **`[ apply all ]`**, runs
@@ -140,7 +140,7 @@ failed) is a `firewall_permission_applied` entry. The fields are listed in
 
 ## The console's Permissions tab
 
-Each Pix Sandbox in the Vulnesis console has a **Permissions** tab, right after
+Each Pix Sandbox in the Vulnetix console has a **Permissions** tab, right after
 **Launch**. It reads the synced entries through
 `GET /v1/belai/sandboxes/{id}/permission-offers`, which returns only sessions of
 that sandbox in the caller's organisation.

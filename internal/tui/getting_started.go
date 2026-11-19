@@ -11,6 +11,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/tui/components"
@@ -21,13 +22,13 @@ import (
 // The Getting started view runs once per user on the first interactive
 // launch, and again on /vulnetix setup. It opens on one page of three ideas
 // that carry the rest of Belai, with the commands and keys for each, then walks
-// the Vulnesis setup: install the CLI through the
+// the Vulnetix setup: install the CLI through the
 // platform package manager (only after the user picks Install), create an
 // account through the enrollment flow, log the CLI in with the device flow,
-// and turn the AI Firewall and the Vulnesis MCP server on.
+// and turn the AI Firewall and the Vulnetix MCP server on.
 //
 // The sign-up password lives only in this view's form until it is posted to
-// auth.vulnes.is; it is cleared as soon as the post returns, whenever the
+// auth.vulnetix.com; it is cleared as soon as the post returns, whenever the
 // form is left, and never reaches the transcript, a log or a model.
 
 type gsStep int
@@ -304,7 +305,7 @@ func (a *App) gsStartLogin() tea.Cmd {
 		}
 	}
 	if st.cliPath == "" {
-		st.loginErr = "the Vulnesis CLI is needed to store the login · install it, then run /vulnetix setup"
+		st.loginErr = "the Vulnetix CLI is needed to store the login · install it, then run /vulnetix setup"
 		return nil
 	}
 	st.loginBusy = true
@@ -359,7 +360,7 @@ func (st *gettingStartedState) gsLoginPhase() int32 {
 }
 
 // gsEnable turns the AI Firewall on in the global settings and installs the
-// Vulnesis MCP server, then pushes the configured provider keys.
+// Vulnetix MCP server, then pushes the configured provider keys.
 func (a *App) gsEnable() tea.Cmd {
 	st := &a.gsState
 	st.enabling, st.enableLog = true, nil
@@ -389,9 +390,9 @@ func (a *App) gsEnable() tea.Cmd {
 	install := func() tea.Msg {
 		n, err := installVulnetixMCP(ctx, wd)
 		if err != nil {
-			return gsEnableDoneMsg{lines: append(lines, "✗ Vulnesis MCP: "+mcpClean(err.Error(), 200))}
+			return gsEnableDoneMsg{lines: append(lines, "✗ Vulnetix MCP: "+mcpClean(err.Error(), 200))}
 		}
-		return gsEnableDoneMsg{lines: append(lines, fmt.Sprintf("✓ Vulnesis MCP connected · %d tools · /vulnetix mcp remove to undo", n))}
+		return gsEnableDoneMsg{lines: append(lines, fmt.Sprintf("✓ Vulnetix MCP connected · %d tools · /vulnetix mcp remove to undo", n))}
 	}
 	return tea.Batch(install, a.firewallActivated())
 }
@@ -503,7 +504,7 @@ func (a *App) gsOptions() []string {
 		}
 	case gsAccount:
 		if st.credChecked && !st.hasCred {
-			return []string{"Create a Vulnesis account", "I already have one — log in", "Skip"}
+			return []string{"Create a Vulnetix account", "I already have one — log in", "Skip"}
 		}
 	}
 	return nil
@@ -703,7 +704,7 @@ func (a *App) gettingStartedView() string {
 	w := a.contentWidth()
 	st := &a.gsState
 	titles := map[gsStep]string{
-		gsWelcome: "Welcome", gsCLI: "Vulnesis CLI", gsAccount: "Vulnesis account",
+		gsWelcome: "Welcome", gsCLI: "Vulnetix CLI", gsAccount: "Vulnetix account",
 		gsSignup: "Create an account", gsLogin: "Log in", gsEnable: "AI Firewall and MCP",
 	}
 	var b strings.Builder
@@ -745,7 +746,7 @@ func (a *App) gettingStartedView() string {
 		default:
 			line("The vulnetix CLI is not installed, and neither Homebrew nor Scoop was found. Install it with:")
 			line("")
-			line("  " + emph.Render(vulnetixcli.ManualInstallHint))
+			line("  " + emph.Render(brand.Text(vulnetixcli.ManualInstallHint)))
 			line("")
 			line(muted.Render("then run /vulnetix setup."))
 		}
@@ -761,17 +762,17 @@ func (a *App) gettingStartedView() string {
 	case gsAccount:
 		switch {
 		case !st.credChecked:
-			line(muted.Render("Checking for Vulnesis CLI credentials…"))
+			line(muted.Render("Checking for Vulnetix CLI credentials…"))
 		case st.hasCred:
-			line(accent.Render("✓ ") + "Vulnesis CLI credentials found.")
+			line(accent.Render("✓ ") + "Vulnetix CLI credentials found.")
 			line("")
 			line(muted.Render(gsNetworkNote))
 			help = components.HelpBar("enter", "turn on the AI Firewall and MCP (network check)", "←", "back")
 		default:
-			line("A Vulnesis account turns on the AI Firewall and the Vulnesis MCP server.")
+			line("A Vulnetix account turns on the AI Firewall and the Vulnetix MCP server.")
 		}
 	case gsSignup:
-		line(muted.Render("Sent only to auth.vulnes.is. The password is never stored or shown to a model."))
+		line(muted.Render("Sent only to " + brand.Host("auth.vulnetix.com") + ". The password is never stored or shown to a model."))
 		line("")
 		if st.editing {
 			f := st.fields[st.sel]
@@ -821,10 +822,10 @@ func (a *App) gettingStartedView() string {
 	case gsLogin:
 		switch {
 		case st.grant != nil && st.loginBusy && st.gsLoginPhase() == gsLoginSaving:
-			line("Approved in the browser. Saving the login with the Vulnesis CLI…")
+			line("Approved in the browser. Saving the login with the Vulnetix CLI…")
 			help = components.HelpBar("esc", "cancel")
 		case st.grant != nil && st.loginBusy && st.gsLoginPhase() == gsLoginRetrying:
-			line("Approved in the browser. The Vulnesis API has not accepted the new key yet.")
+			line("Approved in the browser. The Vulnetix API has not accepted the new key yet.")
 			line(muted.Render("A new key can take up to a minute to reach it. Trying again for about a minute and a half…"))
 			help = components.HelpBar("esc", "cancel")
 		case st.grant != nil && st.loginBusy:
@@ -837,7 +838,7 @@ func (a *App) gettingStartedView() string {
 			line(muted.Render("Waiting for approval… (o opens the page again)"))
 			help = components.HelpBar("o", "open browser", "esc", "cancel")
 		case st.loginBusy:
-			line(muted.Render("Starting the Vulnesis login…"))
+			line(muted.Render("Starting the Vulnetix login…"))
 		case st.loginErr != "":
 			line(components.DangerStyle.Render("✗ " + mcpClean(st.loginErr, 300)))
 			if st.cliPath != "" {
@@ -848,7 +849,7 @@ func (a *App) gettingStartedView() string {
 		}
 	case gsEnable:
 		if st.enabling {
-			line(muted.Render("Turning on the AI Firewall and connecting the Vulnesis MCP server…"))
+			line(muted.Render("Turning on the AI Firewall and connecting the Vulnetix MCP server…"))
 		}
 		for _, l := range st.enableLog {
 			line(l)
@@ -896,8 +897,8 @@ func gsPage(s gsStep) int {
 }
 
 // gsNetworkNote tells the user what Next does on the steps before the Enable
-// page: it reaches the AI Firewall and the Vulnesis MCP server.
-const gsNetworkNote = "Next checks the AI Firewall and the Vulnesis MCP server over the network."
+// page: it reaches the AI Firewall and the Vulnetix MCP server.
+const gsNetworkNote = "Next checks the AI Firewall and the Vulnetix MCP server over the network."
 
 // gsEscHints returns the header's right-hand text for a step, longest first;
 // the header uses the first one that fits. The pronunciation is italic.

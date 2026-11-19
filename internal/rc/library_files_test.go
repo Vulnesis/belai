@@ -120,7 +120,7 @@ func newFullHarness(t *testing.T, trusted bool) *fullHarness {
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
 	t.Setenv("BELAI_HOME", filepath.Join(home, "state"))
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	repo := filepath.Join(home, "repo")
 	if err := os.MkdirAll(repo, 0o755); err != nil {
 		t.Fatal(err)
@@ -749,7 +749,7 @@ type syncHarness struct {
 func newSyncHarness(t *testing.T) *syncHarness {
 	t.Helper()
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	client, err := sessionsync.NewClient("http://127.0.0.1:1", func() (string, error) { return "ApiKey o:k", nil }, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -947,7 +947,7 @@ func TestAutoSyncSendsCrewsAndGivesThemIdsButNeverBuiltIns(t *testing.T) {
 
 func TestAutoSyncRunsWithTheDefaultClock(t *testing.T) {
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	client, err := sessionsync.NewClient("http://127.0.0.1:1", func() (string, error) { return "ApiKey o:k", nil }, nil)
 	if err != nil {
 		t.Fatal(err)

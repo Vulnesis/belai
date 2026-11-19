@@ -16,7 +16,7 @@ import (
 func knowledgeTUI(t *testing.T) (*App, string) {
 	t.Helper()
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	dir := t.TempDir()
 	a := New(Options{Workdir: dir})
 	// Guardrails off: ingestion sanitises and never calls a classifier here.

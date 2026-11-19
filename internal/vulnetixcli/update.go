@@ -68,7 +68,7 @@ func saveCache(c ReleaseCache) error {
 	return config.WriteGlobalFileAtomic(path, data)
 }
 
-// LatestRelease returns the newest Vulnesis CLI version from GitHub. It
+// LatestRelease returns the newest Vulnetix CLI version from GitHub. It
 // caches the result for six hours. The optional cache argument is populated
 // or reused; pass nil to use the default on-disk cache.
 func LatestRelease(ctx context.Context, client *http.Client, getenv func(string) string, cache *ReleaseCache) (Version, string, error) {
@@ -89,7 +89,7 @@ func LatestRelease(ctx context.Context, client *http.Client, getenv func(string)
 	if client == nil {
 		client = &http.Client{Timeout: 10 * time.Second}
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/repos/Vulnesis/cli/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/repos/Vulnetix/cli/releases/latest", nil)
 	if err != nil {
 		return Version{}, "", err
 	}

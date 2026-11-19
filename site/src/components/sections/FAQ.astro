@@ -21,7 +21,7 @@ const product: { q: string; a: string[]; link?: { href: string; label: string } 
     q: 'Does Belai send my code to anyone?',
     a: [
       'Belai sends your prompts, the files its tools read and the tool results to the model provider you choose. With a local model on Ollama or llama-server, that traffic stays on your machine.',
-      'Belai sends no telemetry unless you set up OpenTelemetry export in your own settings, and that carries facts such as token counts, never content. Three more things leave the machine only when they are in use: session sync to the Vulnesis website, while the Vulnesis CLI is logged in (`/sync off` stops it), `WebFetch` and `WebSearch` when the model calls them, and a check for a newer release at startup (`update_check: false` turns it off).',
+      'Belai sends no telemetry unless you set up OpenTelemetry export in your own settings, and that carries facts such as token counts, never content. Three more things leave the machine only when they are in use: session sync to the Vulnetix website, while the Vulnetix CLI is logged in (`/sync off` stops it), `WebFetch` and `WebSearch` when the model calls them, and a check for a newer release at startup (`update_check: false` turns it off).',
     ],
   },
   {
@@ -60,16 +60,16 @@ const product: { q: string; a: string[]; link?: { href: string; label: string } 
   {
     q: 'Can a permission I type in a prompt be enforced outside the session?',
     a: [
-      'Yes. While you are signed in to Vulnesis, a prompt such as "never run Bash" or "mask customer emails" is read again in the background, and Belai offers the AI Firewall guardrails that enforce it on a card. Nothing is written until you click Apply, unless you turn on `auto-apply permissions` in your own settings. An applied rule is enforced at the gateway for every session in your organisation.',
+      'Yes. While you are signed in to Vulnetix, a prompt such as "never run Bash" or "mask customer emails" is read again in the background, and Belai offers the AI Firewall guardrails that enforce it on a card. Nothing is written until you click Apply, unless you turn on `auto-apply permissions` in your own settings. An applied rule is enforced at the gateway for every session in your organisation.',
     ],
     link: { href: '/#prompt-policy', label: 'How a prompt becomes policy.' },
   },
   {
     q: 'Is it free?',
     a: [
-      'Belai is Apache-2.0. The Vulnesis scanners, the AI Firewall and the MCP server it works with are free for everyone.',
+      'Belai is Apache-2.0. The Vulnetix scanners, the AI Firewall and the MCP server it works with are free for everyone.',
     ],
-    link: { href: 'https://www.vulnes.is/features/community', label: 'See everything included on the free Community tier.' },
+    link: { href: 'https://www.vulnetix.com/features/community', label: 'See everything included on the free Community tier.' },
   },
   {
     q: 'Which platforms and editors does it support?',
@@ -92,7 +92,7 @@ const faqs = [
     q: 'How do I install or update Belai?',
     steps: [
       { text: 'macOS / Linux with Homebrew:', cmd: 'brew install vulnetix/tap/belai' },
-      { text: 'Windows with Scoop:', cmd: 'scoop bucket add vulnetix https://github.com/Vulnesis/scoop-bucket && scoop install belai' },
+      { text: 'Windows with Scoop:', cmd: 'scoop bucket add vulnetix https://github.com/Vulnetix/scoop-bucket && scoop install belai' },
       { text: 'Any platform with the shell installer (checksum-verified):', cmd: 'curl -fsSL https://raw.githubusercontent.com/vulnetix/belai/main/install.sh | sh' },
       { text: 'Update Homebrew installs:', cmd: 'brew update && brew upgrade --formula vulnetix/tap/belai' },
       { text: 'Update Scoop installs:', cmd: 'scoop update belai' },
@@ -120,7 +120,7 @@ const faqs = [
   {
     q: 'How do I install or update on Windows?',
     steps: [
-      { text: 'Add the Vulnesis bucket and install:', cmd: 'scoop bucket add vulnetix https://github.com/Vulnesis/scoop-bucket && scoop install belai' },
+      { text: 'Add the Vulnetix bucket and install:', cmd: 'scoop bucket add vulnetix https://github.com/Vulnetix/scoop-bucket && scoop install belai' },
       { text: 'Update to the latest release:', cmd: 'scoop update belai' },
       { text: 'Check the installed version:', cmd: 'belai -version' },
     ],
@@ -128,16 +128,16 @@ const faqs = [
   {
     q: 'How do I install from GitHub Releases or build from source?',
     steps: [
-      { text: 'Download a pre-built binary from the release assets:', cmd: 'https://github.com/vulnesis/belai/releases' },
+      { text: 'Download a pre-built binary from the release assets:', cmd: 'https://github.com/vulnetix/belai/releases' },
       { text: 'Install the latest release with go:', cmd: 'go install github.com/vulnetix/belai/cmd/belai@latest' },
-      { text: 'Build a development binary from a clone:', cmd: 'git clone https://github.com/vulnesis/belai && cd belai && go build ./cmd/belai' },
-      { text: 'Build a stamped release binary with just:', cmd: 'git clone https://github.com/vulnesis/belai && cd belai && just build' },
+      { text: 'Build a development binary from a clone:', cmd: 'git clone https://github.com/vulnetix/belai && cd belai && go build ./cmd/belai' },
+      { text: 'Build a stamped release binary with just:', cmd: 'git clone https://github.com/vulnetix/belai && cd belai && just build' },
     ],
   },
   {
     q: 'What if Homebrew fails or reports a stale formula?',
     steps: [
-      { text: 'Make sure the Vulnesis tap is present:', cmd: 'brew tap vulnetix/tap' },
+      { text: 'Make sure the Vulnetix tap is present:', cmd: 'brew tap vulnetix/tap' },
       { text: 'Force a fresh fetch of the tap metadata:', cmd: 'brew update --force' },
       { text: 'Reinstall directly from the tap:', cmd: 'brew install vulnetix/tap/belai' },
       { text: 'Clear caches and start over:', cmd: 'brew uninstall belai 2>/dev/null; brew cleanup -s belai' },
@@ -156,7 +156,7 @@ const faqs = [
     q: 'How do I fully reset the Homebrew side?',
     steps: [
       { text: 'Uninstall both names and clear caches:', cmd: 'brew uninstall belai signet 2>/dev/null; brew cleanup -s belai signet' },
-      { text: 'Re-tap Vulnesis cleanly:', cmd: 'brew untap vulnetix/tap; brew tap vulnetix/tap' },
+      { text: 'Re-tap Vulnetix cleanly:', cmd: 'brew untap vulnetix/tap; brew tap vulnetix/tap' },
       { text: 'Install fresh and check the version:', cmd: 'brew install vulnetix/tap/belai && belai -version' },
     ],
   },
@@ -228,7 +228,7 @@ const faqs = [
 
   <p class="prose-measure mt-8 text-vx-ink/80">
     Still stuck? Open an issue on{' '}
-    <a class="underline" href="https://github.com/vulnesis/belai">github.com/vulnetix/belai</a>{' '}
+    <a class="underline" href="https://github.com/vulnetix/belai">github.com/vulnetix/belai</a>{' '}
     and include <code class="mono">belai -version</code>, the install method you
     used, and any platform or package-manager diagnostics (for example{' '}
     <code class="mono">brew config</code> and <code class="mono">brew doctor</code>{' '}

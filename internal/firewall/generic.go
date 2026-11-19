@@ -10,7 +10,7 @@ import (
 var requestIDHeaders = []string{HeaderRequestID, "X-Request-Id", "X-Kong-Request-Id", "Cf-Aig-Log-Id", "Fastly-Request-Id", "X-Amzn-Requestid"}
 
 // inspectGeneric recognises the shapes a firewall of unknown make may speak:
-// the Vulnesis headers and bodies, the AI Security Gateway's DLP block, and
+// the Vulnetix headers and bodies, the AI Security Gateway's DLP block, and
 // any OpenAI- or Anthropic-shaped refusal whose type, code or message names
 // a policy. A plain provider error (a bad key, a rate limit) is not a
 // firewall event and yields nil.

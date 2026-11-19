@@ -122,7 +122,7 @@ func severityForResult(res sarifResult, rules map[string]sarifRule) (Severity, b
 			return s, true
 		}
 	}
-	// 2. severity property word (Vulnesis convention).
+	// 2. severity property word (Vulnetix convention).
 	if v, ok := res.Properties["severity"]; ok {
 		if word, ok := v.(string); ok {
 			return SeverityFromWord(word), true

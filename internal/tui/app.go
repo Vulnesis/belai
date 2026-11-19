@@ -187,7 +187,7 @@ type modeClassifiedMsg struct {
 	err       error
 }
 
-// vulnetixProbeMsg carries the result of probing the local Vulnesis CLI.
+// vulnetixProbeMsg carries the result of probing the local Vulnetix CLI.
 type vulnetixProbeMsg struct {
 	cap vulnetixcli.Capabilities
 	err error
@@ -1448,7 +1448,7 @@ func (a *App) Init() tea.Cmd {
 	if cmd := a.enterLSP(); cmd != nil {
 		cmds = append(cmds, cmd)
 	}
-	// Discover the Vulnesis CLI quietly on startup so the footer and
+	// Discover the Vulnetix CLI quietly on startup so the footer and
 	// /vulnetix configure view have fresh capabilities from the first frame.
 	cmds = append(cmds, a.probeVulnetixSilentCmd())
 	// Ask GitHub whether a newer Belai exists. Cached for six hours on
@@ -3050,7 +3050,7 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return a, a.toggleRunsPanel(tabIntel)
 		case "f10":
-			// Toggle the Vulnesis AI Firewall when the CLI is configured. This
+			// Toggle the Vulnetix AI Firewall when the CLI is configured. This
 			// is intentionally global: it works from /vulnetix config too.
 			if a.view == viewPlanReview {
 				return a, nil
@@ -5972,7 +5972,7 @@ func (a *App) toggleFirewall() tea.Cmd {
 	return nil
 }
 
-// firewallActivated runs what turning a firewall on starts: the Vulnesis
+// firewallActivated runs what turning a firewall on starts: the Vulnetix
 // adapter's BYOK key sync, and a fresh nonce probe for the new route.
 func (a *App) firewallActivated() tea.Cmd {
 	if a.cfg.Firewall != nil {
@@ -6874,7 +6874,7 @@ type reviewSend struct {
 // to the user and what the final report holds is the belai:vulnetix-review
 // profile's job; the per-scanner subagents' reports precede this turn and the
 // clarifier has already asked about findings with more than one fix.
-const reviewPrompt = "Remediate every finding of this Vulnesis review and write .vulnetix/belai/code-review-report.md. The per-scanner subagent reports precede this message; the scanner reports are attached."
+const reviewPrompt = "Remediate every finding of this Vulnetix review and write .vulnetix/belai/code-review-report.md. The per-scanner subagent reports precede this message; the scanner reports are attached."
 
 // reviewPromptWith is the triage objective plus what the user typed while the
 // review ran. It is the user's own direction, so it rides on the prompt and

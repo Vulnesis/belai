@@ -1,5 +1,5 @@
 // Package firewall routes model traffic through an AI Firewall and reads
-// back what the firewall did. A firewall is an adapter: Vulnesis AI Firewall
+// back what the firewall did. A firewall is an adapter: Vulnetix AI Firewall
 // is the stable one; Fastly AI Runtime Control, Kong AI Gateway and the
 // self-hosted AI Security Gateway are beta adapters built from their public
 // documentation; a custom firewall is any proxy the user names. OpenRouter
@@ -56,9 +56,9 @@ type RouteInput struct {
 	Instance config.FirewallInstance // defaults applied
 	Target   Target
 	// Secret is the firewall's own key: the instance secret from the
-	// credentials resolver, or the Vulnesis API key for the vulnetix adapter.
+	// credentials resolver, or the Vulnetix API key for the vulnetix adapter.
 	Secret string
-	// Account is the Vulnesis organisation UUID; empty for other adapters.
+	// Account is the Vulnetix organisation UUID; empty for other adapters.
 	Account string
 }
 
@@ -73,7 +73,7 @@ type Route struct {
 	// credential and auth header are sent as normal.
 	KeepProviderKey bool
 	// APIKey replaces the provider key in the provider's own auth style
-	// (Vulnesis). Empty when KeepProviderKey is set.
+	// (Vulnetix). Empty when KeepProviderKey is set.
 	APIKey string
 	// KeyHeader and KeyValue carry the firewall key explicitly.
 	KeyHeader string
@@ -139,11 +139,11 @@ type Adapter interface {
 
 // Capabilities are optional adapter behaviours.
 type Capabilities struct {
-	// VulnetixCredential: the key is the Vulnesis CLI's API key, not an
+	// VulnetixCredential: the key is the Vulnetix CLI's API key, not an
 	// instance secret.
 	VulnetixCredential bool
 	// KeySync: provider keys are pushed to the firewall (BYOK) with the
-	// Vulnesis CLI.
+	// Vulnetix CLI.
 	KeySync bool
 	// CuratedModels: the firewall serves an organisation-curated /models.
 	CuratedModels bool
@@ -252,13 +252,13 @@ func Plan(name string, inst config.FirewallInstance, t Target, secret, account s
 // supportsCommon is the rule every generic routing adapter shares: providers
 // whose credentials are minted by a sign-in (Copilot, Kiro) or whose URL is
 // itself a gateway (Cloudflare) are not routed, and only the three relayed
-// wire surfaces are. Kiro is the exception for the Vulnesis adapter alone,
+// wire surfaces are. Kiro is the exception for the Vulnetix adapter alone,
 // which does not use this rule: that gateway mints Kiro's token itself from
 // the org's secrets vault, which no generic gateway can.
 func supportsCommon(t Target) (bool, string) {
 	switch t.Auth {
 	case provider.AuthKiro:
-		return false, fmt.Sprintf("%s signs in with its own token; only the Vulnesis AI Firewall can route it", t.Provider)
+		return false, fmt.Sprintf("%s signs in with its own token; only the Vulnetix AI Firewall can route it", t.Provider)
 	case provider.AuthCopilot, provider.AuthCFAIG:
 		return false, fmt.Sprintf("%s signs in with its own token and is never routed through a firewall", t.Provider)
 	}

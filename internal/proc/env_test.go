@@ -64,7 +64,7 @@ func TestScrubEnvKeepingKeepsOnlyTheNamedCredentials(t *testing.T) {
 func TestScrubEnvOfKeepsTheCommitterIdentity(t *testing.T) {
 	env := []string{
 		"GIT_COMMITTER_NAME=Pix [bot]",
-		"GIT_COMMITTER_EMAIL=security@vulnes.is",
+		"GIT_COMMITTER_EMAIL=security@vulnetix.com",
 		"GIT_AUTHOR_NAME=Someone",
 	}
 	got := strings.Join(ScrubEnvOf(env), "\n")

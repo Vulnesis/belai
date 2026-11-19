@@ -133,7 +133,7 @@ func TestValidateProvider(t *testing.T) {
 		{"an unknown adapter", inst(`{"adapter":"nginx","url":"https://gw.example.com"}`), "is unknown (want one of"},
 		{"no adapter", inst(`{"url":"https://gw.example.com"}`), "adapter is required"},
 		{"the vulnetix adapter under another name", inst(`{"adapter":"vulnetix"}`), "configured only as the vulnetix instance"},
-		{"another adapter named vulnetix", fw(`{"instances":{"vulnetix":{"adapter":"custom","url":"https://gw.example.com"}}}`), "reserved for the Vulnesis AI Firewall"},
+		{"another adapter named vulnetix", fw(`{"instances":{"vulnetix":{"adapter":"custom","url":"https://gw.example.com"}}}`), "reserved for the Vulnetix AI Firewall"},
 		{"the vulnetix instance with its adapter", fw(`{"instances":{"vulnetix":{"adapter":"vulnetix"}}}`), ""},
 		{"the vulnetix adapter with a mode", fw(`{"instances":{"vulnetix":{"adapter":"vulnetix","mode":"header","header":"X-A"}}}`), "takes no mode or header"},
 		{"a custom adapter with no url", inst(`{"adapter":"custom"}`), "url is required"},

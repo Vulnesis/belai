@@ -1,5 +1,5 @@
-// Package vulnetixenroll creates a Vulnesis account through the Authentik
-// enrollment flow at auth.vulnes.is, the same flow the web sign-up page
+// Package vulnetixenroll creates a Vulnetix account through the Authentik
+// enrollment flow at auth.vulnetix.com, the same flow the web sign-up page
 // runs (/if/flow/vulnetix-enrollment/), driven over its flow-executor API.
 //
 // The email and password go to that one host over TLS and nowhere else: the
@@ -24,12 +24,13 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/sanitize"
 )
 
 const (
-	// BaseURL is the Vulnesis identity provider.
-	BaseURL = "https://auth.vulnes.is"
+	// BaseURL is the Vulnetix identity provider.
+	BaseURL = "https://auth.vulnetix.com"
 	// FlowSlug is the enrollment flow.
 	FlowSlug = "vulnetix-enrollment"
 
@@ -104,8 +105,8 @@ type Client struct {
 	http *http.Client
 }
 
-// New returns a client for auth.vulnes.is.
-func New() *Client { return newClient(BaseURL, nil) }
+// New returns a client for auth.vulnetix.com.
+func New() *Client { return newClient(brand.URL(BaseURL), nil) }
 
 func newClient(base string, transport http.RoundTripper) *Client {
 	jar, _ := cookiejar.New(nil)
@@ -150,7 +151,7 @@ func (c *Client) do(ctx context.Context, method string, body any) (challenge, er
 	resp, err := c.http.Do(req)
 	if err != nil {
 		// The error names the URL, never the body.
-		return challenge{}, fmt.Errorf("could not reach %s: %w", BaseURL, unwrapURL(err))
+		return challenge{}, fmt.Errorf("could not reach %s: %w", brand.URL(BaseURL), unwrapURL(err))
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {

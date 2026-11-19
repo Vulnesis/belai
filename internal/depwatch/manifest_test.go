@@ -84,14 +84,14 @@ func TestEveryEcosystemHasAProfile(t *testing.T) {
 	}
 }
 
-// TestManifestTableMatchesCLI keeps the port in step with the Vulnesis CLI's
+// TestManifestTableMatchesCLI keeps the port in step with the Vulnetix CLI's
 // detector when the CLI is checked out next to this repository: every
 // exact-name manifest the CLI parses must be detected here with the same type
 // and ecosystem, and every one it does not parse must not be.
 func TestManifestTableMatchesCLI(t *testing.T) {
 	src, err := os.ReadFile(filepath.Join("..", "..", "..", "cli", "internal", "scan", "detector.go"))
 	if err != nil {
-		t.Skip("Vulnesis CLI checkout not found next to this repository")
+		t.Skip("Vulnetix CLI checkout not found next to this repository")
 	}
 	entry := regexp.MustCompile(`"([^"]+)":\s*\{Type:\s*"([^"]+)",\s*Ecosystem:\s*"([^"]+)"`)
 	supportedBlock := regexp.MustCompile(`(?s)var SupportedManifestTypes = map\[string\]bool\{(.*?)\n\}`).FindSubmatch(src)
@@ -154,7 +154,7 @@ func TestEcosystemProfilesAreReadOnlyBuiltins(t *testing.T) {
 	}
 }
 
-// Bun's binary lockfile is not parsed by the Vulnesis CLI, so changing it must
+// Bun's binary lockfile is not parsed by the Vulnetix CLI, so changing it must
 // not start a check that has nothing to read; its text bun.lock does.
 func TestBunBinaryLockIsNotAManifest(t *testing.T) {
 	if info, ok := Detect("app/bun.lockb", ""); ok {

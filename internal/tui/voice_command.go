@@ -144,7 +144,7 @@ func (a *App) voiceTargets() []voiceTarget {
 		func(a *App) tea.Cmd { return a.setOperatingMode("plan") })
 	add("mode", "goal", "switch to goal mode, where the assistant works until the goal is met", "goal mode",
 		func(a *App) tea.Cmd { return a.setOperatingMode("goal") })
-	add("review", "security-review", "run the Vulnesis security review scanners on this project", "security review",
+	add("review", "security-review", "run the Vulnetix security review scanners on this project", "security review",
 		func(a *App) tea.Cmd { return a.startReview() })
 	for _, c := range agentprofile.ListCrews() {
 		name := c.Name

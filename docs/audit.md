@@ -1,7 +1,7 @@
 # Audit log
 
 While sync is on, Belai keeps an audit log of what this host and its agents
-did, and uploads it to the Vulnesis website. **Belai → History** shows it in
+did, and uploads it to the Vulnetix website. **Belai → History** shows it in
 two tabs:
 
 - **Hosts** is the audit of a machine: when it was first seen, each Belai
@@ -124,5 +124,5 @@ never touched. A stream stops recording after 100,000 events.
 ## Settings
 
 The audit log goes where session sync goes: it runs only with `sync.enabled`,
-a usable Vulnesis CLI credential and an allowed origin. The project layer may
+a usable Vulnetix CLI credential and an allowed origin. The project layer may
 turn sync off, never on, so a repository cannot start it.

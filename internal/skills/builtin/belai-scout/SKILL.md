@@ -10,7 +10,7 @@ compatibility: >-
   Needs git, the repository's own test runner and coverage tool on PATH, a read-only worktree, and optionally the gh
   or glab CLI and network access for CI history and documentation. Services a suite needs (databases, cloud
   emulators, browsers) may be missing; report that as blocked.
-allowed-tools: Read Grep Glob Edit Write Bash Git GH Glab WebFetch WebSearch Vulnesis KanbanSearch KanbanContract KanbanHandoff Bash(go:*) Bash(cargo:*) Bash(pytest:*) Bash(npm:*) Bash(mvn:*) Bash(gradle:*) Bash(dotnet:*) Bash(jq:*)
+allowed-tools: Read Grep Glob Edit Write Bash Git GH Glab WebFetch WebSearch Vulnetix KanbanSearch KanbanContract KanbanHandoff Bash(go:*) Bash(cargo:*) Bash(pytest:*) Bash(npm:*) Bash(mvn:*) Bash(gradle:*) Bash(dotnet:*) Bash(jq:*)
 metadata:
   belai.role: belai:scout
   belai.niche: Risk-ranked test-gap, coverage and flaky-test scouting that hands builders small, evidenced tasks
@@ -83,7 +83,7 @@ build items a single builder can finish. Read and run checks; never change code.
 - Git: log, blame and -S for churn, ownership and first bad commit; merge-base against the default branch for diff scope.
 - GH, Glab: run and pipeline history, failed logs, test reports, artifacts, pull request search for dedup - [gh run view](https://cli.github.com/manual/gh_run_view), [glab](https://docs.gitlab.com/cli/).
 - WebFetch, WebSearch: coverage and retry flags for the detected tool, error signatures, known flaky reports; name what you used.
-- Vulnesis and the Vulnesis MCP tools: advisories and fix versions for imported packages.
+- Vulnetix and the Vulnetix MCP tools: advisories and fix versions for imported packages.
 - KanbanSearch, KanbanContract, KanbanHandoff: dedup, clause record, and filing build items with covers, depends_on and gates.
 
 ## Contexts

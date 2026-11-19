@@ -19,7 +19,7 @@ import (
 
 // The Pix Sandbox build tells the model about the machine it runs on. The
 // sandbox's Worker answers the instance-metadata address with safe facts about
-// the sandbox, the Vulnesis products around it, Belai, the session limits, the
+// the sandbox, the Vulnetix products around it, Belai, the session limits, the
 // models and the launch settings (website sandbox-worker/src/metadata.ts), and
 // this file reads them once, checks every value, and hands the result to the
 // system prompt as harness text (environmentFacts, run.SealSystem). The default
@@ -143,7 +143,7 @@ var (
 	// image's pinned nixpkgs: nixhub:jq@1.7.1, flakehub:org/flake#cli@0.1.5.
 	extensionPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:@/#+-]{0,127}$`)
 	versionPattern   = regexp.MustCompile(`^v\d+\.\d+\.\d+(-[A-Za-z0-9.]{1,20})?$`)
-	consolePattern   = regexp.MustCompile(`^https://[a-z0-9-]+(\.[a-z0-9-]+)*\.vulnes\.is$`)
+	consolePattern   = regexp.MustCompile(`^https://[a-z0-9-]+(\.[a-z0-9-]+)*\.vulnetix\.com$`)
 )
 
 // section is one object of the tree, or nil.
@@ -246,7 +246,7 @@ func renderEnvironment(v1 map[string]any) string {
 			parts = append(parts, "the console is "+u)
 		}
 		if len(parts) > 0 {
-			add("Vulnesis: %s.", strings.Join(parts, "; "))
+			add("Vulnetix: %s.", strings.Join(parts, "; "))
 		}
 	}
 	if b := section(v1, "belai"); b != nil {

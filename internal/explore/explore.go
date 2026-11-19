@@ -423,7 +423,7 @@ func PlanReview(prompt string, reports []ReviewReport) []Task {
 		tasks = append(tasks, Task{
 			Index:         len(tasks),
 			Reference:     "vulnetix " + name,
-			Prompt:        fmt.Sprintf("The attached %q is one scanner's findings from a Vulnesis review of this repository. For each finding, read the flagged code and its callers (Grep/Read the reported location first), decide whether it is real, and name how it would be remediated in this codebase. Review goal: %s%s", r.Label, prompt, reviewContract),
+			Prompt:        fmt.Sprintf("The attached %q is one scanner's findings from a Vulnetix review of this repository. For each finding, read the flagged code and its callers (Grep/Read the reported location first), decide whether it is real, and name how it would be remediated in this codebase. Review goal: %s%s", r.Label, prompt, reviewContract),
 			Budget:        budgetReview,
 			Evidence:      r.Body,
 			EvidenceLabel: r.Label,

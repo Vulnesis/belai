@@ -76,8 +76,8 @@ classifier refuses it.
   prefixed in square brackets, so a session reads `[VS Code] explore repo`; the
   first prompt's first line follows it. An editor that declares no name gets
   no prefix.
-- With `sync.enabled` on and the Vulnesis CLI logged in, the transcript is
-  mirrored to your Vulnesis account like a TUI session, through the same
+- With `sync.enabled` on and the Vulnetix CLI logged in, the transcript is
+  mirrored to your Vulnetix account like a TUI session, through the same
   syncer and credential. The mirror is upload only: a prompt or answer typed on
   the website never reaches an editor session, because the editor owns the
   conversation. `-no-transcript` keeps nothing and so mirrors nothing.

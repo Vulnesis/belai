@@ -6,7 +6,7 @@ The single-scroll marketing site at [belai.vulnetix.com](https://belai.vulnetix.
 
 - Astro + React islands, Tailwind v4 (CSS-first), Yarn 4.
 - Geist (self-hosted OTFs in `site/public/fonts/`) and Geist Mono (`@fontsource/geist-mono`).
-- Brand tokens ported verbatim from `Vulnesis/website/src/styles/_brand.scss` into
+- Brand tokens ported verbatim from `Vulnetix/website/src/styles/_brand.scss` into
   `site/src/styles/brand.css` as Tailwind `@theme` entries.
 
 ## Layout
@@ -76,7 +76,7 @@ Three step cards open it, and a folded table (cards below `@3xl`) says what chan
 each step. Then come ten promises about autonomous work you can sign off on (`#sign-off`), each
 backed by a mechanism in this repository, the gates that decide when a card is done (`#assurance`),
 a crew's recorded run on a board (`#crews`, which the kanban section links to), the limits on
-crew workers, the built-in crews and a worker profile (`#profiles`), and what the Vulnesis
+crew workers, the built-in crews and a worker profile (`#profiles`), and what the Vulnetix
 console adds (`#control-plane`). The promises are
 about any unattended agent and name no other product; every answer must stay checkable
 against the code, so change it with the mechanism it cites. The step facts live in one
@@ -101,14 +101,14 @@ and every bar keeps its width. The rules the section states are R15 to R22 in
 Without JS the demo shows its first state (this week, timeline).
 
 The web sessions section (`site/src/components/sections/WebSessions.astro`)
-covers following and answering a session on the Vulnesis website. Its audit
+covers following and answering a session on the Vulnetix website. Its audit
 block (`#audit`) says what the History page's Hosts and Agents tabs show and
 lists the events in the `audit` array; keep that list in step with the kinds in
 `internal/audit` and [docs/audit.md](audit.md).
 
 The pix sandbox section (`site/src/components/sections/PixSandbox.astro`, id
-`pix`) follows web sessions. It describes the hosted machine Vulnesis sells
-(one subscription per machine, bought and managed on the Vulnesis console) and
+`pix`) follows web sessions. It describes the hosted machine Vulnetix sells
+(one subscription per machine, bought and managed on the Vulnetix console) and
 the contract in [pix-sandbox.md](pix-sandbox.md), in the section's own blocks:
 logo cards for Jev (included at no cost), Cloudflare Sandbox and Nix; a
 sub-section on the three gates every connection leaves through (the AI Firewall,
@@ -124,7 +124,7 @@ repository is a trusted root and nothing else is, Jev answers every call with
 the key swapped in at the network edge, and a relaunch is a new machine. The
 decider sub-section is the one block with code behind it: the `clef` MCP
 (in every build, always offered in the Pix Sandbox one). Its two cards link to the feature page and to
-the console's sandbox tab on vulnes.is. The classifier section's Jev article
+the console's sandbox tab on vulnetix.com. The classifier section's Jev article
 carries `id="jev"` so the "How Belai uses Jev" link and the feature page can
 deep-link to it.
 

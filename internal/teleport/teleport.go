@@ -249,7 +249,7 @@ func reason(err error) error {
 		case 404:
 			return errors.New("the backend has no session by that id on this account (sessions are mirrored only while sync is on)")
 		case 401:
-			return errors.New("the backend did not accept this host's Vulnesis login; run vulnetix auth login")
+			return errors.New("the backend did not accept this host's Vulnetix login; run vulnetix auth login")
 		}
 	}
 	var ue *url.Error

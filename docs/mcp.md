@@ -50,7 +50,7 @@ Servers are declared in your global `settings.json`
 | `transport` | `stdio` (default) or `http` (MCP streamable HTTP, JSON or event-stream responses) |
 | `command`, `args` | start a stdio server |
 | `env` | variables for a stdio server, on top of the scrubbed environment. `env:NAME` copies `NAME` from Belai's environment; `cred:KEY` reads `KEY` from the credential Belai stored for this server (keychain, else the global credentials file) |
-| `url`, `headers` | reach an http server. A header value `env:NAME` is read from the environment. `"Authorization": "vulnetix:cli"` sends the Vulnesis CLI's credential, and only to `https://*.vulnes.is` (`/vulnetix mcp` writes this entry; see [vulnetix.md](vulnetix.md)) |
+| `url`, `headers` | reach an http server. A header value `env:NAME` is read from the environment. `"Authorization": "vulnetix:cli"` sends the Vulnetix CLI's credential, and only to `https://*.vulnetix.com` (`/vulnetix mcp` writes this entry; see [vulnetix.md](vulnetix.md)) |
 | `tools` | offer only these server tools |
 | `sandbox` | run a stdio server under the [OS sandbox](sandbox.md) |
 | `timeout_ms` | per-call timeout, default 60000, at most 600000 |
@@ -136,7 +136,7 @@ model is offered MCP tools.
   elicitation. It only answers `ping`.
 - The `vulnetix:cli` header reference is resolved when the server is dialled
   and held in memory only. It expands only in the `Authorization` header of
-  an `https` URL on `vulnes.is` or a subdomain; any other use fails the
+  an `https` URL on `vulnetix.com` or a subdomain; any other use fails the
   server with the reason, so a hand-edited entry cannot send the credential
   elsewhere.
 
@@ -153,7 +153,7 @@ set, and from the **MCP** section of `/model`.
 | `mcp.builtin.clef.enabled` | Offer the decision server. Default `true`. |
 | `mcp.builtin.clef.skip_ask` | Let the decision model answer an ask when it is confident. Default `true`. |
 | `mcp.builtin.clef.skip_ask_at` | The confidence at or above which its answer is used. Above 0.5 and at most 1. Default 0.90. |
-| `mcp.builtin.vulnetix.enabled` | Offer the hosted Vulnesis server while Vulnesis credentials exist. Default `true`. |
+| `mcp.builtin.vulnetix.enabled` | Offer the hosted Vulnetix server while Vulnetix credentials exist. Default `true`. |
 
 ### The decision server (`clef`)
 
@@ -220,10 +220,10 @@ asked exactly as before.
 - Turn it off with `skip_ask` or set the bar with `skip_ask_at` (the **Skip ask at
   threshold** row of `/model`, "off" or 0.70 to 0.99).
 
-### The hosted Vulnesis server
+### The hosted Vulnetix server
 
-While Vulnesis credentials exist and `mcp.builtin.vulnetix.enabled` is not
-`false`, Belai offers the hosted Vulnesis MCP server, authenticated with the
+While Vulnetix credentials exist and `mcp.builtin.vulnetix.enabled` is not
+`false`, Belai offers the hosted Vulnetix MCP server, authenticated with the
 credential by reference (see the `vulnetix:cli` rule under Security model).
 Nothing is written to your settings; an `mcp.servers.vulnetix` entry of your own
 takes its place. `/vulnetix mcp remove` and the switch turn it off.
@@ -237,7 +237,7 @@ A server's env and headers hold references, never secret values. A value is one 
 | `env:NAME` | copy `NAME` from Belai's environment |
 | `cred:KEY` | the secret stored for this server under `KEY`, in the keychain or, when there is none, your global credentials file. Only your own user credentials are read, never the environment, a repository file or netrc |
 | `vault:NAME` | an entry of the Secrets Vault lease of a Pix Sandbox, in the headers of an http server only |
-| `vulnetix:cli` | the Vulnesis CLI's credential, as described under Security model |
+| `vulnetix:cli` | the Vulnetix CLI's credential, as described under Security model |
 | plain text | allowed only for a name that does not read as a secret (a name containing key, token, secret, password, credential, private, auth or cookie needs a reference) |
 
 References resolve when the server is dialled and are never written back to the

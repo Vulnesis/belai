@@ -20,14 +20,14 @@ import (
 
 // The AI Firewall permission card (docs/firewall-permissions.md). After a
 // prompt is admitted, the agent session reads a copy of it for permissions the
-// Vulnesis AI Firewall can enforce (agent/fwperm.go). An offer comes back here
+// Vulnetix AI Firewall can enforce (agent/fwperm.go). An offer comes back here
 // on its own channel, whatever the turn is doing; it is recorded in the
 // session for the website at once, and shown as a card when the turn ends, so
 // a card never lands inside a streaming reply. The card's Apply runs the
-// Vulnesis CLI for each rule; nothing is written to the firewall until the
+// Vulnetix CLI for each rule; nothing is written to the firewall until the
 // user clicks it, or has turned firewall.permission_auto_apply on.
 //
-// The pass runs only while the Vulnesis CLI is signed in. It runs whether or
+// The pass runs only while the Vulnetix CLI is signed in. It runs whether or
 // not the firewall is routing this session's traffic: a rule is org policy.
 
 // Session entry types the card writes (docs/session-sync.md).
@@ -36,7 +36,7 @@ const (
 	fwPermAppliedEntryType = "firewall_permission_applied"
 )
 
-// fwPermCLITimeout bounds one Vulnesis CLI call the card makes.
+// fwPermCLITimeout bounds one Vulnetix CLI call the card makes.
 const fwPermCLITimeout = 30 * time.Second
 
 // Sign-in states the bridge knows.
@@ -59,7 +59,7 @@ func newFwPermBridge(workdir string) *fwPermBridge {
 	return &fwPermBridge{workdir: workdir, offers: make(chan rolemanager.PermissionOffer, 16)}
 }
 
-// signedIn reports whether the Vulnesis CLI is signed in: the probe's answer
+// signedIn reports whether the Vulnetix CLI is signed in: the probe's answer
 // once it has one, the CLI's local credentials before.
 func (b *fwPermBridge) signedIn() bool {
 	switch b.auth.Load() {
@@ -101,7 +101,7 @@ func (b *fwPermBridge) hook() *agent.FirewallPermissionHook {
 	}
 }
 
-// liveGuardrails reads the org's guardrails through the Vulnesis CLI.
+// liveGuardrails reads the org's guardrails through the Vulnetix CLI.
 func liveGuardrails(ctx context.Context) ([]rolemanager.FirewallGuardrail, error) {
 	cli, err := vulnetixcli.Detect()
 	if err != nil {

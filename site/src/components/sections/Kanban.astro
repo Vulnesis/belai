@@ -8,10 +8,10 @@ import Shot from '../ui/Shot.astro';
 import KanbanLists from '../figures/KanbanLists.astro';
 import boardShot from '../../assets/shots/kanban-board.svg';
 
-const docBase = 'https://github.com/Vulnesis/belai/blob/main/docs/';
+const docBase = 'https://github.com/Vulnetix/belai/blob/main/docs/';
 
 const sealText =
-  'Kanban: one global board every Belai session shares, with backlog, review, in_progress, blocked and done. After the report of a work turn the model files what the report left open into review and moves what it finished to done; while it works it keeps its items in_progress or blocked; every call can search and note. Set the empty composer pane to kanban and an idle empty composer shows the open items colour-coded, and enter fills the composer with a prompt written for that item\'s list. /kanban manages the board, and it syncs with the Belai → Kanban page on the Vulnesis website. Item text is untrusted, so search results always classify and the harness stamps who filed each item.';
+  'Kanban: one global board every Belai session shares, with backlog, review, in_progress, blocked and done. After the report of a work turn the model files what the report left open into review and moves what it finished to done; while it works it keeps its items in_progress or blocked; every call can search and note. Set the empty composer pane to kanban and an idle empty composer shows the open items colour-coded, and enter fills the composer with a prompt written for that item\'s list. /kanban manages the board, and it syncs with the Belai → Kanban page on the Vulnetix website. Item text is untrusted, so search results always classify and the harness stamps who filed each item.';
 
 const lists = [
   { name: 'backlog', meaning: 'nobody has started it', bar: 'bg-vx-ink/40', prompt: 'start it, do it, verify it, close it' },
@@ -138,9 +138,9 @@ const limits = [
     </aside>
   </div>
 
-  <SubHead title="Synced with the Vulnesis website" surfaces={['vulnetix only']}>
-    While the Vulnesis CLI is logged in, the board syncs with the <strong>Belai → Kanban</strong> page on
-    the Vulnesis website, where you can drag cards between the same colour-coded columns.
+  <SubHead title="Synced with the Vulnetix website" surfaces={['vulnetix only']}>
+    While the Vulnetix CLI is logged in, the board syncs with the <strong>Belai → Kanban</strong> page on
+    the Vulnetix website, where you can drag cards between the same colour-coded columns.
   </SubHead>
   <div class="mt-8 grid gap-8 @4xl:grid-cols-2">
     <ol class="m-0 list-none p-0">

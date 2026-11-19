@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-// Vulnesis/belai#40: the getting started login failed with "authentication
+// Vulnetix/belai#40: the getting started login failed with "authentication
 // test failed" the moment the browser approved it, while a later
 // `vulnetix auth login` by hand worked. The CLI checks the key against the
-// Vulnesis API before saving it, and the API can refuse a key it has just
+// Vulnetix API before saving it, and the API can refuse a key it has just
 // issued for about a minute.
 
 // refusingCLI is a fake vulnetix that fails its auth test the first refusals
@@ -27,7 +27,7 @@ func refusingCLI(t *testing.T, refusals int, failure string) (CLI, func() int, s
 	seen := filepath.Join(dir, "seen")
 	script := "#!/bin/sh\n" +
 		"n=$(cat " + count + " 2>/dev/null || echo 0); n=$((n+1)); echo $n > " + count + "\n" +
-		"printf '%s|%s|%s\\n' \"$VULNESIS_ORG_ID\" \"$VULNESIS_API_KEY\" \"$*\" >> " + seen + "\n" +
+		"printf '%s|%s|%s\\n' \"$VULNETIX_ORG_ID\" \"$VULNETIX_API_KEY\" \"$*\" >> " + seen + "\n" +
 		"if [ $n -le " + strconv.Itoa(refusals) + " ]; then echo 'Testing authentication...'; echo '" + failure + "' >&2; exit 1; fi\n" +
 		"echo 'Credentials saved to home store'\n"
 	path := filepath.Join(dir, "vulnetix")
@@ -139,7 +139,7 @@ func TestSaveLoginRetriesATimedOutCheck(t *testing.T) {
 	}
 }
 
-// The waits must outlast the Vulnesis API's 60-second cache of a missing
+// The waits must outlast the Vulnetix API's 60-second cache of a missing
 // secret (vdb-api authentikSecretTTL), with a margin.
 func TestSaveLoginWaitsOutlastTheAPICache(t *testing.T) {
 	var total time.Duration

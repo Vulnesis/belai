@@ -1,4 +1,4 @@
-// Package commands holds harness commands backed by the Vulnesis CLI.
+// Package commands holds harness commands backed by the Vulnetix CLI.
 package commands
 
 import (

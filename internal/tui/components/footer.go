@@ -74,7 +74,7 @@ type Footer struct {
 	Cap     string
 	CapWarn bool
 
-	// A2A is the A2A messaging segment ("A2A: local only" with no Vulnesis
+	// A2A is the A2A messaging segment ("A2A: local only" with no Vulnetix
 	// login, "A2A: blackout" while the organisation's blackout is on); empty
 	// when A2A relays normally or is off.
 	A2A string

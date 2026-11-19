@@ -102,8 +102,8 @@ func runACP(ctx context.Context, args []string, stdin io.Reader, stdout, stderr 
 			acpLinks.record(id, l)
 			return l
 		}
-		// The transcript is mirrored to the Vulnesis website when session sync
-		// is on and the Vulnesis CLI is logged in; never without a transcript.
+		// The transcript is mirrored to the Vulnetix website when session sync
+		// is on and the Vulnetix CLI is logged in; never without a transcript.
 		if m := newACPMirror(global, wd, *providerName, *model); m != nil {
 			opts.Mirror = m
 		}

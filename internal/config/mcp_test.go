@@ -115,7 +115,7 @@ func TestValidateMCPServerStrict(t *testing.T) {
 		"plain http":     {"x", MCPServer{Transport: "http", URL: "http://example.com/mcp"}, "https, or loopback"},
 		"userinfo":       {"x", MCPServer{Transport: "http", URL: "https://u:p@example.com/mcp"}, "credentials"},
 		"literal header": {"x", MCPServer{Transport: "http", URL: "https://e.com/m", Headers: map[string]string{"Authorization": "Bearer x"}}, "looks like a secret"},
-		"vx elsewhere":   {"x", MCPServer{Transport: "http", URL: "https://e.com/m", Headers: map[string]string{"Authorization": VulnetixCLIRef}}, "vulnes.is"},
+		"vx elsewhere":   {"x", MCPServer{Transport: "http", URL: "https://e.com/m", Headers: map[string]string{"Authorization": VulnetixCLIRef}}, "vulnetix.com"},
 		"mixed":          {"x", MCPServer{Command: "c", URL: "https://e.com"}, "belong to an http server"},
 		"dead binding":   {"x", MCPServer{Command: "c", Secrets: map[string]string{"k": "V"}}, "no cred:k value"},
 		"timeout":        {"x", MCPServer{Command: "c", TimeoutMS: 700000}, "timeout_ms"},

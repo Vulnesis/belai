@@ -17,15 +17,16 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/desktop"
 )
 
-// The RFC 8628 device authorization grant the Vulnesis CLI uses for
-// `vulnetix auth login`, served by www.vulnes.is (cli/cmd/auth.go). Belai
+// The RFC 8628 device authorization grant the Vulnetix CLI uses for
+// `vulnetix auth login`, served by www.vulnetix.com (cli/cmd/auth.go). Belai
 // runs the grant itself so the TUI can show the code, then hands the result
 // to the CLI, which stays the only writer of its credential store.
 const (
-	defaultWebURL      = "https://www.vulnes.is"
+	defaultWebURL      = "https://www.vulnetix.com"
 	devicePath         = "/api/site/v1/cli/device"
 	devicePollInterval = 5 * time.Second
 	devicePollTimeout  = 5 * time.Minute
@@ -59,10 +60,10 @@ func (g DeviceGrant) BrowseURL() string {
 	return g.VerificationURI
 }
 
-// DeviceLogin runs the device grant against BaseURL (the Vulnesis console).
+// DeviceLogin runs the device grant against BaseURL (the Vulnetix console).
 type DeviceLogin struct {
-	// BaseURL is the console origin. Empty means $VULNESIS_WEB_URL, else
-	// https://www.vulnes.is, as for the CLI.
+	// BaseURL is the console origin. Empty means $VULNETIX_WEB_URL, else
+	// https://www.vulnetix.com, as for the CLI.
 	BaseURL string
 	// Client makes the requests. Nil means a client with a short timeout.
 	Client *http.Client
@@ -74,10 +75,10 @@ func (d DeviceLogin) base() string {
 	if d.BaseURL != "" {
 		return strings.TrimRight(d.BaseURL, "/")
 	}
-	if u := strings.TrimSpace(os.Getenv("VULNESIS_WEB_URL")); u != "" {
+	if u := strings.TrimSpace(os.Getenv("VULNETIX_WEB_URL")); u != "" {
 		return strings.TrimRight(u, "/")
 	}
-	return defaultWebURL
+	return brand.URL(defaultWebURL)
 }
 
 func (d DeviceLogin) post(ctx context.Context, path string, body, out any) (int, error) {
@@ -101,7 +102,7 @@ func (d DeviceLogin) post(ctx context.Context, path string, body, out any) (int,
 	}
 	defer resp.Body.Close()
 	if err := json.NewDecoder(io.LimitReader(resp.Body, maxDeviceBody)).Decode(out); err != nil {
-		return resp.StatusCode, fmt.Errorf("malformed response from the Vulnesis login service: %w", err)
+		return resp.StatusCode, fmt.Errorf("malformed response from the Vulnetix login service: %w", err)
 	}
 	return resp.StatusCode, nil
 }
@@ -111,16 +112,16 @@ func (d DeviceLogin) Start(ctx context.Context) (DeviceGrant, error) {
 	var g DeviceGrant
 	status, err := d.post(ctx, "/authorize", struct{}{}, &g)
 	if err != nil {
-		return DeviceGrant{}, fmt.Errorf("could not start the Vulnesis login: %w", err)
+		return DeviceGrant{}, fmt.Errorf("could not start the Vulnetix login: %w", err)
 	}
 	if status != http.StatusOK {
-		return DeviceGrant{}, fmt.Errorf("the Vulnesis login was refused (HTTP %d)", status)
+		return DeviceGrant{}, fmt.Errorf("the Vulnetix login was refused (HTTP %d)", status)
 	}
 	if g.DeviceCode == "" || g.UserCode == "" || g.VerificationURI == "" {
-		return DeviceGrant{}, errors.New("incomplete response from the Vulnesis login service")
+		return DeviceGrant{}, errors.New("incomplete response from the Vulnetix login service")
 	}
 	if !httpsURL(g.BrowseURL()) {
-		return DeviceGrant{}, errors.New("the Vulnesis login service returned a non-https verification page")
+		return DeviceGrant{}, errors.New("the Vulnetix login service returned a non-https verification page")
 	}
 	return g, nil
 }
@@ -168,7 +169,7 @@ func (d DeviceLogin) pollWith(ctx context.Context, g DeviceGrant, fallback time.
 		if err == nil && status == http.StatusOK && res.OrgID != "" && res.Key != "" {
 			org, key, ok := strings.Cut(res.Key, ":")
 			if !ok || org != res.OrgID || key == "" {
-				return "", "", errors.New("unexpected API key format from the Vulnesis login service")
+				return "", "", errors.New("unexpected API key format from the Vulnetix login service")
 			}
 			return res.OrgID, key, nil
 		}
@@ -183,7 +184,7 @@ func (d DeviceLogin) pollWith(ctx context.Context, g DeviceGrant, fallback time.
 		case res.Error == "access_denied":
 			return "", "", ErrDeviceDenied
 		default:
-			return "", "", fmt.Errorf("the Vulnesis login failed (HTTP %d)", status)
+			return "", "", fmt.Errorf("the Vulnetix login failed (HTTP %d)", status)
 		}
 		timer.Reset(interval)
 	}
@@ -210,7 +211,7 @@ func (d DeviceLogin) Redeem(ctx context.Context, deviceCode string) (orgID, apiK
 	if status == http.StatusOK && res.OrgID != "" && res.Key != "" {
 		org, key, ok := strings.Cut(res.Key, ":")
 		if !ok || org != res.OrgID || key == "" {
-			return "", "", errors.New("unexpected API key format from the Vulnesis login service")
+			return "", "", errors.New("unexpected API key format from the Vulnetix login service")
 		}
 		return res.OrgID, key, nil
 	}
@@ -222,11 +223,11 @@ func (d DeviceLogin) Redeem(ctx context.Context, deviceCode string) (orgID, apiK
 	case "access_denied":
 		return "", "", ErrDeviceDenied
 	}
-	return "", "", fmt.Errorf("the Vulnesis login failed (HTTP %d)", status)
+	return "", "", fmt.Errorf("the Vulnetix login failed (HTTP %d)", status)
 }
 
 // saveLoginWaits are the pauses between attempts when the CLI's own check
-// refuses a key the login service has only just issued. The Vulnesis API reads
+// refuses a key the login service has only just issued. The Vulnetix API reads
 // organisations from a replica and keeps a missing secret for 60 seconds, so a
 // key checked the moment the browser approves it can be refused for about a
 // minute; `vulnetix auth login` run by hand is slower and rarely sees it. The
@@ -237,10 +238,10 @@ var saveLoginWaits = []time.Duration{5 * time.Second, 10 * time.Second, 20 * tim
 // retries a 503 and allows 30 seconds a request, more than DefaultTimeout.
 const saveLoginTimeout = 60 * time.Second
 
-// ErrLoginNotAccepted means the browser approved the login but the Vulnesis
+// ErrLoginNotAccepted means the browser approved the login but the Vulnetix
 // API still refused the key it issued after every retry. The wrapped text says
 // what the CLI reported.
-var ErrLoginNotAccepted = errors.New("the browser approved the login, but the Vulnesis API has not accepted the new key yet")
+var ErrLoginNotAccepted = errors.New("the browser approved the login, but the Vulnetix API has not accepted the new key yet")
 
 // SaveLogin hands an org id and API key to `vulnetix auth login
 // --noninteractive --store home`, so the CLI writes its own credential file.
@@ -253,10 +254,10 @@ var ErrLoginNotAccepted = errors.New("the browser approved the login, but the Vu
 // wrapping ErrLoginNotAccepted if the key is still refused. Any other failure
 // is returned at once.
 func (c CLI) SaveLogin(ctx context.Context, orgID, apiKey string, onRetry ...func()) error {
-	env := []string{"VULNESIS_ORG_ID=" + orgID, "VULNESIS_API_KEY=" + apiKey}
+	env := []string{"VULNETIX_ORG_ID=" + orgID, "VULNETIX_API_KEY=" + apiKey}
 	for _, e := range probeEnv() {
 		k, _, _ := strings.Cut(e, "=")
-		if k != "VULNESIS_ORG_ID" && k != "VULNESIS_API_KEY" && k != "VULNESIS_API_TOKEN" {
+		if k != "VULNETIX_ORG_ID" && k != "VULNETIX_API_KEY" && k != "VULNETIX_API_TOKEN" {
 			env = append(env, e)
 		}
 	}

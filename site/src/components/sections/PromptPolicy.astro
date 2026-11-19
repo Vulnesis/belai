@@ -8,12 +8,12 @@ import SubHead from '../ui/SubHead.astro';
 import Limits from '../ui/Limits.astro';
 
 const sealText =
-  'Prompt to policy: a permission you state in a prompt, such as never run Bash or mask emails, becomes an AI Firewall guardrail enforced at the gateway for every session in your organisation. While you are signed in to Vulnesis, a copy of each admitted prompt is read in the background. SystemOne decides whether it states a rule the firewall can enforce, with the fast model as fallback, and the main model writes the rule as a vulnetix ai-firewall guardrail. Every field is validated and rules already live are dropped. A card offers the rules with Apply, and nothing changes until you click. Allow and deny variants are both written, and only the one that fits your current rules is switched on. For Software Factory sessions on a Pix Sandbox, the console Permissions tab lists every offer and the live rules.';
+  'Prompt to policy: a permission you state in a prompt, such as never run Bash or mask emails, becomes an AI Firewall guardrail enforced at the gateway for every session in your organisation. While you are signed in to Vulnetix, a copy of each admitted prompt is read in the background. SystemOne decides whether it states a rule the firewall can enforce, with the fast model as fallback, and the main model writes the rule as a vulnetix ai-firewall guardrail. Every field is validated and rules already live are dropped. A card offers the rules with Apply, and nothing changes until you click. Allow and deny variants are both written, and only the one that fits your current rules is switched on. For Software Factory sessions on a Pix Sandbox, the console Permissions tab lists every offer and the live rules.';
 
 const steps = [
   { n: '01', name: 'Word gate', key: 'free', lead: 'A prompt with no permission-like word (never, only use, redact, mask, PII, secret…) stops here and costs nothing.' },
   { n: '02', name: 'Detect', key: 'fwperm_detect', lead: 'SystemOne answers one question: does this prompt state a rule a network AI firewall could enforce? With no backend, no answer or an unclear score, the fast model answers instead.' },
-  { n: '03', name: 'Read live rules', key: 'ai-firewall get', lead: 'Your organisation\'s guardrails are read through the Vulnesis CLI, so a rule already in force is never offered again and each family\'s mode is known.' },
+  { n: '03', name: 'Read live rules', key: 'ai-firewall get', lead: 'Your organisation\'s guardrails are read through the Vulnetix CLI, so a rule already in force is never offered again and each family\'s mode is known.' },
   { n: '04', name: 'Write', key: 'fwperm_write', lead: 'The main model writes the rules as calls to one tool, vulnetix_ai_firewall_guardrail. Belai checks every field against the firewall\'s grammar and drops any call that fails.' },
   { n: '05', name: 'Offer', key: 'Apply', lead: 'A card in the thread shows each rule, the words it came from and the exact CLI command. Nothing reaches the firewall until you click.' },
 ];
@@ -26,7 +26,7 @@ const stances: [string, string, string][] = [
 ];
 
 const limits = [
-  ['Runs only while signed in', 'The pass runs only while the Vulnesis CLI is signed in. Signed out, no model is asked and no card appears. It runs whether or not this session routes through the firewall, because a rule is organisation policy.'],
+  ['Runs only while signed in', 'The pass runs only while the Vulnetix CLI is signed in. Signed out, no model is asked and no card appears. It runs whether or not this session routes through the firewall, because a rule is organisation policy.'],
   ['The turn never waits', 'The pass reads a copy of the prompt in its own goroutine with its own deadline. The turn never waits, and an offer that arrives mid-reply is shown when the turn ends.'],
   ['Model output, validated', 'Rule types, actions, RE2 patterns, capability globs and names are checked against the firewall\'s own rules. At most 12 rules an offer, all named `belai-…`.'],
   ['A click, unless you say otherwise', '`auto-apply permissions` applies offers with no click. It is off by default and lives only in your global settings: a repository can turn it off, never on.'],

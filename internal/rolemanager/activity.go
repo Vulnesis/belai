@@ -607,7 +607,7 @@ func handoffDraftDescription(a Activity) Description {
 func depChangeDescription(a Activity) Description {
 	d := Description{
 		Summary: "Checked whether a manifest change touched dependencies",
-		Outcome: "dependencies changed, checking them with Vulnesis",
+		Outcome: "dependencies changed, checking them with Vulnetix",
 		Tone:    ToneCaution,
 		Levels:  LevelDecisions,
 	}

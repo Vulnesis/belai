@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// Version is a parsed Vulnesis CLI version.
+// Version is a parsed Vulnetix CLI version.
 type Version struct {
 	Major, Minor, Patch int
 	Pre, Raw            string

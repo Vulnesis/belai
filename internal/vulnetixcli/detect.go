@@ -1,4 +1,4 @@
-// Package vulnetixcli detects and drives the Vulnesis CLI. When the CLI is on
+// Package vulnetixcli detects and drives the Vulnetix CLI. When the CLI is on
 // PATH the harness unlocks its agent hooks, skills, and /code-review.
 package vulnetixcli
 
@@ -218,14 +218,14 @@ func exitCode(err error) int {
 }
 
 // probeEnv returns the process environment with Belai provider secrets removed
-// and the Vulnesis credential variables preserved.
+// and the Vulnetix credential variables preserved.
 func probeEnv() []string {
 	keep := map[string]bool{
-		"VULNESIS_API_TOKEN": true,
-		"VULNESIS_API_KEY":   true,
-		"VULNESIS_ORG_ID":    true,
-		"VULNESIS_API_URL":   true,
-		"VULNESIS_WEB_URL":   true,
+		"VULNETIX_API_TOKEN": true,
+		"VULNETIX_API_KEY":   true,
+		"VULNETIX_ORG_ID":    true,
+		"VULNETIX_API_URL":   true,
+		"VULNETIX_WEB_URL":   true,
 		"VVD_ORG":            true,
 		"VVD_SECRET":         true,
 	}

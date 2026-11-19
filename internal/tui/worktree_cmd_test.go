@@ -25,7 +25,7 @@ func worktreeApp(t *testing.T, w config.WorktreeSettings) (*App, string) {
 	}
 	t.Setenv("BELAI_HOME", t.TempDir())
 	t.Setenv("BELAI_WORKTREES_DIR", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	t.Setenv("GIT_CONFIG_SYSTEM", os.DevNull)
 	repo := t.TempDir()

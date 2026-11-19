@@ -23,7 +23,7 @@ type FirewallState struct {
 	// HasCred is set when the firewall's own key resolved (or none is
 	// needed).
 	HasCred bool
-	// Account is the Vulnesis organisation for the vulnetix adapter.
+	// Account is the Vulnetix organisation for the vulnetix adapter.
 	Account string
 	// Route is populated only when Reason is empty.
 	Route  firewall.Route

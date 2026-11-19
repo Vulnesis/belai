@@ -20,7 +20,7 @@ const agentID = "11111111-1111-4111-8111-111111111111:22222222-2222-4222-8222-22
 
 func TestScopedByRepoKey(t *testing.T) {
 	dir := t.TempDir()
-	a, err := Open(dir, "vulnesis/belai")
+	a, err := Open(dir, "vulnetix/belai")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func TestValidScopeKey(t *testing.T) {
 		key   string
 		want  bool
 	}{
-		{ScopeRepo, "vulnesis/belai", true},
+		{ScopeRepo, "vulnetix/belai", true},
 		{ScopeRepo, "a/b/c", true},
 		{ScopeRepo, "a/b/c/d", true},
 		{ScopeRepo, "a/b/c/d/e", false},
@@ -167,7 +167,7 @@ func TestRepoKey(t *testing.T) {
 	if got := RepoKey("github.com/vulnetix/belai", root); got != "github.com/vulnetix/belai" {
 		t.Errorf("RepoKey(remote) = %q", got)
 	}
-	if got := RepoKey("Vulnesis/Belai/", root); got != "vulnesis/belai" {
+	if got := RepoKey("Vulnetix/Belai/", root); got != "vulnetix/belai" {
 		t.Errorf("RepoKey(mixed case) = %q", got)
 	}
 	// An explicit path: key is never taken as a remote; the root decides.
@@ -205,16 +205,16 @@ func TestKeyForDir(t *testing.T) {
 		t.Fatal(err)
 	}
 	gitIn(t, repo, "init")
-	gitIn(t, repo, "remote", "add", "origin", "git@github.com:vulnesis/belai.git")
-	if got := KeyForDir(repo); got != "vulnesis/belai" {
-		t.Errorf("KeyForDir(repo) = %q, want vulnesis/belai", got)
+	gitIn(t, repo, "remote", "add", "origin", "git@github.com:vulnetix/belai.git")
+	if got := KeyForDir(repo); got != "vulnetix/belai" {
+		t.Errorf("KeyForDir(repo) = %q, want vulnetix/belai", got)
 	}
 	sub := filepath.Join(repo, "subdir")
 	if err := os.MkdirAll(sub, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if got := KeyForDir(sub); got != "vulnesis/belai" {
-		t.Errorf("KeyForDir(subdir) = %q, want vulnesis/belai", got)
+	if got := KeyForDir(sub); got != "vulnetix/belai" {
+		t.Errorf("KeyForDir(subdir) = %q, want vulnetix/belai", got)
 	}
 
 	outside := filepath.Join(dir, "outside")

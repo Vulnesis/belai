@@ -4,7 +4,7 @@
 //
 // The board is bookkeeping, not workspace state. Models write to it through
 // the Kanban* tools, the user through /kanban and the composer pane, and the
-// Vulnesis website through session sync; every write lands in the local file
+// Vulnetix website through session sync; every write lands in the local file
 // first, which is always the durable copy, and is pushed to the backend by the
 // sync worker afterwards.
 //

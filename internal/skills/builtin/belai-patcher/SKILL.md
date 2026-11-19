@@ -3,8 +3,8 @@ name: belai-patcher
 description: >-
   Remediates one vulnerability finding on its own branch: finds the resolution path, picks the lowest fixed version, applies the narrowest per-ecosystem mechanism (lockfile update, parent bump, override, replacement, code fix), re-scans, and files an honest verdict. Use for kanban items labelled vuln, SCA, container, IaC or CI findings, and no-fix or false-positive calls.
 license: Apache-2.0
-compatibility: Needs git (a worktree on the item's branch), the project's package manager and test runner on PATH, the Vulnesis CLI for re-scans, and an OS sandbox. Network access is needed only for advisory data and registry lookups.
-allowed-tools: Read Grep Glob Edit Write Bash Vulnesis Todo KanbanUpdate KanbanVerdict PublishBranch Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(uv:*) Bash(pip:*) Bash(poetry:*) Bash(mvn:*) Bash(gradle:*) Bash(go:*) Bash(cargo:*) Bash(dotnet:*) Bash(composer:*) Bash(bundle:*) Bash(govulncheck:*) Bash(terraform:*) Bash(helm:*)
+compatibility: Needs git (a worktree on the item's branch), the project's package manager and test runner on PATH, the Vulnetix CLI for re-scans, and an OS sandbox. Network access is needed only for advisory data and registry lookups.
+allowed-tools: Read Grep Glob Edit Write Bash Vulnetix Todo KanbanUpdate KanbanVerdict PublishBranch Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(uv:*) Bash(pip:*) Bash(poetry:*) Bash(mvn:*) Bash(gradle:*) Bash(go:*) Bash(cargo:*) Bash(dotnet:*) Bash(composer:*) Bash(bundle:*) Bash(govulncheck:*) Bash(terraform:*) Bash(helm:*)
 metadata:
   belai.role: belai:patcher
   belai.niche: Smallest safe remediation of one finding across package ecosystems, images, IaC and CI, with evidence-backed verdicts
@@ -37,14 +37,14 @@ Close exactly one finding on the item's own branch with the smallest change that
 4. Choose the target: the lowest version outside every affected window of every advisory on that package; same-minor patch, then same-major minor, then a major only as a last resort. Check it is not retired or newly vulnerable, and what runtime floor it raises.
 5. Pick the narrowest mechanism that changes the resolved version: one lockfile entry, parent bump, override or constraint with a comment naming the advisory and the removal condition, replacement, fork, then mitigation.
 6. Apply it with Edit and the ecosystem's own lock command, scripts off where supported; then diff the lockfile and revert any unrelated drift.
-7. Re-resolve and confirm the installed version, run the Vulnesis check, then build, type-check and tests; read the result before trying again, and change approach after a repeat failure.
+7. Re-resolve and confirm the installed version, run the Vulnetix check, then build, type-check and tests; read the result before trying again, and change approach after a repeat failure.
 8. For a breaking upgrade read the release notes for that range, change only the callers that need it, stop after repeated identical errors, and prefer a backport line before crossing a major.
 9. Where several advisories hit one package, pick one target that clears them all; where the finding is unreachable or the component absent, gather evidence for false_positive instead of editing.
 10. Finish: PublishBranch when the finding is gone and checks pass; otherwise KanbanVerdict with evidence another party can re-run.
 
 ## Tools
 
-- Vulnesis: advisories, fixed versions, affected ranges, exploit signals and the re-scan that decides clearance.
+- Vulnetix: advisories, fixed versions, affected ranges, exploit signals and the re-scan that decides clearance.
 - Read, Grep, Glob: manifests, lockfiles, overrides, and call sites of the vulnerable API. Edit, Write: minimal edits only.
 - Bash: explain, lock, audit, build and test commands inside the sandbox; no unsandboxed installs - [npm audit](https://docs.npmjs.com/cli/v10/commands/npm-audit), [govulncheck](https://go.dev/doc/security/vuln/).
 - Explain and audit CLIs: `npm explain`, `yarn why`, `pnpm why`, `uv tree`, `pipdeptree`, `mvn dependency:tree`, `gradle dependencyInsight`, `go mod why`, `cargo tree -i`, `dotnet nuget why`, `composer why-not`, `pip-audit`, `cargo audit`, `mix hex.audit`; image and IaC: `docker build --pull`, `terraform validate`, `helm lint`.

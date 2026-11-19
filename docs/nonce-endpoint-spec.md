@@ -3,7 +3,7 @@
 Belai seals every harness-generated delimiter with a random nonce plus a
 SHA-256 integrity hash of the enclosed content. Belai can mint its own nonces
 from a CSPRNG pool. An AI Firewall or a provider may instead supply them. When
-the Vulnesis AI Firewall supplies them, the gateway also verifies the sealed
+the Vulnetix AI Firewall supplies them, the gateway also verifies the sealed
 blocks it forwards (see *Gateway verification*).
 
 ## Endpoint
@@ -16,7 +16,7 @@ GET {base_url}/v1/nonces[?count=N]
 prefix. OpenAI-style base URLs already end in `/v1`; the trailing `/v1` is
 normalised so the endpoint is always exactly `/v1/nonces` (never
 `/v1/v1/nonces`). Anthropic-style base URLs carry no `/v1`, so the endpoint is
-appended directly. `count` asks for that many nonces (the Vulnesis gateway
+appended directly. `count` asks for that many nonces (the Vulnetix gateway
 accepts 1–64 and defaults to 16). An endpoint may ignore it.
 
 Examples:
@@ -25,8 +25,8 @@ Examples:
 | -------------------------------------------------- | --------------------------------------------------------------- |
 | `https://api.openai.com/v1`                        | `https://api.openai.com/v1/nonces`                              |
 | `https://api.anthropic.com`                        | `https://api.anthropic.com/v1/nonces`                           |
-| `https://guardrails.vulnes.is/openai/<org>/v1`  | `https://guardrails.vulnes.is/openai/<org>/v1/nonces`        |
-| `https://guardrails.vulnes.is/anthropic/<org>`  | `https://guardrails.vulnes.is/anthropic/<org>/v1/nonces`     |
+| `https://guardrails.vulnetix.com/openai/<org>/v1`  | `https://guardrails.vulnetix.com/openai/<org>/v1/nonces`        |
+| `https://guardrails.vulnetix.com/anthropic/<org>`  | `https://guardrails.vulnetix.com/anthropic/<org>/v1/nonces`     |
 
 ## Probe order
 
@@ -34,7 +34,7 @@ A session asks, in order:
 
 1. **The active AI Firewall**, when one routes the session's provider (see
    [firewall.md](firewall.md)), with the firewall's own credential: its key
-   header, or the Vulnesis API key as a Bearer token.
+   header, or the Vulnetix API key as a Bearer token.
 2. **The provider itself**, with its key as a Bearer token. This happens only
    when that key would reach it anyway: with no firewall, or through a
    transparent one. A BYOK firewall holds the provider key, so the provider
@@ -57,7 +57,7 @@ round trip is never made.
 ## Request
 
 The request carries the endpoint's credential (see *Probe order*) and Belai's
-`user-agent` (`belai/<version> (+https://github.com/Vulnesis/belai)`).
+`user-agent` (`belai/<version> (+https://github.com/Vulnetix/belai)`).
 Provider turns also carry the `X-Belai-Session-Id`, `X-Belai-Client-Version`,
 `X-Belai-Client-Build` and W3C `traceparent` headers described in
 [architecture.md](architecture.md#outbound-identification-and-trace-headers).
@@ -82,9 +82,9 @@ A JSON object with a list of nonces:
 - `nonces` — array of nonce strings (opaque, hex-encoded random values).
 - `count` — number of nonces in the list.
 - `expires_at` — optional; when the issuer stops accepting them (the
-  Vulnesis gateway: 24 hours after issue).
+  Vulnetix gateway: 24 hours after issue).
 - `modes` — optional; the `X-Vulnetix-Nonce-Mode` values a gateway accepts
-  (see [Gateway verification](#gateway-verification-vulnesis-ai-firewall)).
+  (see [Gateway verification](#gateway-verification-vulnetix-ai-firewall)).
   Absent means `observe` and `enforce` only.
 
 `nonces` is authoritative. `count` is decoded but never enforced, so a
@@ -124,9 +124,9 @@ delimiter engine accepts a block only when its nonce is currently reserved in
 the pool. A nonce that is merely *available* (fetched but never reserved) is
 not accepted. Rotating the pool invalidates all previously issued nonces.
 
-## Gateway verification (Vulnesis AI Firewall)
+## Gateway verification (Vulnetix AI Firewall)
 
-The Vulnesis gateway's nonces are signed, not stored. Each is random bytes
+The Vulnetix gateway's nonces are signed, not stored. Each is random bytes
 plus a 24-hour expiry, authenticated with an HMAC keyed by the calling
 principal's own secret. Any gateway replica can verify one, nothing is
 written anywhere, and a nonce issued to one principal never verifies for
@@ -198,7 +198,7 @@ The rules that keep this safe:
   it changes nothing the model was asked to do.
 
 A direct request, one through another firewall, or one whose pool is local
-keeps its nonces; only the Vulnesis gateway canonicalises.
+keeps its nonces; only the Vulnetix gateway canonicalises.
 
 Belai shows a card when an enforcing gateway stripped or found tampered
 blocks.

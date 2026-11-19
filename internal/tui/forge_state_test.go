@@ -52,7 +52,7 @@ func forgeApp(t *testing.T, withPR bool) (*App, *forgeFake) {
 	f := &forgeFake{out: map[string]string{}}
 	a.forgeRunner = f.run
 	a.forgeLook = ghOnPath
-	rem, _ := forge.ParseRemote("https://token@github.com/vulnesis/belai.git")
+	rem, _ := forge.ParseRemote("https://token@github.com/vulnetix/belai.git")
 	prov, _ := forge.For(rem, f.run, ghOnPath)
 	snap := forge.Snapshot{
 		Root:        root,
@@ -68,7 +68,7 @@ func forgeApp(t *testing.T, withPR bool) (*App, *forgeFake) {
 		},
 	}
 	if withPR {
-		snap.PR = &forge.PR{Number: 42, Title: "Add the thing", State: "open", URL: "https://github.com/vulnesis/belai/pull/42"}
+		snap.PR = &forge.PR{Number: 42, Title: "Add the thing", State: "open", URL: "https://github.com/vulnetix/belai/pull/42"}
 		snap.Checks = []forge.Check{
 			{Name: "build", Workflow: "CI", State: forge.CheckPass, Link: "https://example/1"},
 			{Name: "test", Workflow: "CI", State: forge.CheckFail, Link: "https://example/2"},
@@ -220,13 +220,13 @@ func TestForgeCreatePRAlwaysConfirms(t *testing.T) {
 		a.editor.SetValue("details")
 		a.handleChatKey(tea.KeyMsg{Type: tea.KeyEnter})
 		c := a.forgeConfirm
-		if c.kind != forgeConfirmCreatePR || !strings.Contains(c.prompt, "vulnesis/belai") || !strings.Contains(c.prompt, "feat") {
+		if c.kind != forgeConfirmCreatePR || !strings.Contains(c.prompt, "vulnetix/belai") || !strings.Contains(c.prompt, "feat") {
 			t.Fatalf("guardrails=%v: confirm %+v", guardrails, c)
 		}
 		if len(f.called()) != 0 {
 			t.Fatalf("CLI ran before confirmation: %v", f.called())
 		}
-		f.out["gh pr create --head feat --title add the thing --body details"] = "https://github.com/vulnesis/belai/pull/43"
+		f.out["gh pr create --head feat --title add the thing --body details"] = "https://github.com/vulnetix/belai/pull/43"
 		cmd := a.handleChatKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("y")})
 		msg, _ := cmd().(forgeActionMsg)
 		if msg.err != nil || !strings.Contains(msg.text, "pull/43") {

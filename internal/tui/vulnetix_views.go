@@ -76,7 +76,7 @@ func (a *App) probeVulnetixCmd() tea.Cmd {
 
 const vulnetixProbeTTL = 5 * time.Minute
 
-// probeVulnetixSilentCmd probes the Vulnesis CLI without adding transcript
+// probeVulnetixSilentCmd probes the Vulnetix CLI without adding transcript
 // noise. It is used for startup discovery and /vulnetix status.
 func (a *App) probeVulnetixSilentCmd() tea.Cmd {
 	return func() tea.Msg {
@@ -179,12 +179,12 @@ func (a *App) vulnetixConfigView() string {
 	var b strings.Builder
 	b.WriteString(components.SectionHeader("code review", "configure", w))
 	if a.vulnetixConfigState.loading {
-		b.WriteString(components.AccentStyle.Render("  ○ Probing Vulnesis CLI…") + "\n")
+		b.WriteString(components.AccentStyle.Render("  ○ Probing Vulnetix CLI…") + "\n")
 		return b.String()
 	}
 	cap := a.vulnetixConfigState.cap
 	if !cap.Present {
-		b.WriteString(components.DangerStyle.Render("  ✗ Vulnesis CLI not found") + "\n")
+		b.WriteString(components.DangerStyle.Render("  ✗ Vulnetix CLI not found") + "\n")
 		b.WriteString(components.MutedStyle.Render("  install it to enable /vulnetix"))
 		return b.String()
 	}

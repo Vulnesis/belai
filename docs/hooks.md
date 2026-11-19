@@ -74,7 +74,7 @@ widen a hook to every tool. An invalid file is skipped under the
 ## Hook bundles
 
 A bundle is the form the Claude Code hooks dialect arrives in, the one Codex and
-the Vulnesis CLI's `agent install` also write: a definition and the script
+the Vulnetix CLI's `agent install` also write: a definition and the script
 files its commands run, in one directory,
 `~/.vulnetix/belai/hooks/<name>/`. The library's `hook` items install as
 bundles ([library items](library-items.md)), and you can write one by hand.

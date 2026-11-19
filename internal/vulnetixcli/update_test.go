@@ -13,7 +13,7 @@ func TestLatestRelease(t *testing.T) {
 	t.Setenv("BELAI_HOME", t.TempDir())
 	wantVersion := "3.108.0"
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/repos/Vulnesis/cli/releases/latest" {
+		if r.URL.Path != "/repos/Vulnetix/cli/releases/latest" {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}

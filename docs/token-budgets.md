@@ -33,7 +33,7 @@ that is not here.
 
 ## The library
 
-With the Vulnesis CLI signed in and `belai rc` running, the host's token-budget
+With the Vulnetix CLI signed in and `belai rc` running, the host's token-budget
 configuration (`token_budgets`, `ui.budget_cycle_seconds` and `ui.budget_warn`) is
 kept in the website's library as one budget set: a change here is pushed as a new
 version, a set saved on the website can be installed on any connected host, and

@@ -44,7 +44,7 @@ func rowOf(t *testing.T, a *App, key string) settingsRow {
 }
 
 // The group lists the decision server and its threshold, plus the hosted
-// Vulnesis server only while Vulnesis credentials exist.
+// Vulnetix server only while Vulnetix credentials exist.
 func TestModelMCPGroupRows(t *testing.T) {
 	noVulnetixCredentials(t)
 	a := mcpModelScreen(t)
@@ -56,12 +56,12 @@ func TestModelMCPGroupRows(t *testing.T) {
 	}
 	for _, r := range a.modelRows() {
 		if r.key == "mcp_vulnetix" {
-			t.Fatal("the Vulnesis row needs credentials")
+			t.Fatal("the Vulnetix row needs credentials")
 		}
 	}
 	withVulnetixCredentials(t)
 	if r := rowOf(t, a, "mcp_vulnetix"); r.value != "on" {
-		t.Fatalf("with credentials the Vulnesis server defaults on: %+v", r)
+		t.Fatalf("with credentials the Vulnetix server defaults on: %+v", r)
 	}
 }
 
@@ -131,6 +131,6 @@ func TestModelMCPVulnetixToggleWritesTheSwitch(t *testing.T) {
 	selectRow(t, a, roleMCP, "mcp_vulnetix")
 	_ = a.changeModelRow()
 	if settingsAt(t, config.ScopeGlobal, a.workdir).VulnetixMCPEnabled() {
-		t.Fatal("space must switch the Vulnesis server off in the global settings")
+		t.Fatal("space must switch the Vulnetix server off in the global settings")
 	}
 }

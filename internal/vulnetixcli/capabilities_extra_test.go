@@ -46,7 +46,7 @@ case "$sub" in
 				echo "Plan: [PRO]"
 				echo "Org ID: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
 				echo "CREDENTIAL SOURCES"
-				echo "[OK] VULNESIS_API_TOKEN environment variable set"
+				echo "[OK] VULNETIX_API_TOKEN environment variable set"
 				;;
 			verify) echo "[OK] verified" ;;
 		esac
@@ -77,7 +77,7 @@ func TestProbeStatFailure(t *testing.T) {
 func TestProbeFull(t *testing.T) {
 	c := writeScript(t, probeStub)
 	getenv := func(k string) string {
-		if k == "VULNESIS_WEB_URL" {
+		if k == "VULNETIX_WEB_URL" {
 			return "https://app.example.com"
 		}
 		return ""
@@ -319,10 +319,10 @@ func TestResolveURLsDefaultAndRejections(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ResolveURLs(default): %v", err)
 	}
-	if w.Root != "https://www.vulnes.is/" {
+	if w.Root != "https://www.vulnetix.com/" {
 		t.Fatalf("default Root = %q", w.Root)
 	}
-	if w.VDB != "https://www.vulnes.is/vdb" {
+	if w.VDB != "https://www.vulnetix.com/vdb" {
 		t.Fatalf("VDB = %q", w.VDB)
 	}
 	if w.Register == "" {
@@ -340,14 +340,14 @@ func TestResolveURLsDefaultAndRejections(t *testing.T) {
 func TestProbeEnvStripsSecrets(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "secret")
 	t.Setenv("BELAI_PROVIDER", "secret")
-	t.Setenv("VULNESIS_API_TOKEN", "keepme")
+	t.Setenv("VULNETIX_API_TOKEN", "keepme")
 	t.Setenv("NORMAL_VAR", "keepnormal")
 	env := probeEnv()
 	joined := strings.Join(env, "\n")
 	if strings.Contains(joined, "OPENAI_API_KEY") || strings.Contains(joined, "BELAI_PROVIDER") {
 		t.Fatal("secret variables leaked into probeEnv")
 	}
-	if !strings.Contains(joined, "VULNESIS_API_TOKEN=keepme") {
+	if !strings.Contains(joined, "VULNETIX_API_TOKEN=keepme") {
 		t.Fatal("vulnetix credential should be preserved")
 	}
 	if !strings.Contains(joined, "NORMAL_VAR=keepnormal") {

@@ -5,9 +5,11 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/vulnetix/belai/internal/brand"
 )
 
-// Snapshot is a link the Vulnesis CLI printed to a scan's results on the
+// Snapshot is a link the Vulnetix CLI printed to a scan's results on the
 // website. The CLI prints them only for an authenticated organisation (never
 // for the shared community credentials).
 type Snapshot struct {
@@ -28,7 +30,7 @@ var snapshotLine = regexp.MustCompile(`(?i)^\s*(?:✓\s*)?([A-Za-z][A-Za-z0-9 ./
 // after "API: N binaries stored …".
 var bareURL = regexp.MustCompile(`^\s+(https://\S+)\s*$`)
 
-// vulnetixLink accepts only https links on vulnes.is, the only place a
+// vulnetixLink accepts only https links on vulnetix.com, the only place a
 // snapshot lives, so a scanned file's own text can never plant a link here.
 func vulnetixLink(raw string) (string, bool) {
 	raw = strings.TrimRight(raw, ".,;:)")
@@ -37,7 +39,7 @@ func vulnetixLink(raw string) (string, bool) {
 		return "", false
 	}
 	h := strings.ToLower(u.Hostname())
-	if h != "vulnes.is" && !strings.HasSuffix(h, ".vulnes.is") {
+	if !brand.OwnsHost(h) {
 		return "", false
 	}
 	return raw, true

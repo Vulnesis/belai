@@ -9,7 +9,7 @@ const mcpGood = `{"name":"github","transport":"stdio","command":"github-mcp-serv
 const mcpRemote = `{"name":"Docs","transport":"http","url":"https://mcp.example.com/mcp","headers":{"Authorization":"vault:DOCS_TOKEN","X-Region":"eu"},"timeout_ms":30000}`
 
 func TestMCPItemsValidateAndKeepTheirName(t *testing.T) {
-	for _, doc := range []string{mcpGood, mcpRemote, `{"name":"x","command":"c"}`, `{"name":"vx","transport":"http","url":"https://mcp.vulnes.is/mcp","headers":{"Authorization":"vulnetix:cli"}}`} {
+	for _, doc := range []string{mcpGood, mcpRemote, `{"name":"x","command":"c"}`, `{"name":"vx","transport":"http","url":"https://mcp.vulnetix.com/mcp","headers":{"Authorization":"vulnetix:cli"}}`} {
 		it, err := Validate(MCP, []byte(doc))
 		if err != nil {
 			t.Errorf("%s: %v", doc, err)

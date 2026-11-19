@@ -12,7 +12,7 @@ func TestParseVersion(t *testing.T) {
 		{"v3.107.2", Version{Major: 3, Minor: 107, Patch: 2, Raw: "v3.107.2"}, true},
 		{"3.107.2", Version{Major: 3, Minor: 107, Patch: 2, Raw: "3.107.2"}, true},
 		{"3.107.2-beta", Version{Major: 3, Minor: 107, Patch: 2, Pre: "beta", Raw: "3.107.2-beta"}, true},
-		{"Vulnesis CLI vv3.107.2", Version{Major: 3, Minor: 107, Patch: 2, Raw: "Vulnesis CLI vv3.107.2"}, true},
+		{"Vulnetix CLI vv3.107.2", Version{Major: 3, Minor: 107, Patch: 2, Raw: "Vulnetix CLI vv3.107.2"}, true},
 		{"1.0.0", Version{Major: 1, Minor: 0, Patch: 0, Raw: "1.0.0"}, true},
 		{"not a version", Version{Raw: "not a version"}, false},
 	}

@@ -19,7 +19,7 @@ import (
 // a test sees exactly what a tool's subprocess received.
 const echoScript = `#!/bin/sh
 echo "args=$*"
-env | sort | grep -E '^(KUBECONFIG|AZURE_[A-Z_]+|ARM_[A-Z_]+|CLOUDSDK_[A-Z_]+|GOOGLE_[A-Z_]+|GH_[A-Z_]+|GITLAB_[A-Z_]+|PULUMI_[A-Z_]+|HEROKU_APP|FLY_APP|VERCEL_[A-Z_]+|NETLIFY_SITE_ID|DIGITALOCEAN_CONTEXT|OP_ACCOUNT|VULNESIS_[A-Z_]+|TF_[A-Za-z_]+)='
+env | sort | grep -E '^(KUBECONFIG|AZURE_[A-Z_]+|ARM_[A-Z_]+|CLOUDSDK_[A-Z_]+|GOOGLE_[A-Z_]+|GH_[A-Z_]+|GITLAB_[A-Z_]+|PULUMI_[A-Z_]+|HEROKU_APP|FLY_APP|VERCEL_[A-Z_]+|NETLIFY_SITE_ID|DIGITALOCEAN_CONTEXT|OP_ACCOUNT|VULNETIX_[A-Z_]+|TF_[A-Za-z_]+)='
 exit 0
 `
 
@@ -142,11 +142,11 @@ func TestPinnedFlagsAreRefusedThroughTheTools(t *testing.T) {
 }
 
 func TestVulnetixFactsSetItsEnvironment(t *testing.T) {
-	// The machine running the tests may itself export VULNESIS_* (a Belai
-	// sandbox does); the fake binary's `env | grep VULNESIS_` would then print
+	// The machine running the tests may itself export VULNETIX_* (a Belai
+	// sandbox does); the fake binary's `env | grep VULNETIX_` would then print
 	// the ambient values and fail the no-facts phase. Scrub them first.
 	for _, e := range os.Environ() {
-		if key, _, _ := strings.Cut(e, "="); strings.HasPrefix(key, "VULNESIS_") {
+		if key, _, _ := strings.Cut(e, "="); strings.HasPrefix(key, "VULNETIX_") {
 			t.Setenv(key, "")
 			os.Unsetenv(key)
 		}
@@ -163,7 +163,7 @@ func TestVulnetixFactsSetItsEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"VULNESIS_ORG_ID=org-1", "VULNESIS_PROJECT=web", "VULNESIS_NAMESPACE=acme", "VULNESIS_ENVIRONMENT=prod"} {
+	for _, want := range []string{"VULNETIX_ORG_ID=org-1", "VULNETIX_PROJECT=web", "VULNETIX_NAMESPACE=acme", "VULNETIX_ENVIRONMENT=prod"} {
 		if !strings.Contains(res.Content, want) {
 			t.Errorf("output lacks %q:\n%s", want, res.Content)
 		}
@@ -174,7 +174,7 @@ func TestVulnetixFactsSetItsEnvironment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(res.Content, "VULNESIS_ORG_ID") {
+	if strings.Contains(res.Content, "VULNETIX_ORG_ID") {
 		t.Errorf("variables without facts:\n%s", res.Content)
 	}
 }

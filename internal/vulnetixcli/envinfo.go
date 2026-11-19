@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/vulnetix/belai/internal/brand"
 )
 
 // EnvInfo is the subset of `vulnetix env` relevant to Belai's UI.
@@ -102,31 +104,31 @@ func parseKeyValue(block, key string) (string, bool) {
 	return "", false
 }
 
-// WebURLs are the Vulnesis product URLs resolved from environment and auth state.
+// WebURLs are the Vulnetix product URLs resolved from environment and auth state.
 type WebURLs struct {
 	Root, Register, Dashboard, Pricing, VDB string
 }
 
-// ResolveURLs builds validated Vulnesis web URLs. The root comes from
-// $VULNESIS_WEB_URL, defaulting to https://www.vulnes.is. It rejects
+// ResolveURLs builds validated Vulnetix web URLs. The root comes from
+// $VULNETIX_WEB_URL, defaulting to https://www.vulnetix.com. It rejects
 // non-http schemes and roots that carry a query or fragment.
 func ResolveURLs(getenv func(string) string, authenticated bool) (WebURLs, error) {
 	if getenv == nil {
 		getenv = os.Getenv
 	}
-	root := getenv("VULNESIS_WEB_URL")
+	root := getenv("VULNETIX_WEB_URL")
 	if root == "" {
-		root = "https://www.vulnes.is"
+		root = brand.URL("https://www.vulnetix.com")
 	}
 	u, err := url.Parse(root)
 	if err != nil {
-		return WebURLs{}, fmt.Errorf("invalid VULNESIS_WEB_URL %q: %w", root, err)
+		return WebURLs{}, fmt.Errorf("invalid VULNETIX_WEB_URL %q: %w", root, err)
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return WebURLs{}, fmt.Errorf("VULNESIS_WEB_URL scheme %q not allowed", u.Scheme)
+		return WebURLs{}, fmt.Errorf("VULNETIX_WEB_URL scheme %q not allowed", u.Scheme)
 	}
 	if u.RawQuery != "" || u.Fragment != "" {
-		return WebURLs{}, fmt.Errorf("VULNESIS_WEB_URL must not contain query or fragment")
+		return WebURLs{}, fmt.Errorf("VULNETIX_WEB_URL must not contain query or fragment")
 	}
 	if !strings.HasSuffix(u.Path, "/") {
 		u.Path += "/"

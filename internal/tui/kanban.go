@@ -19,7 +19,7 @@ import (
 )
 
 // The global kanban board in the TUI: the store every session's tools share,
-// the sync worker that mirrors it to the Vulnesis website, the pane above an
+// the sync worker that mirrors it to the Vulnetix website, the pane above an
 // idle empty composer, and /kanban (kanban_view.go).
 
 // kanbanUI is the TUI's board state. nil means the kanban setting is off.
@@ -102,7 +102,7 @@ func (a *App) kanbanStore() (*kanban.Store, *kanban.Source) {
 }
 
 // startKanbanSync mirrors the board through the session-sync client, which
-// already enforces the Vulnesis origin allowlist and credential handling.
+// already enforces the Vulnetix origin allowlist and credential handling.
 // startSessionSync calls it once it has a client and a host id.
 func (a *App) startKanbanSync(client *sessionsync.Client, hostID string) {
 	if a.kb == nil || a.kb.syncer != nil {
@@ -139,7 +139,7 @@ func (a *App) kanbanSyncLabel() string {
 		if a.kb.syncNote != "" {
 			return "sync " + a.kb.syncNote
 		}
-		return "local only (sync starts with a Vulnesis CLI login)"
+		return "local only (sync starts with a Vulnetix CLI login)"
 	}
 	st := a.kb.syncer.Status()
 	switch {

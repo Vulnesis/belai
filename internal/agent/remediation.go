@@ -28,7 +28,7 @@ const (
 	remediationGuards = 1
 
 	remediationDirective = "Remediation turn: the deliverable is the file change that fixes the advisory in this repository. " +
-		"Work in this order. First, one lookup per identifier with the Vulnesis tool or the Vulnesis MCP server; its fixed versions and remediation are enough to act on, so do not re-verify them, search the web for them or look them up again. " +
+		"Work in this order. First, one lookup per identifier with the Vulnetix tool or the Vulnetix MCP server; its fixed versions and remediation are enough to act on, so do not re-verify them, search the web for them or look them up again. " +
 		"Second, read the manifest and lockfile that name the affected package. " +
 		"Third, edit the manifest to the fixed version, update the lockfile the way the project's own tooling does, and run the project's checks. " +
 		"Until the edit has landed do not search or move kanban cards, read the harness's own source or audit other advisories. " +

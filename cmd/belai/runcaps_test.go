@@ -68,7 +68,7 @@ func TestRunCapsRule11_SessionRefusesMalformedCaps(t *testing.T) {
 		t.Fatal("a malformed cap built a meter")
 	}
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	sess, err := newCLISessionLinked(context.Background(), run.Config{}, nil, posture.Defaults(), t.TempDir(), s, false, "sess", false, false, nil, nil)
 	if err == nil || sess != nil {
 		t.Fatalf("a session was built with a malformed cap: %v", err)

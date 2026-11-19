@@ -31,7 +31,7 @@ func TestParseAuthStatusUnauthenticated(t *testing.T) {
 }
 
 func TestParseAuthStatusAuthenticated(t *testing.T) {
-	text := "AUTH STATE\n[OK] Authenticated\nPlan: [PRO]\nOrg ID: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\nCREDENTIAL SOURCES\n[OK] VULNESIS_API_TOKEN environment variable set\n"
+	text := "AUTH STATE\n[OK] Authenticated\nPlan: [PRO]\nOrg ID: a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11\nCREDENTIAL SOURCES\n[OK] VULNETIX_API_TOKEN environment variable set\n"
 	state := ParseAuthStatus(text)
 	if !state.Authenticated {
 		t.Fatal("expected authenticated")

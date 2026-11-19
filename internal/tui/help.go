@@ -140,7 +140,7 @@ func keySections() []keySection {
 		}},
 		{"activity output (v from the runs panel)", []keyBinding{
 			{"pgup/pgdn, shift+up/down", "scroll"},
-			{"ctrl+y", "open the scan's snapshot on the Vulnesis website (the one on screen, else the last)"},
+			{"ctrl+y", "open the scan's snapshot on the Vulnetix website (the one on screen, else the last)"},
 			{"esc", "back"},
 		}},
 		{"remote control (/rc)", []keyBinding{

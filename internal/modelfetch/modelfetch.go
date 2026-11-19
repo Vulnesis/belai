@@ -135,7 +135,7 @@ func EndpointFor(t Target) (string, error) {
 		// Do not live-fetch from OpenAI directly: their /v1/models list
 		// includes deprecated, preview and internal identifiers that confuse
 		// the picker. When the call goes through a firewall that serves the
-		// org's curated catalogue (Vulnesis, self-hosted or not), it is
+		// org's curated catalogue (Vulnetix, self-hosted or not), it is
 		// worth fetching.
 		if t.Firewall != nil {
 			if a, ok := firewall.Lookup(t.Firewall.AdapterID); ok && firewall.CapabilitiesOf(a).CuratedModels {
@@ -624,7 +624,7 @@ var kiroTokens = kiroauth.Shared
 func listKiro(ctx context.Context, t Target, client *http.Client) ([]models.Model, error) {
 	var infos []kiromodels.Info
 	if t.Firewall.MintsKiroToken() {
-		// Through the Vulnesis AI Firewall the key is the Vulnesis key and the
+		// Through the Vulnetix AI Firewall the key is the Vulnetix key and the
 		// gateway mints the Kiro token from the org's secrets vault.
 		var err error
 		infos, err = kiromodels.FetchRouted(ctx, client, t.BaseURL, t.APIKey, t.Firewall.Apply)

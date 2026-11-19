@@ -10,8 +10,8 @@
 // A2A-shaped but not A2A JSON-RPC.
 //
 // Same-host delivery is a file bus under the global directory (bus.go), so it
-// works with no Vulnesis login. Cross-host delivery is the Relay (relay.go)
-// through the Vulnesis API, stopped by an A2A blackout. Every envelope sent,
+// works with no Vulnetix login. Cross-host delivery is the Relay (relay.go)
+// through the Vulnetix API, stopped by an A2A blackout. Every envelope sent,
 // received, withheld or filtered is written to a local hash-chained audit
 // (audit.go) of facts only, never text parts.
 //

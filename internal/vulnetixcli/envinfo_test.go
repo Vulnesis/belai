@@ -24,7 +24,7 @@ func TestParseEnv(t *testing.T) {
 
 func TestResolveURLs(t *testing.T) {
 	getenv := func(k string) string {
-		if k == "VULNESIS_WEB_URL" {
+		if k == "VULNETIX_WEB_URL" {
 			return "https://app.example.com"
 		}
 		return ""
@@ -51,7 +51,7 @@ func TestResolveURLs(t *testing.T) {
 
 func TestResolveURLsRejectsBadSchemes(t *testing.T) {
 	getenv := func(k string) string {
-		if k == "VULNESIS_WEB_URL" {
+		if k == "VULNETIX_WEB_URL" {
 			return "file:///etc/passwd"
 		}
 		return ""

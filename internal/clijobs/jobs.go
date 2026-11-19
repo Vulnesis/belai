@@ -1,11 +1,11 @@
-// Package clijobs is the closed table of Vulnesis CLI jobs a worker may run
+// Package clijobs is the closed table of Vulnetix CLI jobs a worker may run
 // for a card, and the result document each one produces.
 //
 // A job is an id, a fixed argv, the artifacts to read afterwards and a
 // Mutates flag. The argv is built from this table alone: no card text, model
 // argument or setting reaches an argument, and every path in it is a fixed
 // location under the repository's .vulnetix directory. A mutating job is one
-// that changes a file outside .vulnetix, the forge or a Vulnesis
+// that changes a file outside .vulnetix, the forge or a Vulnetix
 // organisation; it runs only for a profile that sets kanban.cli.write and for
 // a card whose acceptance gates are all met (internal/fleet/clijob.go).
 //

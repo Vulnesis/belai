@@ -4,12 +4,12 @@
     {
       "name": "belai:ai-capability-reviewer",
       "path": "internal/agentprofile/builtin/ai-capability-reviewer.json",
-      "sha256": "350d751e153d506f26650477e68d0ac84a5a811612e6f9548bae1125b519ec88"
+      "sha256": "12318f63c5eebdd8f2140500835c07d72150b23e8d6432003415dbe5037cdab5"
     },
     {
       "name": "belai:alert-triager",
       "path": "internal/agentprofile/builtin/alert-triager.json",
-      "sha256": "fa2a3264ae1a246611d7c56a38dc6f02f2156235b373e2c31225c831ce996bfd"
+      "sha256": "820d808d7e0747b8d9c75066a8b81a28a5fbf122608a1447a88e6e33b8cb18e0"
     },
     {
       "name": "belai:builder",
@@ -19,17 +19,17 @@
     {
       "name": "belai:ci-explainer",
       "path": "internal/agentprofile/builtin/ci-explainer.json",
-      "sha256": "375bab12c813238dadc1279583844fe67a954afb30fcb957d7126ae2db1cb6b3"
+      "sha256": "e079c56260d6386f38c07019b9cdfb236995c6ba7fe44006864a1a91f8ccb5db"
     },
     {
       "name": "belai:cli-runner",
       "path": "internal/agentprofile/builtin/cli-runner.json",
-      "sha256": "39a2f1ebfbdf76d338eb4002ce68338edefaa60d02b412037b2830327922e4cd"
+      "sha256": "d7d497e718f2dccc3ed457bdde157b0ab7902a10c99df78324cf70e76856c2ea"
     },
     {
       "name": "belai:cli-runner-write",
       "path": "internal/agentprofile/builtin/cli-runner-write.json",
-      "sha256": "36e8289f2a925778f712a31ca4c33099bb3b2e82a849a33d78cba9ae798b4c06"
+      "sha256": "3144456a2bf08c8a93b2602ce5ed5c39ffe7f97eb8793e606e2eed4301a04df9"
     },
     {
       "name": "belai:conflict-resolver",
@@ -39,7 +39,7 @@
     {
       "name": "belai:container-fixer",
       "path": "internal/agentprofile/builtin/container-fixer.json",
-      "sha256": "cca0b805eefc9a794214523f8fbd10ca6705f153328cbb49217f42beba5cc73c"
+      "sha256": "324f8003f5b08d30d9f7a50530ec0fd451fe8d5bc6433022f9a686c36eb8ac3a"
     },
     {
       "name": "belai:debug",
@@ -49,87 +49,87 @@
     {
       "name": "belai:defend-writer",
       "path": "internal/agentprofile/builtin/defend-writer.json",
-      "sha256": "0c1605102a2d916eeed9bd4e9ab636462e3ce923ed3e72ba64947792444a1881"
+      "sha256": "3688f1cf0be33bcb3b04e0cd009e81998c66ec41fb1555a23e0c11ec792a1248"
     },
     {
       "name": "belai:dep-scope",
       "path": "internal/agentprofile/builtin/dep-scope.json",
-      "sha256": "2aa6355519af34c271f18bd97c656e90fbf7a6737b85bfda470c5f107c812e18"
+      "sha256": "35f1787934d1b6d539d69987512fee06e2cba9a75a33b0a1407ecf93fb6e1a4d"
     },
     {
       "name": "belai:dep-strategist",
       "path": "internal/agentprofile/builtin/dep-strategist.json",
-      "sha256": "92e7a4291619868f96fac32950c1d3ebee8a84e02cb3db9b031659018599aed9"
+      "sha256": "d1234307c61758e9dac2b1c0c4b89cd99b7e0373ee4871f509d1bb849f0e8211"
     },
     {
       "name": "belai:deps-apple",
       "path": "internal/agentprofile/builtin/deps-apple.json",
-      "sha256": "5d9c397f56eccf20b47ea4965b4282855969ea4f09e348cea4c8c11180fc5adf"
+      "sha256": "c5edbb0c2f0bac370b31015ffc2f07f478339e1bc5d7d91d7d48d91e8bc53a77"
     },
     {
       "name": "belai:deps-ci",
       "path": "internal/agentprofile/builtin/deps-ci.json",
-      "sha256": "c48708a8e4ee605b7a98e64723d9f255af1a2a7a4540ae682e0c187e218b7832"
+      "sha256": "bc8ac6a0148ac11744023364a0b09745849634ed98e408681b42d5088d70cbcc"
     },
     {
       "name": "belai:deps-containers",
       "path": "internal/agentprofile/builtin/deps-containers.json",
-      "sha256": "15bd4cc2a75612f83388be316448ff4ab8ef7a504bced81cbcda8961d1bcd265"
+      "sha256": "9791e977117abc7f9354e4ade791c811863def759339ea9572029320dde22ec9"
     },
     {
       "name": "belai:deps-dotnet",
       "path": "internal/agentprofile/builtin/deps-dotnet.json",
-      "sha256": "4bc78dfeb94aca5e5d98893adfb675c5ebe2b224b8a0c60624abd25467213638"
+      "sha256": "ffa34483af590d955158e453425206b9bfac3d51f3876d49df6abc51a95c2c78"
     },
     {
       "name": "belai:deps-go",
       "path": "internal/agentprofile/builtin/deps-go.json",
-      "sha256": "8d98afbd84b5febc73bba3393a0d4ea2aeafd2c52b36ea07dde812637dcb5a9e"
+      "sha256": "5e879ffcfc924c56fd7ea7506c00aaacc0692db9a22ba54490132a42c5e9ec15"
     },
     {
       "name": "belai:deps-javascript",
       "path": "internal/agentprofile/builtin/deps-javascript.json",
-      "sha256": "8443fca75b1d6ff413afa3f9baf660565e00765f713a635610e3031a569f5a01"
+      "sha256": "e04ab9de34dd8bdff4c262fef30b8709554b03c6a4c0a787bde341f2044b56c5"
     },
     {
       "name": "belai:deps-jvm",
       "path": "internal/agentprofile/builtin/deps-jvm.json",
-      "sha256": "56edbdae51abcf7f780e5fdb962c36e49e7e9de9785270fc03c2df48ccc036dc"
+      "sha256": "bf72fd832681be98833fd35e240618ff1c564b6b60a2fd6e6968141c69a01224"
     },
     {
       "name": "belai:deps-other",
       "path": "internal/agentprofile/builtin/deps-other.json",
-      "sha256": "b661950a3d9558df171be6400bf8f66ba7a3802cf7136431a850375ecd439185"
+      "sha256": "9b9b743d8119c9265fde5ea49ec4701f70f030dd7f86ebab6fcbab0ff2718f66"
     },
     {
       "name": "belai:deps-php",
       "path": "internal/agentprofile/builtin/deps-php.json",
-      "sha256": "4a61b5aa844c584a1c8086b5ab6d26e11757f70d4065e06501b131caa1f0881e"
+      "sha256": "96463804ad7cf5655cb4b3e5752171ccd7fad9ee46e6738b048964c2476a9843"
     },
     {
       "name": "belai:deps-python",
       "path": "internal/agentprofile/builtin/deps-python.json",
-      "sha256": "09a51da89f559b2eaceff5b4ec5f01bbf92b0a4c6837950bde34205f7cdd516c"
+      "sha256": "53762d80b3bfeade786cc85d28ee91c2d67250e2f1638f60415144b403b8123d"
     },
     {
       "name": "belai:deps-ruby",
       "path": "internal/agentprofile/builtin/deps-ruby.json",
-      "sha256": "2c5d4f4132c1bc9843cc2f752cb734fcb14f8857978a2833e43e22014f92e2ba"
+      "sha256": "f48491995f7acc943a8fa3e3eb9624de8b21755b0c15e3d10514f577b32a32c6"
     },
     {
       "name": "belai:deps-rust",
       "path": "internal/agentprofile/builtin/deps-rust.json",
-      "sha256": "cce8839f42ca8c00cd498108a313fd7805762be202ad140b096fd7a695278c78"
+      "sha256": "63bee4df36ee14e54f955ebd371b0cbbb18b77a69fcbea0c216175a07e36f381"
     },
     {
       "name": "belai:designer",
       "path": "internal/agentprofile/builtin/designer.json",
-      "sha256": "74b6e4c0f629a96b8d4f0debf5ae632461caed7d6fece37649d450cbebc9a185"
+      "sha256": "ffa16862621c692f84de5f2ae15dda4bec124c73bd52db890582083d3ea52b61"
     },
     {
       "name": "belai:egress-reviewer",
       "path": "internal/agentprofile/builtin/egress-reviewer.json",
-      "sha256": "3d3018421b034e9a1a89ddfda5efd957f5af8efa0e5624285805fdea73ee291d"
+      "sha256": "7b0fc70d331a4acff2d1f728d4dd57f887c31b4ba5872f3c6e21c6fb8f87f629"
     },
     {
       "name": "belai:fanout",
@@ -139,37 +139,37 @@
     {
       "name": "belai:flaky-hunter",
       "path": "internal/agentprofile/builtin/flaky-hunter.json",
-      "sha256": "d20865771e7add7e0fefbc9998cde2c551019c9f70cffbeb1c3db6377f7bd2df"
+      "sha256": "098f02fddab4dc59341fbc91788fcc38a8260f1e3d5f5f4c354c7c6a795f6a4b"
     },
     {
       "name": "belai:github-investigator",
       "path": "internal/agentprofile/builtin/github-investigator.json",
-      "sha256": "7253bcb77323fa1f088d91832ffb958e488418358ae43a61de25033b80fe6584"
+      "sha256": "2888725cb64579830f2926fb53f33b281cf84bb974a924cb2b7f5624013e2894"
     },
     {
       "name": "belai:guardian-aws-investigator",
       "path": "internal/agentprofile/builtin/guardian-aws-investigator.json",
-      "sha256": "df0b741414c1ccd0a8037840ca8ef83ef87363d0e1e2fbd145c3328ec11977b5"
+      "sha256": "8da0f265b056f070623547b3d162cf3b24722e067176acbbf750eca7ed019bd4"
     },
     {
       "name": "belai:guardian-cloudflare-investigator",
       "path": "internal/agentprofile/builtin/guardian-cloudflare-investigator.json",
-      "sha256": "fb2abd52b0fa409e1e57da340f0bd6b10b5c885c3b2675c103c5d782dbf3be5a"
+      "sha256": "514513a89a58c6f9a18491a064751f4faf2bbc71e90dd658263c97e834e1dff1"
     },
     {
       "name": "belai:guardian-remediator",
       "path": "internal/agentprofile/builtin/guardian-remediator.json",
-      "sha256": "7e7d1bf72c69e3dcfacab4b2d0fe004ea99b45abbdd580ced9ff673452dfac6b"
+      "sha256": "a0062063f31227866d4c57b96fd4bfec56cc2b0bd2818bd354239ec6e0c2e2c8"
     },
     {
       "name": "belai:iac-fixer",
       "path": "internal/agentprofile/builtin/iac-fixer.json",
-      "sha256": "1a5a8f028e0e7679528ae267d0a9b21c65e1373f76988243a739c5011a15bf3c"
+      "sha256": "2afebad0df689fbefee74a91b2081e6e746ef77025afd74eb55d82ad8634ce9d"
     },
     {
       "name": "belai:license-fixer",
       "path": "internal/agentprofile/builtin/license-fixer.json",
-      "sha256": "4e93e67c3a31e5ab8542328aca2a49531abd26536fa4a8db7a82c130c7120160"
+      "sha256": "506b3ec0eb323aa490214b0c71ef65041cb4f5dfc9b9884f4efdd0513440f4ef"
     },
     {
       "name": "belai:lint-fixer",
@@ -179,12 +179,12 @@
     {
       "name": "belai:package-reviewer",
       "path": "internal/agentprofile/builtin/package-reviewer.json",
-      "sha256": "043263006120f11c08828a5c6b2de4c921c0e598d1d1b5bcfadd646f3d315400"
+      "sha256": "f1f45954bd6613384e2757ceada5e51869c6e275e6ed657c0119c1256459cd0b"
     },
     {
       "name": "belai:patcher",
       "path": "internal/agentprofile/builtin/patcher.json",
-      "sha256": "be6185b86d58bab0ee7e14c4007a05c6b34295649f180eff1eb616be389acae5"
+      "sha256": "f52abc3fb83d4cb6ae9d301a12a59316ba3fec390bf2a7e2b9f80dd93292775f"
     },
     {
       "name": "belai:plan-handoff",
@@ -194,12 +194,12 @@
     {
       "name": "belai:planner",
       "path": "internal/agentprofile/builtin/planner.json",
-      "sha256": "580e81fbf8f7b0e53faaec3ee4d3ef77c7d01050cf8b6c25f34eab312d79823b"
+      "sha256": "c254cf36416ebfa6f6d5df2d9c0c34fd80fa7c0082356aef631240efd76faf01"
     },
     {
       "name": "belai:pqc-fixer",
       "path": "internal/agentprofile/builtin/pqc-fixer.json",
-      "sha256": "12e81407fbc143f817c46a7b1aa84fb3af93f901a8acd06f97662dd6ffcb5813"
+      "sha256": "d901db54ce9b26c4a1ec351d281d769d9762185dce6d78abb8f069645d3e9b16"
     },
     {
       "name": "belai:pr-reviewer",
@@ -209,42 +209,42 @@
     {
       "name": "belai:pr-steward",
       "path": "internal/agentprofile/builtin/pr-steward.json",
-      "sha256": "3acd72d3e8bbca093dc0bdaf92d3ec72245d9d1719373b9927f5d967067c8837"
+      "sha256": "0107521214d9750d323db13be402d01e5997e2e344501fe2ec8cc0340392bc5a"
     },
     {
       "name": "belai:release-steward",
       "path": "internal/agentprofile/builtin/release-steward.json",
-      "sha256": "4e45ca998b101eba6da21badbe7eec2b83f4ecf1b13c0cf8383db9c316fedfe1"
+      "sha256": "b0af3687a23d79fac691005cfa126d6959747b10c5767efd708b73de16f7b742"
     },
     {
       "name": "belai:repo-onboarder",
       "path": "internal/agentprofile/builtin/repo-onboarder.json",
-      "sha256": "a43e5c0350b85a498bb3f86c17d69b647b2125ad995658ffb5c9b6de1ba7f2d2"
+      "sha256": "c4dd6f69a5d5648dd1c464b3724b1802c7c2f27d5b7f691b6cfdcb5440258402"
     },
     {
       "name": "belai:repro",
       "path": "internal/agentprofile/builtin/repro.json",
-      "sha256": "d9e9b9bb5c57aef94b149af4b5b1ac61fe2ed70278fe900d8bf3a868a84be5ed"
+      "sha256": "53ef56006f3df35ca1c496dcb6028e7b4c70514936bbdd0d3f5a166d98846738"
     },
     {
       "name": "belai:reviewer",
       "path": "internal/agentprofile/builtin/reviewer.json",
-      "sha256": "6e470a4bf7c2c05a256a08bea38869090aa91a48ed144bbae4f9911a63ed3e10"
+      "sha256": "7bbf881d351805ed66df6c11dd7521633972e6dc7d613c750729a9d72dbce3dd"
     },
     {
       "name": "belai:scout",
       "path": "internal/agentprofile/builtin/scout.json",
-      "sha256": "93a753ca69490f6564f730c0b038b0cf8749d22827abb294c445221c7e22a957"
+      "sha256": "17ec6ff462bfb969a17a1ea1e3abda43b6c151341fd0d763a533ecd0cfa066de"
     },
     {
       "name": "belai:secret-triager",
       "path": "internal/agentprofile/builtin/secret-triager.json",
-      "sha256": "e2bee6cc355607eb19db539e553b7d0251086d17d48b2a5cef3df2a901637cbe"
+      "sha256": "2ed23b1428562e0ea803983a2a07be5c4eee20432108c819e65f8c545f169498"
     },
     {
       "name": "belai:tea-publisher",
       "path": "internal/agentprofile/builtin/tea-publisher.json",
-      "sha256": "a2faec4e521ab17312806c1a78a1db988a1978b1b767098f0b5859ed3fd731d8"
+      "sha256": "1eeab143c04af61ae1590fca0674fa3d868f2e1a3bfb256dbebead57416221ea"
     },
     {
       "name": "belai:test-fixer",
@@ -254,27 +254,27 @@
     {
       "name": "belai:ticket-writer",
       "path": "internal/agentprofile/builtin/ticket-writer.json",
-      "sha256": "3aa9225f7b5da8b59827276d45512784c2691a55f084ca83beee6349bd6ce25d"
+      "sha256": "3061a0dc24e1d93e7570e8bc2ea59fd95753101862604ee477748cc4cf5c0b7a"
     },
     {
       "name": "belai:triage",
       "path": "internal/agentprofile/builtin/triage.json",
-      "sha256": "a88803e892f66d6cfb3c2350764520878c1823d92e7b3c2a7f4db9702ce36d76"
+      "sha256": "c854a744093c3aa1eadbcb921f8542c39f3aea81b979f438cb69f45de0d4f0e9"
     },
     {
       "name": "belai:triage-vulns",
       "path": "internal/agentprofile/builtin/belai-triage-vulns.json",
-      "sha256": "6c805b6aa832a30441f50ea9721d9eb303e2a54923d353c89ac0058fa5ffb177"
+      "sha256": "03fbfe2e04f03494af31234d6f967ad2b81d09f3766db0ef4f10a9ee9a3c9a72"
     },
     {
       "name": "belai:verifier",
       "path": "internal/agentprofile/builtin/verifier.json",
-      "sha256": "f9d37634d63840f686b56818f9552bed8f19f3b93e781d217c5d44fcd7c60978"
+      "sha256": "d34d36813ed88c6444cafd9e4dc73b80df39eda68c397014bce1a47ebfeb89e9"
     },
     {
       "name": "belai:vuln-scout",
       "path": "internal/agentprofile/builtin/vuln-scout.json",
-      "sha256": "806a114f377273cb1debbf810bd2f89cf38f35050f766175a13f16640dff93d8"
+      "sha256": "c93c965d42b641f66995d8d62427860837de074c325db9429b6f06411e06ef00"
     },
     {
       "name": "belai:vulnetix-scanner",
@@ -284,12 +284,12 @@
     {
       "name": "belai:workflow-fixer",
       "path": "internal/agentprofile/builtin/workflow-fixer.json",
-      "sha256": "cd3d913eb323220dea440b9f9caa83137a85878b0384e2cd553522b4a60ddf12"
+      "sha256": "a791139d94c3f9bc6506b31bf903dc6d871aa554ccecd5ef37bda54444716099"
     },
     {
       "name": "belai:workflow-hardener",
       "path": "internal/agentprofile/builtin/workflow-hardener.json",
-      "sha256": "29ab1df8fa3d4902a3ebe646ceba17e91f15555acee9292944af20e9bde22251"
+      "sha256": "3b5fa37a9c576c0a60aa569149867b10261da929f70d321be6719cc0f170620b"
     }
   ],
   "crews": [
@@ -333,27 +333,27 @@
     {
       "name": "belai-patcher",
       "path": "internal/skills/builtin/belai-patcher/SKILL.md",
-      "sha256": "902c2a275c6f54f50343ed1fd81319a2b4e4b99e5942731344fe93a6a255b9f0"
+      "sha256": "104c4e4d524752a848a694e11bf0252745ed82be35f559fcc14461eb918ace3d"
     },
     {
       "name": "belai-reviewer",
       "path": "internal/skills/builtin/belai-reviewer/SKILL.md",
-      "sha256": "c070924cbcd046bf1129d641a7c604f305cc15ad9b3249d09e7272efc3faa4a7"
+      "sha256": "404b586c88b2379a499e298df8822ddb43fdd19a5fac7fb11ef2d7816e2a914b"
     },
     {
       "name": "belai-scout",
       "path": "internal/skills/builtin/belai-scout/SKILL.md",
-      "sha256": "376a2438b1e2fa53de80b3a2a8d4bf6ce4c46931b463032f69d73c46aa052111"
+      "sha256": "3ad48460edc671fadd87da792d8bcf0cb0dd63d51ca5a1ab5247edc8bb2c2cf2"
     },
     {
       "name": "belai-verifier",
       "path": "internal/skills/builtin/belai-verifier/SKILL.md",
-      "sha256": "6f400160376db371922644995d46ff5a23433bd5fd10cf4357844b2308ba412a"
+      "sha256": "b8f85fe0e481ab884c7f27ca8955fdc1ea31da304a3f54afcb0867d23b867c7a"
     },
     {
       "name": "belai-vuln-scout",
       "path": "internal/skills/builtin/belai-vuln-scout/SKILL.md",
-      "sha256": "939646cadb8a7b08eaa4215b7f365580e2c6261da68e2ab29d9968bc1c0fecc4"
+      "sha256": "55758df021534f523af4f4ba09a6f559c1341047f589e337520595f06fb0975f"
     }
   ],
   "avatars": [

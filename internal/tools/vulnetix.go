@@ -15,7 +15,7 @@ import (
 	"github.com/vulnetix/belai/internal/proc"
 )
 
-// Vulnesis is the first-class Vulnetix CLI tool. Driving the CLI through Bash
+// Vulnetix is the first-class Vulnetix CLI tool. Driving the CLI through Bash
 // cost sessions minutes per call and mutated manifests: progress bars and
 // banners filled the output, whole-repository reachability ran on every scan,
 // `fix` without --dry-run edited go.mod, `fix` without --path failed on a
@@ -37,7 +37,7 @@ import (
 //   - progress, spinner and ANSI noise is stripped before the output is
 //     classified or shown.
 //
-// The output mixes advisory text from the Vulnesis database with repository
+// The output mixes advisory text from the Vulnetix database with repository
 // paths and snippets, so the kind is KindRemote: read-only, classified.
 type Vulnetix struct {
 	Cwd      *Cwd
@@ -49,7 +49,7 @@ type Vulnetix struct {
 	Cloud *CloudHub
 }
 
-// VulnetixTimeout is the default limit for one Vulnesis call.
+// VulnetixTimeout is the default limit for one Vulnetix call.
 const VulnetixTimeout = 15 * time.Minute
 
 // scanFlags records which harness-added flags a scan-family subcommand
@@ -103,8 +103,8 @@ var vulnetixScanLock sync.Mutex
 // the model otherwise lacks.
 func (v *Vulnetix) Definition() Definition {
 	return Definition{
-		Name: "Vulnesis",
-		Description: "Run the Vulnesis CLI: SCA and code scans, dependency fix plans, and vulnerability database lookups. " +
+		Name: "Vulnetix",
+		Description: "Run the Vulnetix CLI: SCA and code scans, dependency fix plans, and vulnerability database lookups. " +
 			"Pass the arguments that follow `vulnetix`, for example `sca`, `sca --path web --depth 1`, `fix --dry-run --manifest go.mod`, `vdb vuln CVE-2021-44228`, `sca --help`. " +
 			"Allowed: scan, sca, sast, secrets, iac, containers, malscan, sbom, aibom, cbom, license, fix (always --dry-run), vdb lookups, env, version, auth status, and --help on any of them. " +
 			"The harness adds --no-banner --no-progress --no-analytics --disable-memory, passes --path (the working directory unless you give one), and turns reachability off unless you pass --reachability direct|transitive|both, because it is the slowest stage, and scans secrets in the working tree only (--ignore-git) unless you pass --git-history, because walking commit history is slow. " +

@@ -22,7 +22,7 @@ website's shared cases.
   Vulnerability, Advisory). `Co-authored-by` and `Signed-off-by` belong to commits alone.
 - The worker contract tells the model that trailers are added for it and are not to be written, edited or removed.
 - **The committer stays Pix.** The sandbox's commit signer signs only a commit whose committer is
-  `Pix [bot] <security@vulnes.is>` and refuses any other (`not_pix_identity`). The sandbox sets
+  `Pix [bot] <security@vulnetix.com>` and refuses any other (`not_pix_identity`). The sandbox sets
   `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL`, which outrank `-c user.name` and `-c user.email`, and
   `proc.ScrubEnvOf` passes them to every command. `fleet.identityEnv` never supplies a committer the
   environment already names (it still supplies an author on a machine with no identity). When a Bash

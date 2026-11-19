@@ -51,7 +51,7 @@ behaviour, and implementation details.
   [facts](agent-profiles.md#facts) that point the cloud tools at an account, a
   cluster or a Terraform directory.
 - [Guardian investigations](guardian.md): the three workers Guardian (the
-  Vulnesis SIEM) workflows dispatch, the investigation contract, and the `AWS`
+  Vulnetix SIEM) workflows dispatch, the investigation contract, and the `AWS`
   and `CF` reads they use.
 - [Importing from other harnesses](agent-import.md): `belai library scan` searches a
   host for commands, skills, prompts, agents, crews, documents and Belai's own
@@ -78,11 +78,11 @@ behaviour, and implementation details.
 
 - [Kiro](kiro.md): the `kiro` provider, AWS Builder ID and IAM Identity
   Center sign-in, token refresh, and the Kiro wire surface.
-- [Vulnesis code review](vulnetix-review.md): `/vulnetix review`, what it runs and
+- [Vulnetix code review](vulnetix-review.md): `/vulnetix review`, what it runs and
   costs, the report it writes, its settings and troubleshooting.
-- [Vulnesis](vulnetix.md): review scanners, artifact handling, project history,
-  and the Vulnesis AI Firewall.
-- [AI Firewall](firewall.md): the adapter-based firewall (Vulnesis, beta
+- [Vulnetix](vulnetix.md): review scanners, artifact handling, project history,
+  and the Vulnetix AI Firewall.
+- [AI Firewall](firewall.md): the adapter-based firewall (Vulnetix, beta
   Fastly ARC, Kong and AI Security Gateway, custom proxies, read-only
   OpenRouter and Cloudflare), modes, key storage and event cards.
 - [Firewall permissions](firewall-permissions.md): permissions stated in a
@@ -94,7 +94,7 @@ behaviour, and implementation details.
 - [Git sync](git-sync.md): rebasing a session's branch onto upstream main before
   its turns, turning it off per session or globally, and the git state the
   website shows
-- [Session sync](session-sync.md): mirroring sessions to the Vulnesis website
+- [Session sync](session-sync.md): mirroring sessions to the Vulnetix website
 - [Session measures](session-measures.md): the cache tokens, cost, `check_run`
   and `commit` entries and the finish rollup a session records for the
   Software Factory
@@ -104,7 +104,7 @@ behaviour, and implementation details.
   start and drive sessions on this machine.
 - [Teleport](teleport.md): `belai -teleport`, which continues a session from another
   host, sandbox or the web on this host, under a new id.
-- [Pix Sandbox](pix-sandbox.md): the contract between Belai and the hosted machine Vulnesis
+- [Pix Sandbox](pix-sandbox.md): the contract between Belai and the hosted machine Vulnetix
   runs: host id, settings, credentials, trusted directories and Jev.
 - [Vault environment variables](vault-env.md): the environment variables a Pix sandbox gets
   from the organisation's secrets vault, how they reach a tool call, and how they are
@@ -174,7 +174,7 @@ until the feature ships, then `alpha-YYYYMMDD`, the date it landed.
 | Reviewing the working tree's staged, unstaged and untracked changes read-only | [Workspace changes (`/diff`)](diff.md) | alpha-20261001 |
 | Finish review: a harness check of the working tree for scratch files, weakened tests, unverified changes and unread files before a goal is accepted | [Finish review](finish-review.md) | alpha-20261106 |
 | Test-until-pass on plain agent turns: `tests.each_turn` runs the detected suites after a turn that edited files | [Testing](testing.md#when-the-pass-runs) | alpha-20261106 |
-| CLI jobs: a card labelled `cli-job:<id>` makes the harness run one fixed Vulnesis CLI job and record ids, counts, findings and signals on the card, with mutating jobs behind a write profile, met gates and a harness-verified branch, and five fixer workers for what the jobs find | [CLI jobs](cli-jobs.md) | alpha-20261106 |
+| CLI jobs: a card labelled `cli-job:<id>` makes the harness run one fixed Vulnetix CLI job and record ids, counts, findings and signals on the card, with mutating jobs behind a write profile, met gates and a harness-verified branch, and five fixer workers for what the jobs find | [CLI jobs](cli-jobs.md) | alpha-20261106 |
 | Per-edit lint loop: the detected linter runs on each edited file and its classified, bounded findings ride back on the tool result | [Lint](lint.md#per-edit-loop) | alpha-20261106 |
 | `/context` token breakdown against the model's window, and an optional per-call cost line | [Context and reply cost](token-budgets.md#context-and-reply-cost) | alpha-20261106 |
 | Prompt cache: a one hour lifetime, opt-in keep-alive pings, a prefix-change notice and `/cache` | [Prompt cache](prompt-cache.md) | alpha-20261106 |
@@ -221,7 +221,7 @@ until the feature ships, then `alpha-YYYYMMDD`, the date it landed.
 - **Recover from provider trouble:** [classification](resilience.md#error-classification-internalresilience) →
   [transport retry](resilience.md#pre-first-byte-boundary) →
   [turn retry](resilience.md#turn-retry-and-state-invariants).
-- **Integrate Vulnesis:** [code review](vulnetix-review.md) →
+- **Integrate Vulnetix:** [code review](vulnetix-review.md) →
   [business rules](vulnetix.md#business-rules) →
   [command surface](vulnetix.md#command-surface) →
   [AI Firewall](vulnetix.md#ai-firewall-vulnetix-firewall-and-f10).

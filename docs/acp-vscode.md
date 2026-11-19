@@ -62,7 +62,7 @@ ends with the session. Every classifier, permission rule, sandbox and budget
 applies as in a headless run; see [Security model](acp.md#security-model).
 
 Each session is named after the editor, for example `[VS Code] explore repo`,
-and is mirrored to your Vulnesis account when session sync is on. Without
+and is mirrored to your Vulnetix account when session sync is on. Without
 `-provider` and `-model` it runs on the provider and model you configured in
 Belai.
 

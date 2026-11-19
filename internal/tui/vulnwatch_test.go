@@ -37,7 +37,7 @@ func TestVulnRowOncePerIdentifierPerSession(t *testing.T) {
 		t.Fatal("an identifier got a second row")
 	}
 	c := rows[0].Vuln
-	if c.ID != "CVE-2021-44228" || c.URL != "https://www.vulnes.is/vuln/CVE-2021-44228" || c.Command != "vulnetix vdb vuln CVE-2021-44228" {
+	if c.ID != "CVE-2021-44228" || c.URL != "https://www.vulnetix.com/vuln/CVE-2021-44228" || c.Command != "vulnetix vdb vuln CVE-2021-44228" {
 		t.Errorf("card = %+v", c)
 	}
 }
@@ -168,7 +168,7 @@ func TestHoverLinkOnAVulnRow(t *testing.T) {
 	a.observeVulnText("CVE-2021-44228")
 	a.flushVulnRows()
 	idx := len(a.messages) - 1
-	if got := a.hoverLink(components.SourceLine{Owner: idx}, 0); got != "https://www.vulnes.is/vuln/CVE-2021-44228" {
+	if got := a.hoverLink(components.SourceLine{Owner: idx}, 0); got != "https://www.vulnetix.com/vuln/CVE-2021-44228" {
 		t.Errorf("hoverLink = %q", got)
 	}
 }

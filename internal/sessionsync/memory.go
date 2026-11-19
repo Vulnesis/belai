@@ -19,7 +19,7 @@ import (
 
 // Memory replication (docs/a2a.md#repo-memory, docs/session-sync.md). The
 // shared memory (internal/repomemory: repo notes and fleet profile lessons)
-// is uploaded to Vulnesis and pulled back, so it survives an ephemeral
+// is uploaded to Vulnetix and pulled back, so it survives an ephemeral
 // machine (a Pix Sandbox) and is managed from the Software Factory console.
 // It runs only while sync is on. The A2A blackout does not stop it: it is
 // persistence, like the session mirror, not relay between agents.

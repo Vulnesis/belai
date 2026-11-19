@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/firewall"
 	"github.com/vulnetix/belai/internal/nonce"
@@ -49,7 +50,7 @@ func (a *App) enterFirewall() tea.Cmd {
 	return nil
 }
 
-// firewallRows lists the screen: Vulnesis, the beta adapters (their
+// firewallRows lists the screen: Vulnetix, the beta adapters (their
 // instances, or the adapter itself while unconfigured), custom instances with
 // the add row, then the provider-native entries.
 func (a *App) firewallRows() []firewallRow {
@@ -58,7 +59,7 @@ func (a *App) firewallRows() []firewallRow {
 		inst, _ := a.settings.FirewallInstanceNamed(name)
 		byAdapter[inst.Adapter] = append(byAdapter[inst.Adapter], name)
 	}
-	rows := []firewallRow{{kind: "header", label: "Vulnesis"}}
+	rows := []firewallRow{{kind: "header", label: "Vulnetix"}}
 	vx, _ := firewall.Lookup("vulnetix")
 	rows = append(rows, firewallRow{kind: "instance", instance: config.DefaultFirewall, adapter: vx, label: vx.Label()})
 	rows = append(rows, firewallRow{kind: "header", label: "Beta — built from public docs, not yet tested"})
@@ -442,7 +443,7 @@ func (a *App) commitFirewallForm() tea.Cmd {
 			}
 		}
 	}
-	if inst.Adapter == "vulnetix" && inst.URL == config.DefaultVulnetixGateway {
+	if inst.Adapter == "vulnetix" && inst.URL == brand.URL(config.DefaultVulnetixGateway) {
 		inst.URL = ""
 	}
 	if err := config.ValidateFirewallInstance(name, inst); err != nil {
@@ -600,7 +601,7 @@ func (a *App) firewallCommand(arg string) tea.Cmd {
 	return nil
 }
 
-// vulnetixFirewallCommand is /vulnetix firewall: it configures the Vulnesis
+// vulnetixFirewallCommand is /vulnetix firewall: it configures the Vulnetix
 // adapter through the generic path — making it active, or toggling it when it
 // already is.
 func (a *App) vulnetixFirewallCommand() tea.Cmd {

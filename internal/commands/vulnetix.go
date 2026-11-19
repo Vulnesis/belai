@@ -1,4 +1,4 @@
-// Package commands holds harness commands backed by the Vulnesis CLI.
+// Package commands holds harness commands backed by the Vulnetix CLI.
 package commands
 
 import (
@@ -17,7 +17,7 @@ import (
 	"github.com/vulnetix/belai/internal/vulnetixcli"
 )
 
-// Scanner is one fixed review activity. Name is the Vulnesis subcommand, Args
+// Scanner is one fixed review activity. Name is the Vulnetix subcommand, Args
 // the fixed, allowlisted arguments (no user-supplied flag ever reaches
 // exec.Command), Lane the serialisation key, and Artifacts the output files
 // the scanner is expected to write.
@@ -109,7 +109,7 @@ type RunObserver interface {
 	Start(name string, argv []string, dir string, cancel context.CancelFunc) (sink func(string), done func(exitCode int, timedOut bool, err error))
 }
 
-// Vulnesis runs the Vulnesis CLI review subcommands for a workdir.
+// Vulnetix runs the Vulnetix CLI review subcommands for a workdir.
 type Vulnetix struct {
 	CLI     *vulnetixcli.CLI
 	Workdir string
@@ -144,7 +144,7 @@ type ScanOutcome struct {
 	Findings int
 	// Counts is Findings broken down by severity.
 	Counts scanartifacts.Counts
-	// Snapshots are the links to this scan on the Vulnesis website that the
+	// Snapshots are the links to this scan on the Vulnetix website that the
 	// CLI printed (authenticated organisations only).
 	Snapshots []Snapshot
 	// SARIF and BOM are what the scanner's own artifacts say about the scan:
