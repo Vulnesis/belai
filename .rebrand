@@ -11,3 +11,8 @@ keep belai.vulnetix.com
 # A slug followed by .git is not rewritten by the slug rule; its test input must
 # match the rewritten expectation.
 rewrite "vulnetix/vdb-site.git": => "vulnesis/vdb-site.git":
+# Consumers' tests of the shared trailers expect them as the package emits them.
+imports-only internal/fleet/attribution_test.go
+# A slug before a full stop is not rewritten by the slug rule; the expectation
+# must follow its rewritten input (Repo: "vulnesis/cli").
+rewrite push webhook on vulnetix/cli. => push webhook on vulnesis/cli.
