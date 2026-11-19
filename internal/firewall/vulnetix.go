@@ -9,10 +9,10 @@ import (
 	"github.com/vulnetix/belai/internal/config"
 )
 
-// DefaultGateway is the production Vulnetix AI Firewall host.
+// DefaultGateway is the production Vulnesis AI Firewall host.
 const DefaultGateway = config.DefaultVulnetixGateway
 
-// Vulnetix AI Firewall response headers (ai-firewall internal/api).
+// Vulnesis AI Firewall response headers (ai-firewall internal/api).
 const (
 	HeaderDecision   = "X-Vulnetix-Firewall-Decision"
 	HeaderRules      = "X-Vulnetix-Firewall-Rules"
@@ -43,7 +43,7 @@ var slugs = map[string]string{
 	"minimax":    "minimax",
 	// Kiro has no API key: the gateway mints its token from the Kiro sign-in
 	// the org keeps in the secrets vault (`vulnetix ai-firewall kiro login`),
-	// so Belai sends only the Vulnetix key and never mints one itself.
+	// so Belai sends only the Vulnesis key and never mints one itself.
 	"kiro": "kiro",
 }
 
@@ -75,7 +75,7 @@ func BaseURL(gateway, slug, orgUUID string) string {
 }
 
 // IsGatewayURL reports whether baseURL points at gatewayURL's host (the
-// default Vulnetix gateway when gatewayURL is empty).
+// default Vulnesis gateway when gatewayURL is empty).
 func IsGatewayURL(gatewayURL, baseURL string) bool {
 	if gatewayURL == "" {
 		gatewayURL = DefaultGateway
@@ -106,9 +106,9 @@ func URLPathUUID(baseURL string) string {
 	return ""
 }
 
-// MintsKiroToken reports whether r is a Vulnetix AI Firewall route, whose
+// MintsKiroToken reports whether r is a Vulnesis AI Firewall route, whose
 // gateway mints Kiro's access token from the org's secrets vault and sets the
-// profile itself. Belai then sends its Vulnetix key as the Bearer token and
+// profile itself. Belai then sends its Vulnesis key as the Bearer token and
 // must not mint, or even read, a Kiro token of its own.
 func (r *Route) MintsKiroToken() bool {
 	return r != nil && (r.AdapterID == "vulnetix" || r.Mode == "vulnetix")
@@ -117,10 +117,10 @@ func (r *Route) MintsKiroToken() bool {
 type vulnetixAdapter struct{}
 
 func (vulnetixAdapter) ID() string           { return "vulnetix" }
-func (vulnetixAdapter) Label() string        { return "Vulnetix AI Firewall" }
+func (vulnetixAdapter) Label() string        { return "Vulnesis AI Firewall" }
 func (vulnetixAdapter) Stability() Stability { return Stable }
 func (vulnetixAdapter) Summary() string {
-	return "guardrails, redaction and BYOK provider keys for your Vulnetix organisation"
+	return "guardrails, redaction and BYOK provider keys for your Vulnesis organisation"
 }
 func (vulnetixAdapter) Defaults() config.FirewallInstance {
 	return config.FirewallInstance{Adapter: "vulnetix", URL: DefaultGateway}
@@ -132,20 +132,20 @@ func (vulnetixAdapter) Capabilities() Capabilities {
 
 func (vulnetixAdapter) Supports(t Target) (bool, string) {
 	if _, ok := Slug(t.Provider); !ok {
-		return false, fmt.Sprintf("provider %q cannot be routed through the Vulnetix AI Firewall — routable providers: %s", t.Provider, strings.Join(Providers(), ", "))
+		return false, fmt.Sprintf("provider %q cannot be routed through the Vulnesis AI Firewall — routable providers: %s", t.Provider, strings.Join(Providers(), ", "))
 	}
 	return true, ""
 }
 
-// Route keeps the provider's own auth style carrying the Vulnetix API key: the
+// Route keeps the provider's own auth style carrying the Vulnesis API key: the
 // gateway reads Authorization: Bearer first, then x-api-key.
 func (vulnetixAdapter) Route(in RouteInput) (Route, error) {
 	slug, ok := Slug(in.Target.Provider)
 	if !ok {
-		return Route{}, fmt.Errorf("provider %q cannot be routed through the Vulnetix AI Firewall", in.Target.Provider)
+		return Route{}, fmt.Errorf("provider %q cannot be routed through the Vulnesis AI Firewall", in.Target.Provider)
 	}
 	if in.Account == "" || in.Secret == "" {
-		return Route{}, fmt.Errorf("no Vulnetix API key: run `vulnetix auth login` with an API key")
+		return Route{}, fmt.Errorf("no Vulnesis API key: run `vulnetix auth login` with an API key")
 	}
 	gw := in.Instance.URL
 	if gw == "" {
@@ -159,10 +159,10 @@ func (vulnetixAdapter) Route(in RouteInput) (Route, error) {
 
 func (vulnetixAdapter) Instructions() []string {
 	return []string{
-		"Sign in with `vulnetix auth login` using an API key; Belai reads the key and organisation from the Vulnetix CLI.",
+		"Sign in with `vulnetix auth login` using an API key; Belai reads the key and organisation from the Vulnesis CLI.",
 		"Provider keys you save in /providers are pushed to the firewall (BYOK) with `vulnetix ai-firewall key set`, so they are no longer sent from this machine.",
 		"Kiro is signed in once for the organisation with `vulnetix ai-firewall kiro login`; the firewall mints Kiro's tokens, so this machine's Kiro sign-in is not used while routed.",
-		"Guardrails are managed with `vulnetix ai-firewall guardrails` or at https://www.vulnetix.com/vdb-ai-firewall.",
+		"Guardrails are managed with `vulnetix ai-firewall guardrails` or at https://www.vulnes.is/vdb-ai-firewall.",
 	}
 }
 
@@ -174,7 +174,7 @@ var vulnetixHints = map[string]string{
 	"provider_disabled":    "this provider is disabled on the AI Firewall",
 	"model_denied":         "your organisation's AI Firewall policy denies this model — pick another in /model",
 	"model_not_allowed":    "this model is not on your organisation's allow list — pick another in /model",
-	"invalid_api_key":      "the gateway refused the Vulnetix key — run `vulnetix auth login` with an API key",
+	"invalid_api_key":      "the gateway refused the Vulnesis key — run `vulnetix auth login` with an API key",
 	"unsupported_api":      "the gateway does not relay this wire for this provider",
 	"unknown_provider":     "the gateway does not know this provider",
 	"request_too_large":    "the gateway accepts requests up to 8 MiB",

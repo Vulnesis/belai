@@ -17,7 +17,7 @@ func availableStatus() selfupdate.Status {
 		Current:   cur,
 		Latest:    latest,
 		Tag:       "v0.9.0",
-		URL:       "https://github.com/Vulnetix/belai/releases/tag/v0.9.0",
+		URL:       "https://github.com/Vulnesis/belai/releases/tag/v0.9.0",
 		Method:    vulnetixcli.InstallBrew,
 		Command:   "brew upgrade --formula vulnetix/tap/belai",
 	}

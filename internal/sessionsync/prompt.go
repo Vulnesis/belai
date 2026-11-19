@@ -13,7 +13,7 @@ const MaxPromptBytes = 32 << 10
 
 // ErrTokenCredential explains why a token login cannot sync: the console
 // accepts the CLI's ApiKey (or a session JWT), not an opaque API token.
-var ErrTokenCredential = errors.New("the Vulnetix CLI is logged in with an API token, which the console does not accept; run `vulnetix auth login` in a browser to sync sessions")
+var ErrTokenCredential = errors.New("the Vulnesis CLI is logged in with an API token, which the console does not accept; run `vulnetix auth login` in a browser to sync sessions")
 
 // UsableCredential reports whether an Authorization header value can reach
 // the console: an ApiKey, or a Bearer that is shaped like a JWT.
@@ -26,7 +26,7 @@ func UsableCredential(header string) error {
 	case strings.HasPrefix(header, "Bearer "):
 		return ErrTokenCredential
 	default:
-		return errors.New("no usable Vulnetix credential")
+		return errors.New("no usable Vulnesis credential")
 	}
 }
 

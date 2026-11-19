@@ -22,12 +22,12 @@ func releaseServer(t *testing.T, tag string, hits *int) *httptest.Server {
 		if hits != nil {
 			*hits++
 		}
-		if !strings.HasSuffix(r.URL.Path, "/repos/Vulnetix/belai/releases/latest") {
+		if !strings.HasSuffix(r.URL.Path, "/repos/Vulnesis/belai/releases/latest") {
 			t.Errorf("unexpected path %q", r.URL.Path)
 		}
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"tag_name": tag,
-			"html_url": "https://github.com/Vulnetix/belai/releases/tag/" + tag,
+			"html_url": "https://github.com/Vulnesis/belai/releases/tag/" + tag,
 		})
 	}))
 	t.Cleanup(srv.Close)
@@ -191,13 +191,13 @@ func TestUpgradeHintPerInstallMethod(t *testing.T) {
 		{vulnetixcli.InstallGo, "linux", "go install github.com/vulnetix/belai/cmd/belai@latest", ""},
 		{
 			vulnetixcli.InstallDirect, "linux",
-			"curl -fsSL https://raw.githubusercontent.com/Vulnetix/belai/main/install.sh | sh",
-			"https://github.com/Vulnetix/belai/releases/download/v9.9.9/belai-linux-arm64",
+			"curl -fsSL https://raw.githubusercontent.com/Vulnesis/belai/main/install.sh | sh",
+			"https://github.com/Vulnesis/belai/releases/download/v9.9.9/belai-linux-arm64",
 		},
 		{
 			vulnetixcli.InstallUnknown, "windows",
-			"download https://github.com/Vulnetix/belai/releases/download/v9.9.9/belai-windows-arm64.exe",
-			"https://github.com/Vulnetix/belai/releases/download/v9.9.9/belai-windows-arm64.exe",
+			"download https://github.com/Vulnesis/belai/releases/download/v9.9.9/belai-windows-arm64.exe",
+			"https://github.com/Vulnesis/belai/releases/download/v9.9.9/belai-windows-arm64.exe",
 		},
 	}
 	for _, tc := range cases {
@@ -252,7 +252,7 @@ func TestEnabled(t *testing.T) {
 }
 
 func TestAssetURL(t *testing.T) {
-	if got := AssetURL("v1.2.3", "linux", "amd64"); got != "https://github.com/Vulnetix/belai/releases/download/v1.2.3/belai-linux-amd64" {
+	if got := AssetURL("v1.2.3", "linux", "amd64"); got != "https://github.com/Vulnesis/belai/releases/download/v1.2.3/belai-linux-amd64" {
 		t.Fatalf("AssetURL = %q", got)
 	}
 	if got := AssetURL("v1.2.3", "windows", "amd64"); !strings.HasSuffix(got, "belai-windows-amd64.exe") {
@@ -264,7 +264,7 @@ func TestAssetURLVariant(t *testing.T) {
 	orig := version.Variant
 	version.Variant = "bert-guardrails"
 	defer func() { version.Variant = orig }()
-	if got := AssetURL("v1.2.3", "linux", "amd64"); got != "https://github.com/Vulnetix/belai/releases/download/v1.2.3/belai-bert-guardrails-linux-amd64" {
+	if got := AssetURL("v1.2.3", "linux", "amd64"); got != "https://github.com/Vulnesis/belai/releases/download/v1.2.3/belai-bert-guardrails-linux-amd64" {
 		t.Fatalf("AssetURL = %q", got)
 	}
 	if got := AssetURL("v1.2.3", "windows", "arm64"); !strings.HasSuffix(got, "belai-bert-guardrails-windows-arm64.exe") {

@@ -1,7 +1,7 @@
 # Session sync
 
-While Belai is logged in with the Vulnetix CLI, each session is mirrored to
-the Vulnetix website. Two console pages show it:
+While Belai is logged in with the Vulnesis CLI, each session is mirrored to
+the Vulnesis website. Two console pages show it:
 
 - **Belai → History** (`/resolve/belai-history`) has three tabs. Sessions lists
   every synced session that is no longer attached to a running host. Hosts and
@@ -141,14 +141,14 @@ a model: the conversation is still rebuilt from paired calls and results.
     registration and heartbeat responses. It reaches only a live session that
     takes web prompts, and the host applies it and confirms it in its next
     repository state.
-- **Destination:** requests go to `https://www.vulnetix.com/api/site/v1/belai/*`.
-  - `$VULNETIX_WEB_URL` overrides the origin.
-  - The credential is only sent to `https://*.vulnetix.com` or a loopback
+- **Destination:** requests go to `https://www.vulnes.is/api/site/v1/belai/*`.
+  - `$VULNESIS_WEB_URL` overrides the origin.
+  - The credential is only sent to `https://*.vulnes.is` or a loopback
     origin for local development.
-- **Credential:** the Vulnetix CLI's own credential in the `Authorization`
+- **Credential:** the Vulnesis CLI's own credential in the `Authorization`
   header. That is `ApiKey <org>:<hmac>` from `vulnetix auth login`, read the
   same way as the MCP `vulnetix:cli` reference and cached for five minutes.
-  - An opaque API-token login (`--token`, `VULNETIX_API_TOKEN`) is not
+  - An opaque API-token login (`--token`, `VULNESIS_API_TOKEN`) is not
     accepted by the console, so sync stays off with that reason.
 - **Visibility:** only the principal whose credential uploaded a session can
   see or prompt it on the website.
@@ -328,7 +328,7 @@ and the inbox run on the syncer's own goroutines.
 { "sync": { "enabled": true, "remote_prompts": true, "remote_answers": true, "profiles": true, "skills": true, "prompts": true, "processes": true, "repos": true, "budgets": true, "rewrites": true, "providers": true, "commands": true } }
 ```
 
-- **`sync.enabled`** — mirror sessions. Default on whenever a Vulnetix CLI
+- **`sync.enabled`** — mirror sessions. Default on whenever a Vulnesis CLI
   credential resolves.
 - **`sync.remote_prompts`** — accept web prompts. Default on; `false` shares
   sessions view-only.

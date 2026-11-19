@@ -43,8 +43,8 @@ const (
 type MCPBuiltin struct {
 	// Clef is the decision server.
 	Clef *ClefMCPSettings `json:"clef,omitempty"`
-	// Vulnetix is the hosted Vulnetix MCP server, offered by default once
-	// Vulnetix credentials exist.
+	// Vulnesis is the hosted Vulnesis MCP server, offered by default once
+	// Vulnesis credentials exist.
 	Vulnetix *VulnetixMCPSettings `json:"vulnetix,omitempty"`
 }
 
@@ -62,9 +62,9 @@ type ClefMCPSettings struct {
 	SkipAskAt *float64 `json:"skip_ask_at,omitempty"`
 }
 
-// VulnetixMCPSettings configures the hosted Vulnetix MCP server.
+// VulnetixMCPSettings configures the hosted Vulnesis MCP server.
 type VulnetixMCPSettings struct {
-	// Enabled turns it on or off. nil means on while Vulnetix credentials exist.
+	// Enabled turns it on or off. nil means on while Vulnesis credentials exist.
 	Enabled *bool `json:"enabled,omitempty"`
 }
 
@@ -93,8 +93,8 @@ func (s Settings) ClefSkipAsk() (threshold float64, on bool) {
 	return MCPDefaultSkipAskAt, true
 }
 
-// VulnetixMCPEnabled reports whether the user wants the hosted Vulnetix MCP
-// server. Default on; it is only offered while Vulnetix credentials exist.
+// VulnetixMCPEnabled reports whether the user wants the hosted Vulnesis MCP
+// server. Default on; it is only offered while Vulnesis credentials exist.
 func (s Settings) VulnetixMCPEnabled() bool {
 	if s.MCP == nil || s.MCP.Builtin == nil || s.MCP.Builtin.Vulnetix == nil || s.MCP.Builtin.Vulnetix.Enabled == nil {
 		return true
@@ -278,7 +278,7 @@ func ValidateMCPServer(name string, s MCPServer, strict bool) error {
 		case !ok:
 			return bad("header %s: %q is not a legal reference", k, v)
 		case kind == MCPRefVulnetix && (!strings.EqualFold(k, "Authorization") || !mcpVulnetixURL(s.URL)):
-			return bad("header %s: %s is only for Authorization on an https vulnetix.com URL", k, VulnetixCLIRef)
+			return bad("header %s: %s is only for Authorization on an https vulnes.is URL", k, VulnetixCLIRef)
 		case kind == MCPRefCred:
 			used[ref] = true
 		case kind == MCPRefNone && strict && MCPLooksSecret(k):
@@ -337,12 +337,12 @@ func mcpLoopback(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
-// mcpVulnetixURL reports whether raw is https on vulnetix.com or a subdomain.
+// mcpVulnetixURL reports whether raw is https on vulnes.is or a subdomain.
 func mcpVulnetixURL(raw string) bool {
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" || u.User != nil {
 		return false
 	}
 	h := strings.ToLower(u.Hostname())
-	return h == "vulnetix.com" || strings.HasSuffix(h, ".vulnetix.com")
+	return h == "vulnes.is" || strings.HasSuffix(h, ".vulnes.is")
 }

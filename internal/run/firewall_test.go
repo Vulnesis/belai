@@ -11,7 +11,7 @@ import (
 	"github.com/vulnetix/belai/internal/nonce"
 )
 
-// The nonce-mode header goes out only on a Vulnetix route whose gateway
+// The nonce-mode header goes out only on a Vulnesis route whose gateway
 // issued every nonce the pool holds: canonical when that gateway advertised
 // it, enforce otherwise.
 func TestApplyFirewallNonceMode(t *testing.T) {

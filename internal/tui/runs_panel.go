@@ -659,7 +659,7 @@ func (a *App) activityFinishLine(act activity.Activity) string {
 }
 
 // Start implements commands.RunObserver / vulnetixcli.RunObserver: it registers
-// a Vulnetix subcommand/probe and returns its live-output sink and terminal
+// a Vulnesis subcommand/probe and returns its live-output sink and terminal
 // callback. It never mutates App state (it runs on the exec goroutine); the TUI
 // reacts to the registry event stream instead.
 func (a *App) Start(name string, argv []string, dir string, cancel context.CancelFunc) (func(string), func(int, bool, error)) {
@@ -779,7 +779,7 @@ func activityDirective(act activity.Activity) string {
 	}
 	b.WriteString("The command, directory and exit status above are established; do not re-derive them")
 	if act.Kind == activity.KindVulnetix {
-		b.WriteString(", and re-run or narrow a Vulnetix command only with the Vulnetix tool")
+		b.WriteString(", and re-run or narrow a Vulnesis command only with the Vulnesis tool")
 	}
 	b.WriteString(".")
 	return b.String()

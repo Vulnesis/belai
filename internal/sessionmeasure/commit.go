@@ -38,9 +38,9 @@ const maxTrailers = 32
 
 // Meta is the entry's meta, the wire shape vdb-site reads:
 //
-//	{"sha":"<40 hex>","author_name":"Pix [bot]","author_email":"security@vulnetix.com",
-//	 "committer_name":"Pix [bot]","committer_email":"security@vulnetix.com",
-//	 "trailers":[{"key":"Signed-off-by","value":"Pix [bot] <security@vulnetix.com>"}],
+//	{"sha":"<40 hex>","author_name":"Pix [bot]","author_email":"security@vulnes.is",
+//	 "committer_name":"Pix [bot]","committer_email":"security@vulnes.is",
+//	 "trailers":[{"key":"Signed-off-by","value":"Pix [bot] <security@vulnes.is>"}],
 //	 "branch":"belai/k-0363e1"}
 func (c Commit) Meta() map[string]any {
 	tr := make([]map[string]string, 0, len(c.Trailers))

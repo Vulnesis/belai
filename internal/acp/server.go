@@ -57,7 +57,7 @@ type Server struct {
 }
 
 // Mirror follows the sessions of a connection so their transcripts can be
-// mirrored elsewhere (the Vulnetix web session sync). It sees only a session's
+// mirrored elsewhere (the Vulnesis web session sync). It sees only a session's
 // id, directory and harness-composed name; the transcript lines are read from
 // the file the session log already wrote.
 type Mirror interface {
@@ -216,7 +216,7 @@ func (s *Server) initialize(params json.RawMessage) (any, error) {
 			"promptCapabilities":  map[string]any{"image": true, "audio": false, "embeddedContext": true},
 			"mcpCapabilities":     map[string]any{"http": false, "sse": false},
 		},
-		"agentInfo":   map[string]any{"name": "belai", "title": "Vulnetix Belai", "version": version.Version},
+		"agentInfo":   map[string]any{"name": "belai", "title": "Vulnesis Belai", "version": version.Version},
 		"authMethods": []any{},
 	}, nil
 }

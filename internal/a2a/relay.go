@@ -67,7 +67,7 @@ type RelayClient interface {
 	PostA2A(ctx context.Context, hostID string, envelopes []json.RawMessage) (sessionsync.A2APostResult, error)
 }
 
-// Relay forwards this process's outbound envelopes to Vulnetix and writes the
+// Relay forwards this process's outbound envelopes to Vulnesis and writes the
 // organisation's inbound ones into the local bus, de-duplicated by messageId.
 // It runs only while sync is on (a login), one per host process. During an
 // A2A blackout it relays nothing in either direction: the local bus goes on,

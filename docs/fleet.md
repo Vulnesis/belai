@@ -5,7 +5,7 @@ without anyone watching. Each worker is its own `belai` process. It claims an
 item off the board, works on it in a git worktree of its own, and moves the
 item on when it is done — to another worker, to a human, or to `done`. Work is
 handed between agents on the board and nowhere else, so every step is visible
-in `/kanban`, on the Vulnetix website, and in `belai kanban list`.
+in `/kanban`, on the Vulnesis website, and in `belai kanban list`.
 
 ```sh
 belai kanban add "Add a --json flag to belai agent ps" --label build
@@ -547,7 +547,7 @@ on startup, so one settings file serves every build variant.
 
 Each item's turn is written as a session under the repository's project, so
 the session id on the item's notes lists, resumes and searches like any
-other. With `sync.enabled` on and a Vulnetix CLI credential, the worker
+other. With `sync.enabled` on and a Vulnesis CLI credential, the worker
 mirrors that session to the website the same way the TUI does. The mirror
 uploads only the lines the transcript wrote, and it takes no answers back.
 
@@ -615,7 +615,7 @@ forms:
 |---|---|---|
 | `NAME` or `worker:NAME` | a worker profile | workers of that profile |
 | `crew:NAME` | a crew | any worker started in that crew (`Record.Crew`) |
-| `person:HANDLE` | someone on the Vulnetix website | no worker, ever |
+| `person:HANDLE` | someone on the Vulnesis website | no worker, ever |
 
 Rules and edge cases:
 
@@ -928,7 +928,7 @@ relative path and never gets the repository's path:
   only, credential files by name are never copied, and a file Git tracks outside
   `.vulnetix` is never written back into your checkout: a change to tracked
   source goes on a branch.
-- **It travels with the profile.** A profile from the Vulnetix library installs
+- **It travels with the profile.** A profile from the Vulnesis library installs
   with its `knowledge` and `workspace.sync` blocks, a backup carries them, and a
   replace takes the library copy (keeping this host's entries when the copy lists
   none).
@@ -942,7 +942,7 @@ and long output out of it, to treat teammates' notes as notes and not
 instructions, and never to commit it. How the file is created and kept tidy is
 left to those instructions: the harness only copies and merges. The scout and the
 reviewer have the file tools (`Edit`, `Write`) and `Bash`, `Git`, `GH` and
-`Glab`, `WebFetch` and `WebSearch`, the `Vulnetix` tool and the Vulnetix MCP
+`Glab`, `WebFetch` and `WebSearch`, the `Vulnesis` tool and the Vulnesis MCP
 server's tools (`mcp__vulnetix__*`, available once `/vulnetix mcp` has added the
 server), so they can find and patch source and research a fix, not only read.
 
@@ -1013,7 +1013,7 @@ Rules and edge cases:
   with its id, what decides it, its state and its note (`- G1 [runnable go
   internal/parse TestLast] unmet: title (exit 1: TestLast)`), so a builder knows
   what done means and reads why the last attempt failed.
-- **A worker never edits gates.** Gates are set when the card is filed, and a pulled copy of a card from the Vulnetix
+- **A worker never edits gates.** Gates are set when the card is filed, and a pulled copy of a card from the Vulnesis
   website never carries or replaces them (they stay on the host that decided
   them, like a finding's fields).
 - **The board file is version 3.** A Belai that predates gates refuses the
@@ -1300,7 +1300,7 @@ is not compared, so a missing report never closes a card.
 
 After a sweep that files new cards, the harness files one more item for that
 commit, labelled `sweep`, and the scout works it as a model turn: it runs the
-Vulnetix fix dry run for the manifests the new cards name and adds a note to
+Vulnesis fix dry run for the manifests the new cards name and adds a note to
 each card with the fixed version, the exact edit and the lockfile command, so a
 patcher starts with the answer. The claim lists which cards it may annotate. The
 harness derives them from fields it set (the commit the card was filed at, its
@@ -1313,7 +1313,7 @@ the fixed `sca` argv, and while the scanner still reports the card's finding it
 runs another turn with the result attached: the package, version, file, severity
 and how many findings remain, never scanner text. If the scanner still reports
 it after the last round, the attempt fails whatever the model said, and the
-usual attempt limit applies. A scan that gives no answer (no Vulnetix CLI, a
+usual attempt limit applies. A scan that gives no answer (no Vulnesis CLI, a
 failed scan) leaves a single turn. The scan's `.vulnetix` directory is removed
 from the worktree, so scan output is never committed, and the rounds share the
 item's token and wall budgets. A verdict a worker recorded with `KanbanVerdict` stands when the turn then runs out of wall time: the verifier that recorded `fixed` with its evidence and kept re-checking has decided, and the card closes with the VEX instead of going round again. An error or a cancellation does not settle a verdict. Published work stands the same way: when the wall budget ends while the branch is exactly what `PublishBranch` last pushed, or exactly what origin already holds for it (the same commit, nothing uncommitted beside it; a retry that resumed a branch whose pull request is open has nothing new to push), the turn counts as complete and the card moves on with no attempt counted. Its gates are still verified, under a 10-minute grace period that holds the lease. Work left beside what was published is not finished, and the overrun fails it as before. A review stands the same way: a reviewer with `gates.review` that recorded every manual gate as met with `KanbanGate` has approved, so an overrun after that closes the card instead of failing it, once the harness has verified the runnable gates under the same grace period. A gate left undecided at the deadline is not an approval. A turn that ends because the model provider refused a call (a 429 rate limit or quota, or a 5xx), at the start or part way through, is not an attempt: the card goes back to the list it was claimed from with its labels untouched and a note, the attempt count stays, and anything committed stays on the branch. An outage or an exhausted allowance cannot block cards. The patcher can also
@@ -1724,7 +1724,7 @@ Each lesson is also a `profile`-scoped note in the shared memory store
 (`~/.vulnetix/belai/memory/profiles/<profile>.jsonl`, [repo memory](a2a.md#repo-memory)),
 which is the record once it holds the profile: the worker reads its lessons
 from it, newest kept within `memory.max_bytes`. While sync is on the store
-replicates to Vulnetix, so a worker on a fresh machine (a Pix Sandbox) reads
+replicates to Vulnesis, so a worker on a fresh machine (a Pix Sandbox) reads
 its lessons back, and the Software Factory console is where people edit or
 delete them; a console delete arrives as a tombstone and removes the lesson
 here. `belai agent memory NAME -clear` deletes the file and sends a tombstone

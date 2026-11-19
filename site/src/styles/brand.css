@@ -1,6 +1,6 @@
 /* Belai marketing site: brand tokens and Tailwind v4 theme.
  *
- * Token values are ported verbatim from Vulnetix/website/src/styles/_brand.scss
+ * Token values are ported verbatim from Vulnesis/website/src/styles/_brand.scss
  * (the hex table in the plan) so captured TUI frames sit natively on the page.
  * Tailwind v4 is CSS-first: every @theme entry generates a utility class
  * (bg-vx-cream, text-vx-mint-strong, font-mono, …). */
@@ -856,7 +856,7 @@ main > .chapter:first-child {
 
 /* ----------------------------------------------------------------------------
  * Surface markers: where a feature works (TUI, ACP, CLI, self-hosted, Pix
- * Sandbox, Software Factory, Vulnetix only). Deliberately quiet: small mono type, a hairline
+ * Sandbox, Software Factory, Vulnesis only). Deliberately quiet: small mono type, a hairline
  * outline and the ink at low strength.
  * ------------------------------------------------------------------------- */
 .surfaces {

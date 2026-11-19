@@ -72,7 +72,7 @@ const rcUsage = `usage: belai rc [--dir PATH]... [--max N] [--max-workers N] [--
        belai rc --stop
 
 Runs Belai remote control: this machine appears under Belai → Sessions on the
-Vulnetix website, which can start headless Belai sessions here, follow them
+Vulnesis website, which can start headless Belai sessions here, follow them
 live and prompt them. Sessions run only in projects already trusted on this
 machine and in the directories given with --dir.
 
@@ -102,7 +102,7 @@ Software Factory dispatches, in place of agents.factory_reserved_workers: any
 other start, and a crew topping itself up with no card waiting, stops N short of
 the cap. N is clamped below the cap.
 
-Needs a Vulnetix CLI browser login (vulnetix auth login).
+Needs a Vulnesis CLI browser login (vulnetix auth login).
 `
 
 // runRCCLI implements `belai rc`. It returns the exit code.
@@ -162,7 +162,7 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		fmt.Fprintln(stderr, "belai rc: --factory-reserved-workers cannot be negative")
 		return 2
 	}
-	url := rc.ManageURL(os.Getenv("VULNETIX_WEB_URL"))
+	url := rc.ManageURL(os.Getenv("VULNESIS_WEB_URL"))
 
 	switch {
 	case *status:
@@ -356,7 +356,7 @@ func flagGiven(fs *flag.FlagSet, name string) bool {
 	return given
 }
 
-// rcClient builds the sync client with the Vulnetix CLI credential, re-read
+// rcClient builds the sync client with the Vulnesis CLI credential, re-read
 // every five minutes so a fresh `vulnetix auth login` is picked up.
 func rcClient(wd string) (*sessionsync.Client, error) {
 	var mu sync.Mutex
@@ -378,10 +378,10 @@ func rcClient(wd string) (*sessionsync.Client, error) {
 		header, at = h, time.Now()
 		return header, nil
 	}
-	return sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")), auth, httpclient.Default())
+	return sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNESIS_WEB_URL")), auth, httpclient.Default())
 }
 
-// rcRedeemLogin turns the approved grant of a sign-in request into the Vulnetix
+// rcRedeemLogin turns the approved grant of a sign-in request into the Vulnesis
 // CLI's stored login. The grant was minted for this host's own principal, so
 // nobody types a code anywhere; rcClient picks the new login up within five
 // minutes.

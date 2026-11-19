@@ -63,14 +63,14 @@ func TestBaseURL(t *testing.T) {
 		org     string
 		want    string
 	}{
-		{"anthropic no trailing slash", "https://guardrails.vulnetix.com", "anthropic", "org-1",
-			"https://guardrails.vulnetix.com/anthropic/org-1"},
-		{"anthropic trailing slash", "https://guardrails.vulnetix.com/", "anthropic", "org-1",
-			"https://guardrails.vulnetix.com/anthropic/org-1"},
-		{"openai", "https://guardrails.vulnetix.com", "openai", "org-1",
-			"https://guardrails.vulnetix.com/openai/org-1/v1"},
-		{"openai trailing slash", "https://guardrails.vulnetix.com/", "openai", "org-1",
-			"https://guardrails.vulnetix.com/openai/org-1/v1"},
+		{"anthropic no trailing slash", "https://guardrails.vulnes.is", "anthropic", "org-1",
+			"https://guardrails.vulnes.is/anthropic/org-1"},
+		{"anthropic trailing slash", "https://guardrails.vulnes.is/", "anthropic", "org-1",
+			"https://guardrails.vulnes.is/anthropic/org-1"},
+		{"openai", "https://guardrails.vulnes.is", "openai", "org-1",
+			"https://guardrails.vulnes.is/openai/org-1/v1"},
+		{"openai trailing slash", "https://guardrails.vulnes.is/", "openai", "org-1",
+			"https://guardrails.vulnes.is/openai/org-1/v1"},
 		{"deepseek", "https://gw.example.com", "deepseek", "abc", "https://gw.example.com/deepseek/abc/v1"},
 	}
 	for _, tc := range cases {
@@ -87,10 +87,10 @@ func TestIsGatewayURL(t *testing.T) {
 		baseURL string
 		want    bool
 	}{
-		{"explicit match", "https://guardrails.vulnetix.com", "https://guardrails.vulnetix.com/openai/org/v1", true},
-		{"explicit host match different path", "https://guardrails.vulnetix.com", "https://guardrails.vulnetix.com/whatever", true},
-		{"explicit mismatch", "https://gw.example.com", "https://guardrails.vulnetix.com/openai/org/v1", false},
-		{"default match", "", "https://guardrails.vulnetix.com/openai/org/v1", true},
+		{"explicit match", "https://guardrails.vulnes.is", "https://guardrails.vulnes.is/openai/org/v1", true},
+		{"explicit host match different path", "https://guardrails.vulnes.is", "https://guardrails.vulnes.is/whatever", true},
+		{"explicit mismatch", "https://gw.example.com", "https://guardrails.vulnes.is/openai/org/v1", false},
+		{"default match", "", "https://guardrails.vulnes.is/openai/org/v1", true},
 		{"default mismatch", "", "https://api.openai.com/v1", false},
 		{"explicit self-hosted match", "https://gw.example.com", "https://gw.example.com/anthropic/org", true},
 	}
@@ -106,7 +106,7 @@ func TestHostOf(t *testing.T) {
 		in   string
 		want string
 	}{
-		{"https://guardrails.vulnetix.com/openai/org/v1", "guardrails.vulnetix.com"},
+		{"https://guardrails.vulnes.is/openai/org/v1", "guardrails.vulnes.is"},
 		{"http://api.openai.com", "api.openai.com"},
 		{"not a url", ""},
 		{"", ""},
@@ -124,11 +124,11 @@ func TestURLPathUUID(t *testing.T) {
 		in   string
 		want string
 	}{
-		{"https://guardrails.vulnetix.com/openai/org-123/v1", "org-123"},
-		{"https://guardrails.vulnetix.com/anthropic/org-456", "org-456"},
-		{"https://guardrails.vulnetix.com/openai/org-789/v1/chat/completions", "org-789"},
-		{"https://guardrails.vulnetix.com/anthropic", ""}, // only one path segment
-		{"https://guardrails.vulnetix.com", ""},
+		{"https://guardrails.vulnes.is/openai/org-123/v1", "org-123"},
+		{"https://guardrails.vulnes.is/anthropic/org-456", "org-456"},
+		{"https://guardrails.vulnes.is/openai/org-789/v1/chat/completions", "org-789"},
+		{"https://guardrails.vulnes.is/anthropic", ""}, // only one path segment
+		{"https://guardrails.vulnes.is", ""},
 		{"://bad", ""},
 	}
 	for _, tc := range cases {

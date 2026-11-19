@@ -11,7 +11,7 @@ func TestIsolateSetsEveryVariableToItsOwnDir(t *testing.T) {
 		"HOME":             e.Home,
 		"BELAI_HOME":       e.BelaiHome,
 		"BELAI_MODELS_DIR": e.ModelsDir,
-		"VULNETIX_WEB_URL": OfflineWebURL,
+		"VULNESIS_WEB_URL": OfflineWebURL,
 	} {
 		if got := os.Getenv(k); got != want {
 			t.Errorf("%s = %q, want %q", k, got, want)
@@ -30,7 +30,7 @@ func TestIsolateSetsEveryVariableToItsOwnDir(t *testing.T) {
 }
 
 func TestIsolateRestoresTheEnvironment(t *testing.T) {
-	const key = "VULNETIX_WEB_URL"
+	const key = "VULNESIS_WEB_URL"
 	t.Setenv(key, "https://example.invalid")
 	t.Run("inner", func(t *testing.T) {
 		Isolate(t)

@@ -17,7 +17,7 @@ import (
 )
 
 // TestKiroThroughVulnetixFirewallSendsTheVulnetixKey routes a Kiro turn
-// through the Vulnetix AI Firewall: Belai sends its Vulnetix key as the Bearer
+// through the Vulnesis AI Firewall: Belai sends its Vulnesis key as the Bearer
 // token, leaves the profile to the gateway, and never mints a Kiro token.
 func TestKiroThroughVulnetixFirewallSendsTheVulnetixKey(t *testing.T) {
 	var oidcCalls atomic.Int32

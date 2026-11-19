@@ -123,7 +123,7 @@ running on Mac hardware, or off to hide them on a Mac. It is display only.
 ### Firewall permissions
 
 `firewall.permission_offers` (the `permission offers` row) shows the card
-belai adds when a prompt states a permission the Vulnetix AI Firewall can
+belai adds when a prompt states a permission the Vulnesis AI Firewall can
 enforce. It is on by default. Off, the card is hidden from the thread, but the
 offer is still written to the session record, so the console's sandbox
 Permissions tab can still apply it.

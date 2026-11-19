@@ -1,12 +1,12 @@
-# `/vulnetix` — Vulnetix review + AI Firewall
+# `/vulnetix` — Vulnesis review + AI Firewall
 
-`/vulnetix` is the Belai entry point for the Vulnetix CLI and the Vulnetix AI
-Firewall. It runs Vulnetix review subcommands, surfaces CLI capability state,
+`/vulnetix` is the Belai entry point for the Vulnesis CLI and the Vulnesis AI
+Firewall. It runs Vulnesis review subcommands, surfaces CLI capability state,
 keeps a history of projects found on this machine, and toggles the AI Firewall
 for LLM traffic.
 
 For how to run a review, what it costs and how to read its report, see
-[Vulnetix code review](vulnetix-review.md). This page holds the implementation
+[Vulnesis code review](vulnetix-review.md). This page holds the implementation
 rules behind it.
 
 ## Business rules
@@ -56,7 +56,7 @@ rules behind it.
 - **Artifacts live under `.vulnetix/`, summary state under `.vulnetix/belai/`.**
   `code-review-summary.md` and `code-review-manifest.json` are written to
   `<workdir>/.vulnetix/belai/` so they stay outside `@file` admission and
-  Vulnetix's own scans.
+  Vulnesis's own scans.
 - **Belai's own files are excluded from the manifest.** The manifest uses
   `scanartifacts.Enumerate`, which classifies `settings.json`, `prompts.json`
   (a tombstone for the old library), `credentials.json`,
@@ -67,9 +67,9 @@ rules behind it.
   fingerprint over `(rel, size, mtime)` plus a schema version.
 - **AI Firewall is fail-closed.** The firewall routes LLM traffic only when
   four conditions are true: (1) the user toggled it on via `/vulnetix firewall`,
-  the `F10` key, or `BELAI_FIREWALL=1`; (2) valid Vulnetix gateway credentials
-  are present (`VULNETIX_API_KEY` + `VULNETIX_ORG_ID`, `VVD_ORG` + `VVD_SECRET`,
-  or the logged-in Vulnetix CLI credential); (3) the provider maps to a
+  the `F10` key, or `BELAI_FIREWALL=1`; (2) valid Vulnesis gateway credentials
+  are present (`VULNESIS_API_KEY` + `VULNESIS_ORG_ID`, `VVD_ORG` + `VVD_SECRET`,
+  or the logged-in Vulnesis CLI credential); (3) the provider maps to a
   gateway slug; and (4) resolving the credential succeeded without error. If any
   condition is missing, the toggle is stored but the run falls back to the
   native provider. A provider whose key could not be stored on the gateway
@@ -77,7 +77,7 @@ rules behind it.
   `.vulnetix/settings.json` can turn the firewall off but never on; the
   per-project toggle (`F10`) overrides the global value, and the CLI flag /
   environment variable overrides both.
-- **Gateway routing uses the provider slug, not the URL.** The Vulnetix
+- **Gateway routing uses the provider slug, not the URL.** The Vulnesis
   adapter in `internal/firewall` (see [firewall.md](firewall.md)) maps providers (`openai`, `anthropic`, etc.) to gateway paths. The gateway
   base URL is `<gatewayHost>/<slug>/<org>/v1`. Anthropic chat uses
   `/v1/messages`; OpenAI-compatible surfaces use `/v1/chat/completions`. The
@@ -96,21 +96,21 @@ rules behind it.
 | `/vulnetix configure` | Open the CLI capability screen |
 | `/vulnetix list` | Open the project history screen |
 | `/vulnetix status` | Print CLI capabilities as plain text |
-| `/vulnetix firewall` | Make the Vulnetix AI Firewall the active firewall, or toggle it on/off when it already is |
-| `/vulnetix mcp` | Add the hosted Vulnetix MCP server, authenticated with the CLI's credential (see *Vulnetix MCP server*) |
+| `/vulnetix firewall` | Make the Vulnesis AI Firewall the active firewall, or toggle it on/off when it already is |
+| `/vulnetix mcp` | Add the hosted Vulnesis MCP server, authenticated with the CLI's credential (see *Vulnesis MCP server*) |
 | `/vulnetix mcp remove` | Remove it from the global settings and stop it |
 | `/vulnetix mcp status` | Show its state and tools |
 | `/vulnetix setup` | Open the Getting started view again (see *Getting started*) |
 | `/vulnetix help` | Show the available subcommands |
 
 The capability screen and `/vulnetix status` report the CLI's version, whether
-a newer one exists, and whether the API is reachable at `$VULNETIX_API_URL`
-(default `https://api.vdb.vulnetix.com/v1`), and whether the credential is
+a newer one exists, and whether the API is reachable at `$VULNESIS_API_URL`
+(default `https://api.vdb.vulnes.is/v1`), and whether the credential is
 accepted when the CLI is logged in. Every call to the CLI runs with a filtered
 environment. Variables starting `OPENAI_`, `ANTHROPIC_`, `CLOUDFLARE_` or
 `BELAI_`, and any ending `_API_KEY`, `_TOKEN` or `_SECRET`, are removed, except
-the Vulnetix variables (`VULNETIX_API_TOKEN`, `VULNETIX_API_KEY`,
-`VULNETIX_ORG_ID`, `VULNETIX_API_URL`, `VULNETIX_WEB_URL`, `VVD_ORG` and
+the Vulnesis variables (`VULNESIS_API_TOKEN`, `VULNESIS_API_KEY`,
+`VULNESIS_ORG_ID`, `VULNESIS_API_URL`, `VULNESIS_WEB_URL`, `VVD_ORG` and
 `VVD_SECRET`), which are kept. Everything else passes through, and `NO_COLOR=1`,
 `TERM=dumb` and `HOMEBREW_NO_AUTO_UPDATE=1` are set.
 
@@ -126,10 +126,10 @@ Belai runs with its default settings until the file is fixed.
 | `vulnetix.subcommands` | every scanner | The scanners a review runs, from `sca`, `containers`, `sast`, `secrets`, `iac`, `malscan`, `sbom`, `aibom`, `cbom` and `fix`. They run in the fixed table order whatever order you list them, so `sca` still precedes `containers` in the `sbom` lane. `fix` is always reported: it is the post-scan activity, not a scanner. A name outside this list is refused. |
 | `vulnetix.timeout` | none | A Go duration such as `10m` or `1h30m`, longer than zero and at most `24h`. Each scan gets that long. `0s`, a negative value, a value over a day and text that is not a duration are refused. |
 | `vulnetix.autofix` | `false` | When true, the review runs `vulnetix fix --yes` after the SCA scan. When false it attaches the `--dry-run` plan to the triage turn and changes nothing. |
-| `vulnetix.gateway_url` | `https://guardrails.vulnetix.com` | The AI Firewall host for a self-hosted deployment. Your own layers only. |
+| `vulnetix.gateway_url` | `https://guardrails.vulnes.is` | The AI Firewall host for a self-hosted deployment. Your own layers only. |
 | `vulnetix.firewall_enabled` | off | The legacy firewall switch, read as `firewall.enabled` when that key is unset. Writers use `firewall.enabled`. |
 | `vulnetix.dep_watch` | `true` | The [dependency hook](#dependency-hook). |
-| `vulnetix.continue_on_error`, `vulnetix.org_id` | | Accepted when present and ignored. A failing scanner never stops the others (see *A killed scanner does not stop the run*), and the organisation is the one the Vulnetix CLI is logged in to. |
+| `vulnetix.continue_on_error`, `vulnetix.org_id` | | Accepted when present and ignored. A failing scanner never stops the others (see *A killed scanner does not stop the run*), and the organisation is the one the Vulnesis CLI is logged in to. |
 | `vulnetix_sweep_enabled` | `true` | The background sweep for other `.vulnetix` projects, below. |
 | `vulnetix_sweep_roots` | `$HOME` and the working directory's parent | The directories the sweep walks. Each must be an absolute path. |
 
@@ -176,9 +176,9 @@ reopen it.
    `/help`). Where the Mac form of an F key is on (see [macOS keyboard
    hints](settings.md#macos-keyboard-hints)), `f3` reads `f3 (Fn+Mission
    Control)`.
-2. **Vulnetix CLI** — when `vulnetix` is not on `PATH`, Belai shows the exact
+2. **Vulnesis CLI** — when `vulnetix` is not on `PATH`, Belai shows the exact
    command it would run: `brew install vulnetix/tap/vulnetix` on macOS and
-   Linux, or `scoop bucket add vulnetix https://github.com/Vulnetix/scoop-bucket`
+   Linux, or `scoop bucket add vulnetix https://github.com/Vulnesis/scoop-bucket`
    then `scoop install vulnetix` on Windows. The default choice is *Skip*;
    the fixed command runs only when you pick *Install*, with the scrubbed
    environment and its own process group. With neither package manager the
@@ -186,7 +186,7 @@ reopen it.
 3. **Account** — skipped when a CLI credential already loads. Otherwise you
    can create an account, log in to an existing one, or skip.
    - *Create* posts email, optional company and password to the enrollment
-     flow at `https://auth.vulnetix.com/if/flow/vulnetix-enrollment/`
+     flow at `https://auth.vulnes.is/if/flow/vulnetix-enrollment/`
      (`internal/vulnetixenroll`, Authentik's flow-executor API). The form is
      sent to that host only, redirects off it are refused, and the password
      fields are cleared as soon as the post returns or the form is left. The
@@ -195,12 +195,12 @@ reopen it.
      verification-email stage asks you to open the link; a stage the terminal
      cannot run offers the web page (`o`).
    - *Log in* runs the CLI's RFC 8628 device flow against
-     `www.vulnetix.com` (`vulnetixcli.DeviceLogin`), shows the code and opens
+     `www.vulnes.is` (`vulnetixcli.DeviceLogin`), shows the code and opens
      the verification page. The resulting org id and API key go to
      `vulnetix auth login --noninteractive --store home` through that child's
      environment only (never its argv), so the CLI stays the only writer of
      `~/.vulnetix/credentials.json`.
-     The CLI checks the key against the Vulnetix API before saving it, and
+     The CLI checks the key against the Vulnesis API before saving it, and
      the API can refuse a key it issued moments ago for up to a minute (it
      reads organisations from a replica and caches a missing secret for 60
      seconds). When the CLI's check fails ("authentication test failed") or
@@ -212,20 +212,20 @@ reopen it.
      then `/welcome`.
 4. **AI Firewall and MCP** — once a credential loads, Belai sets
    `vulnetix.firewall_enabled: true` in the **global** settings, adds the
-   Vulnetix MCP server, and pushes the configured provider keys to the
+   Vulnesis MCP server, and pushes the configured provider keys to the
    firewall. A login here also starts [session sync](session-sync.md), which
    mirrors sessions to the website's Belai History and Hosts pages
    (`/sync off` turns it off).
 
 The **Next** on the CLI and account pages leads to the enable page, which
-reaches the AI Firewall and the Vulnetix MCP server over the network, so those
-pages say so (*Next checks the AI Firewall and the Vulnetix MCP server over the
+reaches the AI Firewall and the Vulnesis MCP server over the network, so those
+pages say so (*Next checks the AI Firewall and the Vulnesis MCP server over the
 network*, and *next (network check)* on the key bar). An MCP error that comes
 back as a web page, such as a 403 from a gateway, is shown as its plain text:
 tags, comments and script and style content are removed before the line is
 drawn (`sanitize.PlainText`).
 
-## Vulnetix MCP server (`/vulnetix mcp`)
+## Vulnesis MCP server (`/vulnetix mcp`)
 
 `/vulnetix mcp` writes this entry to the global `settings.json` and connects it
 in the running session:
@@ -233,17 +233,17 @@ in the running session:
 ```json
 {"mcp": {"servers": {"vulnetix": {
   "transport": "http",
-  "url": "https://mcp.vulnetix.com/mcp",
+  "url": "https://mcp.vulnes.is/mcp",
   "headers": {"Authorization": "vulnetix:cli"}
 }}}}
 ```
 
-`vulnetix:cli` stands for the Vulnetix CLI's own credential. It is resolved each
+`vulnetix:cli` stands for the Vulnesis CLI's own credential. It is resolved each
 time the server is dialled (`vulnetixcreds.AuthHeader`: `ApiKey <org>:<key>`
 for an API-key or SigV4 login, `Bearer <token>` for a token login), so a later
 `vulnetix auth login` takes effect on `/mcp restart vulnetix`. The secret is
 never written to settings. The reference expands only in the `Authorization`
-header of an `https` URL on `vulnetix.com` or a subdomain; anywhere else the
+header of an `https` URL on `vulnes.is` or a subdomain; anywhere else the
 server fails to start with the reason. The server's tools are ordinary MCP
 tools (`mcp__vulnetix__*`), classified like every other MCP result.
 
@@ -328,9 +328,9 @@ looks idle while the scanners work (`internal/tui/review.go`).
   the classifier withheld, and the background agent reviewing it. An
   activity without a template falls back to a finding count.
 - **Snapshot links.** When the CLI is logged in to an organisation (not the
-  shared [community](https://www.vulnetix.com/features/community) credentials) it prints a link to each scan's snapshot on
-  the Vulnetix website. The review keeps every such link that is https on
-  `vulnetix.com` and lists it on the scanner's card as `snapshot · <url>`.
+  shared [community](https://www.vulnes.is/features/community) credentials) it prints a link to each scan's snapshot on
+  the Vulnesis website. The review keeps every such link that is https on
+  `vulnes.is` and lists it on the scanner's card as `snapshot · <url>`.
   Hover the line (or anywhere on a card with one link) and press `ctrl+y` to
   open it in your browser; `ctrl+c` still copies the card. In the activity
   output view (`v` from the runs panel) `ctrl+y` opens the snapshot on
@@ -431,9 +431,9 @@ own at the next idle, ahead of any queued activity output.
 Keys: `↑↓` move, `t` start the built-in `belai:triage-vulns` agent for that
 project, `l` history, `esc` back.
 
-## The `Vulnetix` tool
+## The `Vulnesis` tool
 
-When `vulnetix` is on `PATH` the model gets a first-class `Vulnetix` tool, and
+When `vulnetix` is on `PATH` the model gets a first-class `Vulnesis` tool, and
 Bash refuses any command that runs the `vulnetix` binary (a mention such as
 `grep vulnetix` is fine) with a pointer to the tool. Driving the CLI through
 Bash wasted minutes per call: progress bars filled the output, every scan ran
@@ -463,9 +463,9 @@ The tool takes the arguments after `vulnetix` and builds the argv itself:
 - `--path` and `-o` must stay inside the working tree.
 - An engaged profile's `vulnetix_org_id`, `vulnetix_project`,
   `vulnetix_namespace` and `vulnetix_environment` facts
-  ([Facts](agent-profiles.md#facts)) set `VULNETIX_ORG_ID`, `VULNETIX_PROJECT`,
-  `VULNETIX_NAMESPACE` and `VULNETIX_ENVIRONMENT` for the call, after the
-  environment scrub. `VULNETIX_API_URL` and the key are never set from a fact.
+  ([Facts](agent-profiles.md#facts)) set `VULNESIS_ORG_ID`, `VULNESIS_PROJECT`,
+  `VULNESIS_NAMESPACE` and `VULNESIS_ENVIRONMENT` for the call, after the
+  environment scrub. `VULNESIS_API_URL` and the key are never set from a fact.
 - Scans run one at a time, because they write the same `.vulnetix/`
   artifacts, under a 15-minute limit.
 - Output is stripped of ANSI codes, progress bars and spinner redraws, then
@@ -481,7 +481,7 @@ a failure from the output first instead of rediscovering those facts.
 
 Every file a session tool changes (`Write`, `Edit`, `Bash` and the native
 catalogue, as seen by the file-diff recorder) is matched against the manifest
-table the Vulnetix CLI parses. The table in `internal/depwatch` is a port of
+table the Vulnesis CLI parses. The table in `internal/depwatch` is a port of
 the CLI's `scan.DetectManifest` tables, restricted to the types the CLI can
 parse. When `../cli` is checked out next to this repository,
 `TestManifestTableMatchesCLI` fails if the two drift apart. Matching is
@@ -545,7 +545,7 @@ cannot silence the check on the dependencies it asks you to add.
 
 ## AI Firewall (`/vulnetix firewall` and `F10`)
 
-The Vulnetix AI Firewall is the first adapter of Belai's generic AI Firewall
+The Vulnesis AI Firewall is the first adapter of Belai's generic AI Firewall
 (see [firewall.md](firewall.md), which also covers the beta Fastly, Kong and
 AI Security Gateway adapters, custom firewalls and the read-only OpenRouter
 and Cloudflare entries). Getting started and `/vulnetix firewall` configure
@@ -561,7 +561,7 @@ never on. Turning it on also stores the configured provider keys with the
 gateway (see *Provider keys*).
 
 When enabled, `run.Prepare` asks the credential resolver for the active
-firewall's route. For Vulnetix, that route is the gateway URL and the Vulnetix
+firewall's route. For Vulnesis, that route is the gateway URL and the Vulnesis
 API key, which `run.Config` uses as the provider base URL and API key. The
 model catalogue is fetched through the gateway: the org's curated `/models`.
 
@@ -572,7 +572,7 @@ refuses a request (a guardrail block, `provider_key_missing`,
 code, request id and a hint. The matched text is never shown.
 
 Keys: `F10` toggle; `/firewall` configures; `/vulnetix firewall` makes
-Vulnetix active or toggles it.
+Vulnesis active or toggles it.
 
 ## Runs panel
 
@@ -624,7 +624,7 @@ vulnerabilities (source `vulnetix-license-analyzer` or a
 ## SARIF severity precedence
 
 1. `result.properties["security-severity"]`
-2. `result.properties["severity"]` word (Vulnetix convention)
+2. `result.properties["severity"]` word (Vulnesis convention)
 3. `result.level` (error→High, warning→Medium, note→Low, none→None)
 4. Rule `defaultConfiguration.level`, then rule `security-severity`, then rule
    `severity`
@@ -682,5 +682,5 @@ built from the card (`pkg:npm/%40scope/name@1.2.3`, an unknown ecosystem is
 names no package. A finding id such as `sast:rule:abcd1234` is written as
 `sast_rule_abcd1234.openvex.json`, and an id starting with a dot is refused.
 
-A `rejected` verdict writes nothing. The Vulnetix views above read the file like
+A `rejected` verdict writes nothing. The Vulnesis views above read the file like
 any other VEX.

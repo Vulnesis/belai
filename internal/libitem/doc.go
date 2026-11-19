@@ -1,5 +1,5 @@
 // Package libitem is the host's half of the library-item contract: the nine
-// kinds of item the Vulnetix website's library keeps for a tenant (skills,
+// kinds of item the Vulnesis website's library keeps for a tenant (skills,
 // prompts, slash commands, processes, repositories, token budgets, provider sets and the Bash
 // rewrite table), the canonical bytes whose SHA-256 the sync compares, and a
 // validator per kind.

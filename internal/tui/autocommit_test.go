@@ -118,7 +118,7 @@ func quietRepo(t *testing.T) *autoCommitRunner {
 func commitTestApp(t *testing.T, mode string, f *autoCommitRunner) *App {
 	t.Helper()
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	a := New(Options{})
 	a.lastGoal = &goals.GoalState{Objective: "ship it"}
 	a.settings.CommitMode = mode
@@ -706,7 +706,7 @@ func TestRealRepoFailingHookLeavesTheTreeUntouched(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	a := New(Options{Workdir: dir})
 	a.settings.CommitMode = "auto"
 	a.lastGoal = &goals.GoalState{Objective: "ship it"}
@@ -749,7 +749,7 @@ func TestRealRepoFailingHookLeavesTheTreeUntouched(t *testing.T) {
 func TestRealRepoCommitsOnlyTaskPaths(t *testing.T) {
 	dir := realRepo(t)
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	// notes.txt is already modified before the turn, and the user has a
 	// staged change of their own in another file.
 	if err := os.WriteFile(filepath.Join(dir, "notes.txt"), []byte("mine\n"), 0o600); err != nil {

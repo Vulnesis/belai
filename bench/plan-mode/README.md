@@ -11,7 +11,7 @@ the provider under test.
 
 ```sh
 export PLAN_BENCH_DIR=/tmp/belai-plan-bench          # where everything goes
-export WEBSITE_DIR=$HOME/GitHub/Vulnetix/website      # optional: adds S1 and S2
+export WEBSITE_DIR=$HOME/GitHub/Vulnesis/website      # optional: adds S1 and S2
 
 # 1. Three small projects (Go, Python, TypeScript), each with a project
 #    settings file that routes the classifier and evaluator roles.

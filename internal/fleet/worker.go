@@ -178,7 +178,7 @@ type Worker struct {
 	// Runner works one item; nil uses the real agent session.
 	Runner TurnRunner
 	// Review runs the review scanners over the repository for a sweep; nil
-	// runs the Vulnetix CLI. Head reads the repository's HEAD commit; nil asks
+	// runs the Vulnesis CLI. Head reads the repository's HEAD commit; nil asks
 	// git. Both exist so a test can stand in for the CLI and git.
 	Review func(ctx context.Context) error
 	Head   func(ctx context.Context) (string, error)
@@ -187,7 +187,7 @@ type Worker struct {
 	// Suites detects the test suites and RunTests runs a plan, for a quality
 	// sweep; nil detects from the repository and runs the real suites.
 	// Scan scans a worktree for one finding after a patcher's round; nil runs
-	// the Vulnetix CLI.
+	// the Vulnesis CLI.
 	Scan func(ctx context.Context, dir, finding string, round, max int) (scanFeedback, bool)
 	// Jev runs the delivery relevance jobs; nil builds it from Cfg on first use,
 	// and with no decision backend configured no job runs.

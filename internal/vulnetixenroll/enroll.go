@@ -1,5 +1,5 @@
-// Package vulnetixenroll creates a Vulnetix account through the Authentik
-// enrollment flow at auth.vulnetix.com, the same flow the web sign-up page
+// Package vulnetixenroll creates a Vulnesis account through the Authentik
+// enrollment flow at auth.vulnes.is, the same flow the web sign-up page
 // runs (/if/flow/vulnetix-enrollment/), driven over its flow-executor API.
 //
 // The email and password go to that one host over TLS and nowhere else: the
@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	// BaseURL is the Vulnetix identity provider.
-	BaseURL = "https://auth.vulnetix.com"
+	// BaseURL is the Vulnesis identity provider.
+	BaseURL = "https://auth.vulnes.is"
 	// FlowSlug is the enrollment flow.
 	FlowSlug = "vulnetix-enrollment"
 
@@ -104,7 +104,7 @@ type Client struct {
 	http *http.Client
 }
 
-// New returns a client for auth.vulnetix.com.
+// New returns a client for auth.vulnes.is.
 func New() *Client { return newClient(BaseURL, nil) }
 
 func newClient(base string, transport http.RoundTripper) *Client {

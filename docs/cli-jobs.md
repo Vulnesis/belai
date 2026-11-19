@@ -2,7 +2,7 @@
 
 **Status:** new.
 
-A worker can run a Vulnetix CLI job for a card. The card is labelled
+A worker can run a Vulnesis CLI job for a card. The card is labelled
 `cli-job:<id>`, the id is one of a closed table, and the harness (not a model)
 runs the job's fixed argument list, reads the files it leaves and records a
 result of ids, counts and enums on the card. The Software Factory uses this to
@@ -39,7 +39,7 @@ page, and checks every subcommand and flag against the CLI's own command
 manifest when the CLI checkout is next to this one.
 
 A read-only job changes nothing outside `.vulnetix`. A mutating job changes a
-file in the repository, the forge or a Vulnetix organisation.
+file in the repository, the forge or a Vulnesis organisation.
 
 | Job | Kind | Fixed argv (after `vulnetix`) | Artifacts read |
 | --- | --- | --- | --- |
@@ -120,7 +120,7 @@ harness-composed note; an error or timeout counts as a failed attempt.
    removed, except the files the job lists as its own change (`ignore-sync`'s
    `memory.yaml`, `vex-apply`'s and `bom-merge`'s output), and tracked files are
    never touched. The harness commits what changed on the item's branch. A
-   mutating job whose effect is on the forge or a Vulnetix organisation (the
+   mutating job whose effect is on the forge or a Vulnesis organisation (the
    `gha-*` publishers, `config-apply`, `tea-release`) changes no file, so it has
    no branch and the card goes to review without one.
    With `kanban.gates.verify: enforce` (the built-in write profile sets it) the

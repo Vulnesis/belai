@@ -130,7 +130,7 @@ func TestTriggerEnv(t *testing.T) {
 
 func TestProvenanceFromEnvValue(t *testing.T) {
 	line, enc := Provenance(`{"source":"console","note":"x\ny","ignored":1}`)
-	if line != "Started from the Vulnetix console. Note: x y." || enc != `{"source":"console","note":"x y"}` {
+	if line != "Started from the Vulnesis console. Note: x y." || enc != `{"source":"console","note":"x y"}` {
 		t.Errorf("line %q enc %s", line, enc)
 	}
 	if line, enc := Provenance(""); line != "" || enc != "" {
@@ -162,14 +162,14 @@ func TestRunSessionProvenanceOnTheFirstTurnOnly(t *testing.T) {
 	m.prompts <- sessionsync.RemotePrompt{ID: "p1", Content: "second"}
 	err := RunSession(context.Background(), SessionOptions{
 		Agent: r, Log: turnlog.New(nil), Mirror: m, Dispatch: "d1", Prompt: "first",
-		Idle: 150 * time.Millisecond, Provenance: "Started from the Vulnetix console.",
+		Idle: 150 * time.Millisecond, Provenance: "Started from the Vulnesis console.",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	want := []string{"first|Started from the Vulnetix console.", "second|"}
+	want := []string{"first|Started from the Vulnesis console.", "second|"}
 	if !slices.Equal(r.seen, want) {
 		t.Fatalf("turns = %q, want %q", r.seen, want)
 	}

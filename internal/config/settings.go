@@ -148,8 +148,8 @@ type Settings struct {
 	// A project layer may turn it off and narrow the filter, never the
 	// reverse.
 	A2A *A2ASettings `json:"a2a,omitempty"`
-	// Sync mirrors session transcripts to the Vulnetix website while Belai is
-	// logged in with the Vulnetix CLI (docs/session-sync.md). The project
+	// Sync mirrors session transcripts to the Vulnesis website while Belai is
+	// logged in with the Vulnesis CLI (docs/session-sync.md). The project
 	// layer may turn it off, never on.
 	Sync *SyncSettings `json:"sync,omitempty"`
 	// Git configures what Belai does to the repository around a session
@@ -160,7 +160,7 @@ type Settings struct {
 	// SweepRoots restricts the sweep to a list of paths. Empty means $HOME and
 	// the current workdir's parent.
 	VulnetixSweepRoots []string `json:"vulnetix_sweep_roots,omitempty"`
-	// Vulnetix holds per-project /vulnetix configuration. It is typed and
+	// Vulnesis holds per-project /vulnetix configuration. It is typed and
 	// allowlisted so arbitrary argv can never be persisted here.
 	Vulnetix *VulnetixSettings `json:"vulnetix,omitempty"`
 	// Firewall configures the AI Firewall adapters (docs/firewall.md).
@@ -311,8 +311,8 @@ type Settings struct {
 
 // SyncSettings configures session sync (docs/session-sync.md).
 type SyncSettings struct {
-	// Enabled mirrors each session's JSONL to the Vulnetix website. Default
-	// true whenever a Vulnetix CLI credential resolves; false turns it off.
+	// Enabled mirrors each session's JSONL to the Vulnesis website. Default
+	// true whenever a Vulnesis CLI credential resolves; false turns it off.
 	Enabled *bool `json:"enabled,omitempty"`
 	// RemotePrompts lets the website send prompts into a live session. Default
 	// true; false shares the session view-only.
@@ -499,7 +499,7 @@ func (s Settings) SyncItemEnabled(kind string) bool {
 }
 
 // SyncEnabled reports whether session sync is on. Default on; it still needs
-// a Vulnetix CLI credential to do anything.
+// a Vulnesis CLI credential to do anything.
 func (s Settings) SyncEnabled() bool {
 	return s.Sync == nil || s.Sync.Enabled == nil || *s.Sync.Enabled
 }
@@ -530,8 +530,8 @@ type VulnetixSettings struct {
 	Timeout         string   `json:"timeout,omitempty"`
 	ContinueOnError *bool    `json:"continue_on_error,omitempty"`
 	OrgID           string   `json:"org_id,omitempty"`
-	// GatewayURL overrides the default Vulnetix AI Firewall host for self-hosted
-	// deployments. Empty means https://guardrails.vulnetix.com.
+	// GatewayURL overrides the default Vulnesis AI Firewall host for self-hosted
+	// deployments. Empty means https://guardrails.vulnes.is.
 	GatewayURL string `json:"gateway_url,omitempty"`
 	// AutoFix opts `/vulnetix review` into `vulnetix fix --yes` after the SCA
 	// scan. Default false: the review attaches a --dry-run plan instead of
@@ -541,7 +541,7 @@ type VulnetixSettings struct {
 	// firewall.enabled when that key is unset. Writers use firewall.enabled.
 	FirewallEnabled *bool `json:"firewall_enabled,omitempty"`
 	// DepWatch runs the dependency-manifest hook: a manifest the session
-	// changes is checked with the Vulnetix CLI when the change added or
+	// changes is checked with the Vulnesis CLI when the change added or
 	// updated dependencies. Default true; false turns the hook off.
 	DepWatch *bool `json:"dep_watch,omitempty"`
 }
@@ -658,18 +658,18 @@ type TelemetrySettings struct {
 type MCPSettings struct {
 	Servers map[string]MCPServer `json:"servers,omitempty"`
 	// Builtin switches the servers Belai offers itself (the decision server
-	// and the hosted Vulnetix server).
+	// and the hosted Vulnesis server).
 	Builtin *MCPBuiltin `json:"builtin,omitempty"`
 }
 
 const (
 	// VulnetixMCPName is the mcp.servers key /vulnetix mcp manages.
 	VulnetixMCPName = "vulnetix"
-	// VulnetixMCPURL is the hosted Vulnetix MCP server (streamable HTTP).
-	VulnetixMCPURL = "https://mcp.vulnetix.com/mcp"
-	// VulnetixCLIRef is a header value that stands for the Vulnetix CLI's
+	// VulnetixMCPURL is the hosted Vulnesis MCP server (streamable HTTP).
+	VulnetixMCPURL = "https://mcp.vulnes.is/mcp"
+	// VulnetixCLIRef is a header value that stands for the Vulnesis CLI's
 	// Authorization credential. It is resolved when the server is dialled,
-	// only for https://*.vulnetix.com, and never written out resolved.
+	// only for https://*.vulnes.is, and never written out resolved.
 	VulnetixCLIRef = "vulnetix:cli"
 )
 
@@ -695,7 +695,7 @@ type MCPServer struct {
 	Env map[string]string `json:"env,omitempty"`
 	// URL and Headers reach an http server. A header value "env:NAME" is
 	// read from the environment; an Authorization value VulnetixCLIRef is
-	// the Vulnetix CLI's credential, sent only to https://*.vulnetix.com.
+	// the Vulnesis CLI's credential, sent only to https://*.vulnes.is.
 	URL     string            `json:"url,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
 	// Tools, when set, offers only these server tools.

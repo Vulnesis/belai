@@ -182,7 +182,7 @@ func firstHeader(h http.Header, names ...string) string {
 }
 
 // errorEnvelope is the union of the OpenAI and Anthropic error bodies and
-// the Vulnetix extensions to them.
+// the Vulnesis extensions to them.
 type errorEnvelope struct {
 	Type  string          `json:"type"`
 	Error json.RawMessage `json:"error"`

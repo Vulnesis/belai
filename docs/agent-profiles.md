@@ -39,7 +39,7 @@ where `GlobalDir()` honours `BELAI_HOME` and otherwise resolves to
 | *(file name)* | No | string | The on-disk filename (e.g. `triage-deps.json`), independent of `name`. It is never serialised — the file's own name is the record. Empty means derive it from `name`. The editor exposes it as its own field; renaming via `name` moves the file only while the file name is still derived. |
 | `description` | Yes | string | Human-readable purpose, shown in `/agent list`. |
 | `system_prompt` | Yes | string | The system prompt sent to the model on every turn. |
-| `tools` | No | string[] | Allowed tool names; empty means the full default registry. Validated against the built-in set: `AskUserQuestion`, `apply_patch`, `Bash`, `Cd`, `Edit`, `ExitPlanMode`, `Glob`, `Grep`, `Outline`, `Read`, `ReadSession`, `SearchMemory`, `SearchSessions`, `Skill`, `SkillDraft`, `SubAgentLog`, `Symbol`, `Task`, `Todo`, `update_plan`, `WebFetch`, `WebSearch`, `Write`; the tools a session adds when available: `KanbanSearch`, `KanbanUpdate`, `KanbanMove`, `KanbanAdd`, `KanbanHandoff`, `Vulnetix`, `ToolSearch`, `SearchFetched`, `ProcessRestart`, `BashOutput`, `KillShell`, `ProcessList`, `Screenshot`, `Repos`, `RepoFiles`, `RepoRead`, `GH`, `Glab`, `Git`, `PublishBranch`, `A2AMessage`, `A2AAck` ([A2A messaging](a2a.md)), `RepoMemoryRead`, `RepoMemoryWrite`; the native catalogue's tools, offered when their binary is installed and signed in: `AWS`, `AZ`, `GCloud`, `Kubectl`, `Terraform`, `Pulumi`, `Heroku`, `Fly`, `Vercel`, `Netlify`, `Doctl`, `Tea`, `Stripe`, `OnePassword`, `Bitwarden`, the Cloudflare API tool `CF` (offered when a `CLOUDFLARE_API_TOKEN` can read zones), and the read-only commands `Cat`, `Head`, `Tail`, `File`, `Strings`, `LS`, `Find`, `JQ`, `YQ`, `Sed`, `Awk`, `Cut`, `Sort`, `Uniq`, `WC`, `Tr`, `Paste`, `Join`, `Echo`, `Date`, `Pwd`, `Env`, `Diff`, `Cmp`; and MCP tools as `mcp__<server>__<tool>` (the tool part may be `*`; a fleet worker or a web session engaged with the profile expands it to every tool of the server, and a profile engaged in the TUI matches names exactly, see [MCP servers](mcp.md#how-tools-appear)). |
+| `tools` | No | string[] | Allowed tool names; empty means the full default registry. Validated against the built-in set: `AskUserQuestion`, `apply_patch`, `Bash`, `Cd`, `Edit`, `ExitPlanMode`, `Glob`, `Grep`, `Outline`, `Read`, `ReadSession`, `SearchMemory`, `SearchSessions`, `Skill`, `SkillDraft`, `SubAgentLog`, `Symbol`, `Task`, `Todo`, `update_plan`, `WebFetch`, `WebSearch`, `Write`; the tools a session adds when available: `KanbanSearch`, `KanbanUpdate`, `KanbanMove`, `KanbanAdd`, `KanbanHandoff`, `Vulnesis`, `ToolSearch`, `SearchFetched`, `ProcessRestart`, `BashOutput`, `KillShell`, `ProcessList`, `Screenshot`, `Repos`, `RepoFiles`, `RepoRead`, `GH`, `Glab`, `Git`, `PublishBranch`, `A2AMessage`, `A2AAck` ([A2A messaging](a2a.md)), `RepoMemoryRead`, `RepoMemoryWrite`; the native catalogue's tools, offered when their binary is installed and signed in: `AWS`, `AZ`, `GCloud`, `Kubectl`, `Terraform`, `Pulumi`, `Heroku`, `Fly`, `Vercel`, `Netlify`, `Doctl`, `Tea`, `Stripe`, `OnePassword`, `Bitwarden`, the Cloudflare API tool `CF` (offered when a `CLOUDFLARE_API_TOKEN` can read zones), and the read-only commands `Cat`, `Head`, `Tail`, `File`, `Strings`, `LS`, `Find`, `JQ`, `YQ`, `Sed`, `Awk`, `Cut`, `Sort`, `Uniq`, `WC`, `Tr`, `Paste`, `Join`, `Echo`, `Date`, `Pwd`, `Env`, `Diff`, `Cmp`; and MCP tools as `mcp__<server>__<tool>` (the tool part may be `*`; a fleet worker or a web session engaged with the profile expands it to every tool of the server, and a profile engaged in the TUI matches names exactly, see [MCP servers](mcp.md#how-tools-appear)). |
 | `mode` | Yes | string | One of `single`, `loop`, `scheduled`, `monitor`, `worker`. A `worker` claims kanban items; see [Worker profiles](#worker-profiles). |
 | `schedule` | No | string | Cron-like schedule expression (used when `mode` is `scheduled`). A worker profile's own cron keeps a started worker waiting between ticks; nothing starts it. A host that runs `belai rc` starts workers on a cron from its stored schedules instead ([remote-control.md](remote-control.md#scheduled-agents)). |
 | `monitor_condition` | No | string | Human-readable trigger condition (used when `mode` is `monitor`). |
@@ -127,10 +127,10 @@ facts:
 | `netlify_site_id` | a site id | Sets NETLIFY_SITE_ID. | no |
 | `doctl_context` | a doctl context name | Sets DIGITALOCEAN_CONTEXT. A --context flag is refused. | yes |
 | `onepassword_account` | an account sign-in address or id | Sets OP_ACCOUNT. An --account flag is refused. | yes |
-| `vulnetix_org_id` | an organization id | Sets VULNETIX_ORG_ID for the Vulnetix tool. | no |
-| `vulnetix_project` | a project name | Sets VULNETIX_PROJECT. | no |
-| `vulnetix_namespace` | a namespace | Sets VULNETIX_NAMESPACE. | no |
-| `vulnetix_environment` | an environment name | Sets VULNETIX_ENVIRONMENT. | no |
+| `vulnetix_org_id` | an organization id | Sets VULNESIS_ORG_ID for the Vulnesis tool. | no |
+| `vulnetix_project` | a project name | Sets VULNESIS_PROJECT. | no |
+| `vulnetix_namespace` | a namespace | Sets VULNESIS_NAMESPACE. | no |
+| `vulnetix_environment` | an environment name | Sets VULNESIS_ENVIRONMENT. | no |
 <!-- facts-table:end -->
 
 Keys that carry context for the model and that nothing reads are listed so profiles use the same names: `aws_log_groups`, `aws_account_alias`, `terraform_backend`, `terraform_version`, `fly_org`, `stripe_account`, `environment`, `service`, `team`, `owner` and `runbook`. They never draw a warning.
@@ -237,7 +237,7 @@ The security crew's three personas also answer the console's Pix assistant: a
 Kremvax (`belai:patcher`) or Dark Avenger (`belai:verifier`), and as no other
 profile. The session takes the persona's identity, system prompt, skills,
 personality and presentation, but its tools are cut to the read-only
-`Read`, `Grep`, `Glob`, `Vulnetix` and `Skill` (so Kremvax cannot edit there),
+`Read`, `Grep`, `Glob`, `Vulnesis` and `Skill` (so Kremvax cannot edit there),
 and the profile's `worker` mode, kanban block and workspace do not apply. See
 [remote-control.md](remote-control.md) (Pix assistant sessions).
 
@@ -384,7 +384,7 @@ All three run in `single` mode with supervised autonomy and omit `tools`, so
 they advertise the full default surface. `@agent:belai:fanout` also pre-engages
 the fan-out surface so the `Task` tool is offered to the model.
 
-## Built-in Vulnetix profiles
+## Built-in Vulnesis profiles
 
 The harness starts these itself; they can also be started by hand with
 `/agent start`. The scanner and dependency agents are read-only by
@@ -403,7 +403,7 @@ Bash call still goes through the permission rules. See
   starts it on that project, keyed per project. It reads the `.vulnetix/`
   artifacts, cites file and line, and proposes fixes without patching.
 - `belai:triage`: the button on a [vulnerability row](vuln-row.md) starts it on
-  one advisory identifier, keyed `belai:triage#<n>`. Its tools are `Vulnetix`,
+  one advisory identifier, keyed `belai:triage#<n>`. Its tools are `Vulnesis`,
   `Read`, `Grep` and `Glob`. It looks the identifier up with `vdb`, checks
   whether this repository is exposed and proposes the fix without patching.
   The identifier arrives as data on the task's `vulnerability_id:` line.
@@ -438,7 +438,7 @@ items and works each as a goal. It adds these fields:
 | `kanban.survey.title`, `kanban.survey.body` | string | When the board has nothing for the worker, it files and works one survey item with this title (`{project}` replaced, date appended) and body. `title` is required in a `survey` block. See [Finding work](fleet.md#finding-work-kanbansurvey). |
 | `kanban.survey.list` | string | Where the survey's handoffs go, whatever the model asks: `review` (default), `backlog` or `auto` (each handoff routed by whether it is clear and concise, as for `kanban.quality.list`). |
 | `kanban.survey.every` | duration | At most one survey per this interval for the same profile and repository on one machine (at least `1h`, default `24h`). A start up to two minutes early (a tenth of the interval at most) still surveys, so an hourly start is not skipped for arriving a moment before the hour is up. |
-| `kanban.security.sweep` | bool | At start, make sure a review ran on HEAD (running it only when no artefact records that commit) and that every finding has a card. Needs the `Vulnetix` tool. See [the security crew](fleet.md#the-security-crew). |
+| `kanban.security.sweep` | bool | At start, make sure a review ran on HEAD (running it only when no artefact records that commit) and that every finding has a card. Needs the `Vulnesis` tool. See [the security crew](fleet.md#the-security-crew). |
 | `kanban.security.reconcile` | bool | Before each claim, compare the cards with the artefacts on disk: a finding that left the report becomes a gone card for the verifier. Never scans. |
 | `kanban.security.verdicts` | string[] | The verdicts `KanbanVerdict` may record: `fixed`, `false_positive`, `no_fix`, `needs_human`, `rejected`. Empty: the worker has no such tool. |
 | `kanban.security.vex` | bool | The harness writes a VEX for each verdict the worker records, and the worker may reject a claim. Needs `verdicts`. |
@@ -451,7 +451,7 @@ items and works each as a goal. It adds these fields:
 | `kanban.gates.review` | bool | The worker may decide a card's manual gates with `KanbanGate`, and under `enforce` the card is done only when every manual gate is met. Needs `kanban.gates.verify` to be `enforce`. See [manual gates](fleet.md#manual-gates-and-the-reviewer). |
 | `kanban.gates.coverage` | bool | The worker records the clauses of a request card with `KanbanContract`, gives every handoff the clauses it covers, and the harness files a gap card for a clause no handoff covers. Needs `handoff_to` or `handoff_labels`. See [request coverage](fleet.md#request-coverage). |
 | `kanban.gates.draft` | bool | When the worker claims a card that has no gates, the fast model drafts manual gates for it, so a reviewer has criteria to check. A drafted gate is always manual. See [drafted gates](fleet.md#drafted-gates-and-the-delivery-note). |
-| `kanban.cli.jobs` | string[] | The Vulnetix CLI job ids the worker may run for a card labelled `cli-job:<id>`, each in the closed table of [CLI jobs](cli-jobs.md). The harness runs the job's fixed argv and records the result on the card; no model runs the CLI. A card naming an id not listed is blocked. A profile may list read-only jobs only unless `kanban.cli.write` is set. |
+| `kanban.cli.jobs` | string[] | The Vulnesis CLI job ids the worker may run for a card labelled `cli-job:<id>`, each in the closed table of [CLI jobs](cli-jobs.md). The harness runs the job's fixed argv and records the result on the card; no model runs the CLI. A card naming an id not listed is blocked. A profile may list read-only jobs only unless `kanban.cli.write` is set. |
 | `kanban.cli.write` | bool | Allows mutating jobs (the ones that change files outside `.vulnetix`, the forge or an organisation) in `kanban.cli.jobs`. A mutating job runs in the item's worktree and only for a card whose acceptance gates are all met. Needs `workspace.isolation: worktree`. |
 | `kanban.conflicts.max_checkouts` | int | For a card labelled `merge-conflict`, the harness runs the merge-conflict loop: up to this many fresh checkouts of the pull request's head with its base merged in, each told the earlier attempts and a strategy, none allowed to repeat an earlier one's choices, each checked for markers, duplicate imports, the build, the linters and the tests, and the passing merge pushed to the head as a fast-forward. 1 to 10, default 5. Needs `workspace.isolation: worktree` and `Edit` or `Write`. See [Merge conflicts](merge-conflicts.md). |
 | `kanban.conflicts.prefer` | string | The choice the first attempt makes for every hunk, and the one later variations keep where they change nothing: `both` (default, the current side first), `current` or `incoming`. |
@@ -481,7 +481,7 @@ Validation fails closed:
 - a `lint` block takes only `sweep`; it needs no handoff target, because its cards are claimed by label;
 - a `conflicts` block needs a `max_checkouts` of 0 to 10, a `prefer` of `both`, `current` or `incoming`, `workspace.isolation: worktree` that is not read-only, and `Edit` or `Write` in the tools;
 - a `gates` block needs a `verify` of `off`, `record` or `enforce`, `require` needs `handoff_to` or `handoff_labels`, `review` needs `verify` to be `enforce`, and `coverage` needs `handoff_to` or `handoff_labels`;
-- a `security` block with `sweep` needs the `Vulnetix` tool, `vex` needs `verdicts`, `verdicts` name known verdicts once each, only a worker with `vex` may list `rejected`, and `rounds` runs 0 to 5 and needs `isolation: worktree`.
+- a `security` block with `sweep` needs the `Vulnesis` tool, `vex` needs `verdicts`, `verdicts` name known verdicts once each, only a worker with `vex` may list `rejected`, and `rounds` runs 0 to 5 and needs `isolation: worktree`.
 
 A definition can also be written as Markdown with YAML front-matter. The keys
 are the JSON keys,

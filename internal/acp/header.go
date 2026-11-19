@@ -9,7 +9,7 @@ import (
 )
 
 // tagline is the brand line the TUI's compact header carries.
-const tagline = "a safer LLM harness · vulnetix.com"
+const tagline = "a safer LLM harness · vulnes.is"
 
 // headerText is the TUI's compact header as plain markdown for an editor's
 // chat: the wordmark and tagline, then the build facts and the model the

@@ -6,14 +6,14 @@ import Limits from '../ui/Limits.astro';
 import CopyButton from '../ui/CopyButton.tsx';
 import Walkthrough from '../ui/Walkthrough.astro';
 
-// The Vulnetix review is laid out like the agents ladder: scan, triage and
+// The Vulnesis review is laid out like the agents ladder: scan, triage and
 // fix, where each stage can change more than the one before it. The firewall
 // and the MCP server follow the review.
 
-const docBase = 'https://github.com/Vulnetix/belai/blob/main/docs/';
+const docBase = 'https://github.com/Vulnesis/belai/blob/main/docs/';
 
 const sealText =
-  'Vulnetix integration: /vulnetix review runs nine code scanners, eight at once in lanes of their own, and each posts a card in the thread as it finishes. A read-only background agent per scanner checks every finding against the repository. The session then reads every report together, asks you when a finding has more than one fix, plans dependency fixes as a dry run, patches code under the permission prompts and writes a code-review report. Report blocks are size-limited, sanitised and classified. The AI Firewall routes model traffic through a filtering gateway, and its verdicts are shown to you only. The scanners, the firewall and the MCP server are free for everyone. Dependency checks while the agent edits: a manifest a turn changes is matched against the table ported from the Vulnetix CLI, checked once per turn against the net change, judged by the fast tier, scanned with vulnetix sca, and any finding goes to a read-only background agent for that ecosystem, so no install script runs. A repository cannot turn the check off. The AI Firewall has seven adapters: Vulnetix, Fastly AI Runtime Control, Kong AI Gateway and the AI Security Gateway (the last three in beta), a custom proxy, and read-only OpenRouter and Cloudflare AI Gateway entries, in transparent, authorization or header mode, routed per provider, with nonces fetched from the firewall first.';
+  'Vulnesis integration: /vulnetix review runs nine code scanners, eight at once in lanes of their own, and each posts a card in the thread as it finishes. A read-only background agent per scanner checks every finding against the repository. The session then reads every report together, asks you when a finding has more than one fix, plans dependency fixes as a dry run, patches code under the permission prompts and writes a code-review report. Report blocks are size-limited, sanitised and classified. The AI Firewall routes model traffic through a filtering gateway, and its verdicts are shown to you only. The scanners, the firewall and the MCP server are free for everyone. Dependency checks while the agent edits: a manifest a turn changes is matched against the table ported from the Vulnesis CLI, checked once per turn against the net change, judged by the fast tier, scanned with vulnetix sca, and any finding goes to a read-only background agent for that ecosystem, so no install script runs. A repository cannot turn the check off. The AI Firewall has seven adapters: Vulnesis, Fastly AI Runtime Control, Kong AI Gateway and the AI Security Gateway (the last three in beta), a custom proxy, and read-only OpenRouter and Cloudflare AI Gateway entries, in transparent, authorization or header mode, routed per provider, with nonces fetched from the firewall first.';
 
 type Stage = {
   n: string;
@@ -123,7 +123,7 @@ const limits = [
 ];
 
 const deps: [string, string][] = [
-  ['Matched by a table', 'Every file a session tool changes is matched against the manifest table ported from the Vulnetix CLI. The path and the change decide it, and no model is asked whether a file is a manifest.'],
+  ['Matched by a table', 'Every file a session tool changes is matched against the manifest table ported from the Vulnesis CLI. The path and the change decide it, and no model is asked whether a file is a manifest.'],
   ['Checked once per turn', 'Edits are held until the turn ends, so a manifest edited several times is checked once, against the net change. A change undone within the turn, and a deleted manifest, are not checked.'],
   ['The fast tier decides', 'A fast model sees a bounded, sanitized digest of the removed and added lines and answers whether dependencies changed. When it cannot answer, Belai checks anyway.'],
   ['The scanner runs', '`vulnetix sca` runs in the manifest\'s directory with the malware, end-of-life, public exploit and severity flags set, so its exit status says whether anything was found. A Pro or Enterprise plan adds target versions from `vulnetix fix --dry-run`.'],
@@ -147,7 +147,7 @@ const ecosystems: [string, string][] = [
 ];
 
 const adapters: [string, string, string][] = [
-  ['Vulnetix AI Firewall', 'stable', 'Guardrails, redaction and BYOK provider keys for your Vulnetix organisation.'],
+  ['Vulnesis AI Firewall', 'stable', 'Guardrails, redaction and BYOK provider keys for your Vulnesis organisation.'],
   ['Fastly AI Runtime Control', 'beta', 'ARC virtual keys and the ARC AI Firewall, in log or block mode.'],
   ['Kong AI Gateway', 'beta', 'Your Kong route with ai-proxy and the prompt-guard, sanitizer or guardrails plugins.'],
   ['AI Security Gateway', 'beta', 'The self-hosted gateway for DLP and prompt-injection detection, OpenAI chat completions only.'],
@@ -158,16 +158,16 @@ const adapters: [string, string, string][] = [
 
 const firewallRules: [string, string][] = [
   ['Three modes', '`transparent` changes only the base URL and sends the provider\'s own key. `authorization` sends the firewall\'s key as a bearer token, and the firewall holds the provider key. `header` sends the firewall\'s key in a header you name.'],
-  ['Routed per provider', 'A firewall can be limited to some providers, and its URL can carry `{provider}`. Copilot, the Cloudflare AI Gateway provider and the classifier\'s decision backends are never routed. Kiro goes only through the Vulnetix AI Firewall, which mints its token from the Kiro sign-in in your organisation\'s secrets vault, so Belai sends just its Vulnetix key.'],
-  ['Nonces from the gateway', 'A session\'s sealed-block nonces come from the active firewall first. When they all do, requests carry `X-Vulnetix-Nonce-Mode: enforce` and the Vulnetix gateway strips any sealed block it cannot verify. A gateway that offers canonical mode also forwards verified blocks without their nonce, so every session sends the provider the same prompt prefix and it is served from cache.'],
+  ['Routed per provider', 'A firewall can be limited to some providers, and its URL can carry `{provider}`. Copilot, the Cloudflare AI Gateway provider and the classifier\'s decision backends are never routed. Kiro goes only through the Vulnesis AI Firewall, which mints its token from the Kiro sign-in in your organisation\'s secrets vault, so Belai sends just its Vulnesis key.'],
+  ['Nonces from the gateway', 'A session\'s sealed-block nonces come from the active firewall first. When they all do, requests carry `X-Vulnetix-Nonce-Mode: enforce` and the Vulnesis gateway strips any sealed block it cannot verify. A gateway that offers canonical mode also forwards verified blocks without their nonce, so every session sends the provider the same prompt prefix and it is served from cache.'],
   ['Verdicts as report cards', 'Each firewall\'s verdict is read from its response headers and refusal bodies, cleaned and capped, then shown to you as a card. A matched value is never shown, and the card never reaches a model.'],
   ['Permissions from your prompt', 'A prompt such as "never run Bash" or "mask emails" is offered back as `vulnetix ai-firewall` guardrails, applied to your organisation when you click Apply. Prompt to policy, above, has the details.'],
 ];
 
 const products = [
-  { cmd: '/vulnetix review', name: 'Code Scanner', what: 'Nine scanners, triage and fixes', href: 'https://www.vulnetix.com/features/code-scanner', accent: false },
-  { cmd: '/vulnetix firewall', name: 'AI Firewall', what: 'A filtering gateway for model traffic', href: 'https://www.vulnetix.com/features/ai-firewall', accent: false },
-  { cmd: '/vulnetix mcp', name: 'MCP server', what: 'Vulnetix as MCP tools in your session', href: 'https://www.vulnetix.com/features/mcp-server', accent: true },
+  { cmd: '/vulnetix review', name: 'Code Scanner', what: 'Nine scanners, triage and fixes', href: 'https://www.vulnes.is/features/code-scanner', accent: false },
+  { cmd: '/vulnetix firewall', name: 'AI Firewall', what: 'A filtering gateway for model traffic', href: 'https://www.vulnes.is/features/ai-firewall', accent: false },
+  { cmd: '/vulnetix mcp', name: 'MCP server', what: 'Vulnesis as MCP tools in your session', href: 'https://www.vulnes.is/features/mcp-server', accent: true },
 ];
 
 const codeish = /^(sca|esc|belai:vulnetix-review|vulnetix fix|code-review-report\.md)$/;
@@ -175,15 +175,15 @@ const parts = (s: string) => s.split(/(\bsca\b|\besc\b|belai:vulnetix-review|vul
 ---
 
 <SealedSection label="vulnetix" sealText={sealText} id="vulnetix">
-  <SectionHead title="Vulnetix integration" surfaces={['tui', 'acp', 'cli', 'vulnetix only']}>
+  <SectionHead title="Vulnesis integration" surfaces={['tui', 'acp', 'cli', 'vulnetix only']}>
       Belai includes a code review that scans your repository, checks what it finds and fixes it, an
       AI Firewall in front of your provider, and an MCP server. The review has three stages, and
       each one can change more than the one before it.
     </SectionHead>
 
   <figure class="mt-10 m-0">
-    <Walkthrough id="ZyMn7kyyvuM" title="the Vulnetix review" />
-    <figcaption class="mono mt-3 text-xs text-vx-ink/75">Vulnetix, in motion</figcaption>
+    <Walkthrough id="ZyMn7kyyvuM" title="the Vulnesis review" />
+    <figcaption class="mono mt-3 text-xs text-vx-ink/75">Vulnesis, in motion</figcaption>
   </figure>
 
   <ol class="mt-10 grid list-none gap-5 p-0 @3xl:grid-cols-3">
@@ -398,7 +398,7 @@ const parts = (s: string) => s.split(/(\bsca\b|\besc\b|belai:vulnetix-review|vul
 
   <!-- Dependency checks -->
   <SubHead id="deps" title="Dependency checks as the agent edits">
-    When a turn changes a package manifest, Belai checks the new dependencies with the Vulnetix scanner
+    When a turn changes a package manifest, Belai checks the new dependencies with the Vulnesis scanner
     and hands anything it finds to a read-only agent for that ecosystem.
   </SubHead>
   <Limits items={deps} cols={2} class="mt-head" />
@@ -423,7 +423,7 @@ const parts = (s: string) => s.split(/(\bsca\b|\besc\b|belai:vulnetix-review|vul
 
   <!-- AI Firewall -->
   <SubHead title="AI Firewall" surfaces={['vulnetix only', 'pix sandbox']}>
-      <a class="text-vx-ink underline" href="https://www.vulnetix.com/features/ai-firewall">AI Firewall</a>{' '}
+      <a class="text-vx-ink underline" href="https://www.vulnes.is/features/ai-firewall">AI Firewall</a>{' '}
       sends your model traffic through a filtering gateway, which uses its own key in place of the
       provider's. If any of its four required settings is missing, Belai talks to the provider directly.
     </SubHead>
@@ -498,5 +498,5 @@ const parts = (s: string) => s.split(/(\bsca\b|\besc\b|belai:vulnetix-review|vul
       </a>
     ))}
   </div>
-  <p class="mt-4 text-sm text-vx-ink/70">The scanners, the firewall and the MCP server are <a class="text-vx-ink underline" href="https://www.vulnetix.com/features/community">free for everyone</a>.</p>
+  <p class="mt-4 text-sm text-vx-ink/70">The scanners, the firewall and the MCP server are <a class="text-vx-ink underline" href="https://www.vulnes.is/features/community">free for everyone</a>.</p>
 </SealedSection>

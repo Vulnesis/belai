@@ -25,11 +25,11 @@ func TestEngineCardIsClaimable(t *testing.T) {
 		it   sessionsync.KanbanItem
 		req  ClaimRequest
 	}{
-		{"scout in crew", wire("60e10aff-b614-5cad-9838-c88fc1b1f01d", "vulnetix/vdb-site", "vdb-site-69f15847", "/workspace/repos/Vulnetix/vdb-site", "crew:belai:delivery", "factory", "scout", "wf-sys-test-sweep"),
+		{"scout in crew", wire("60e10aff-b614-5cad-9838-c88fc1b1f01d", "vulnesis/vdb-site", "vdb-site-69f15847", "/workspace/repos/Vulnesis/vdb-site", "crew:belai:delivery", "factory", "scout", "wf-sys-test-sweep"),
 			ClaimRequest{Profile: "belai:scout", Crew: "belai:delivery", Project: "vdb-site-69f15847", Lists: []List{Backlog}, Labels: []string{"scout"}, Worker: "w1", Host: "h", Lease: time.Minute}},
-		{"repro in crew", wire("8ffa7b00-0000-5000-8000-000000000000", "vulnetix/mcp-server", "mcp-server-c4a87d99", "/workspace/repos/Vulnetix/mcp-server", "crew:belai:bug", "factory", "repro", "wf-sys-ci-fix"),
+		{"repro in crew", wire("8ffa7b00-0000-5000-8000-000000000000", "vulnesis/mcp-server", "mcp-server-c4a87d99", "/workspace/repos/Vulnesis/mcp-server", "crew:belai:bug", "factory", "repro", "wf-sys-ci-fix"),
 			ClaimRequest{Profile: "belai:repro", Crew: "belai:bug", Project: "mcp-server-c4a87d99", Lists: []List{Backlog}, Labels: []string{"repro"}, Worker: "w1", Host: "h", Lease: time.Minute}},
-		{"lint-fixer", wire("7791bc00-0000-5000-8000-000000000000", "vulnetix/vulnetix-vscode", "vulnetix-vscode-de627585", "/workspace/repos/Vulnetix/vulnetix-vscode", "belai:lint-fixer", "factory", "lint-drift", "wf-sys-lint-sweep"),
+		{"lint-fixer", wire("7791bc00-0000-5000-8000-000000000000", "vulnesis/vulnetix-vscode", "vulnetix-vscode-de627585", "/workspace/repos/Vulnesis/vulnetix-vscode", "belai:lint-fixer", "factory", "lint-drift", "wf-sys-lint-sweep"),
 			ClaimRequest{Profile: "belai:lint-fixer", Project: "vulnetix-vscode-de627585", Lists: []List{Backlog}, Labels: []string{"lint-drift"}, Worker: "w1", Host: "h", Lease: time.Minute}},
 	}
 	for _, c := range cases {
@@ -54,7 +54,7 @@ func TestEngineCardIsClaimable(t *testing.T) {
 func TestEngineCardWithoutProjectKeyIsNotClaimableByAProjectScopedWorker(t *testing.T) {
 	s := testStore(t)
 	w := sessionsync.KanbanItem{
-		ID: "60e10aff-b614-5cad-9838-c88fc1b1f01d", Title: "Sweep the tests", List: "backlog", Project: "vulnetix/vdb-site",
+		ID: "60e10aff-b614-5cad-9838-c88fc1b1f01d", Title: "Sweep the tests", List: "backlog", Project: "vulnesis/vdb-site",
 		CreatedAt: 1, UpdatedAt: 2, Version: 3, Agent: &sessionsync.KanbanAgent{Labels: []string{"factory", "scout"}, Assignee: "crew:belai:delivery"},
 	}
 	if _, err := s.Merge([]Item{FromWire(w)}, 3); err != nil {

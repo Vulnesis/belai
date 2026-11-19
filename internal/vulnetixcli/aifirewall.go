@@ -91,9 +91,9 @@ func cliFailure(res Result, err error) error {
 	case strings.Contains(low, "planlocked") || strings.Contains(low, "plan locked") || strings.Contains(low, "teams plan"):
 		return ErrPlanLocked
 	case strings.Contains(low, "no credentials") || strings.Contains(low, "unauthor") || strings.Contains(low, "not authenticated"):
-		return errors.New("the Vulnetix CLI is not signed in")
+		return errors.New("the Vulnesis CLI is not signed in")
 	case res.TimedOut:
-		return errors.New("the Vulnetix CLI timed out")
+		return errors.New("the Vulnesis CLI timed out")
 	}
 	if i := strings.LastIndexByte(msg, '\n'); i >= 0 {
 		msg = strings.TrimSpace(msg[i+1:])

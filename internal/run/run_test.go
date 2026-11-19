@@ -1745,7 +1745,7 @@ func TestPrepareRoutesThroughFirewall(t *testing.T) {
 	src := &fakeFirewallSource{
 		values:   map[string]string{"anthropic:api_key": "provider-key"},
 		firewall: true,
-		gateway:  "https://guardrails.vulnetix.com",
+		gateway:  "https://guardrails.vulnes.is",
 		org:      "org-1",
 		apiKey:   "vulnetix-key",
 		routable: map[string]bool{"anthropic": true},
@@ -1754,11 +1754,11 @@ func TestPrepareRoutesThroughFirewall(t *testing.T) {
 	if !status.Configured {
 		t.Fatalf("expected configured status, missing %v, notes %v", status.Missing, status.Notes)
 	}
-	if cfg.BaseURL != "https://guardrails.vulnetix.com/anthropic/org-1" {
+	if cfg.BaseURL != "https://guardrails.vulnes.is/anthropic/org-1" {
 		t.Fatalf("base URL = %q, want gateway URL", cfg.BaseURL)
 	}
 	if cfg.APIKey != "vulnetix-key" {
-		t.Fatalf("API key should be Vulnetix key, got %q", cfg.APIKey)
+		t.Fatalf("API key should be Vulnesis key, got %q", cfg.APIKey)
 	}
 	if cfg.Firewall == nil || cfg.Firewall.Instance != "vulnetix" {
 		t.Fatalf("firewall route = %v", cfg.Firewall)
@@ -1873,7 +1873,7 @@ func TestPrepareFirewallReplacesProviderKey(t *testing.T) {
 	src := &fakeFirewallSource{
 		values:   map[string]string{"anthropic:api_key": "provider-key"},
 		firewall: true,
-		gateway:  "https://guardrails.vulnetix.com",
+		gateway:  "https://guardrails.vulnes.is",
 		org:      "org-1",
 		apiKey:   "vulnetix-key",
 		routable: map[string]bool{"anthropic": true},
@@ -1894,7 +1894,7 @@ func TestPrepareBYOKFirewallConfiguresWithoutProviderKey(t *testing.T) {
 	src := &fakeFirewallSource{
 		values:   map[string]string{},
 		firewall: true,
-		gateway:  "https://guardrails.vulnetix.com",
+		gateway:  "https://guardrails.vulnes.is",
 		org:      "org-1",
 		apiKey:   "vulnetix-key",
 		routable: map[string]bool{"anthropic": true},
@@ -1913,7 +1913,7 @@ func TestPrepareBELAI_BASE_URLStillWins(t *testing.T) {
 	src := &fakeFirewallSource{
 		values:   map[string]string{"anthropic:api_key": "provider-key"},
 		firewall: true,
-		gateway:  "https://guardrails.vulnetix.com",
+		gateway:  "https://guardrails.vulnes.is",
 		org:      "org-1",
 		apiKey:   "vulnetix-key",
 		routable: map[string]bool{"anthropic": true},
@@ -1928,7 +1928,7 @@ func TestPrepareFirewallNotEnabled(t *testing.T) {
 	src := &fakeFirewallSource{
 		values:   map[string]string{"anthropic:api_key": "provider-key"},
 		firewall: false,
-		gateway:  "https://guardrails.vulnetix.com",
+		gateway:  "https://guardrails.vulnes.is",
 		org:      "org-1",
 		apiKey:   "vulnetix-key",
 		routable: map[string]bool{"anthropic": true},

@@ -61,7 +61,7 @@ var notEnvWired = map[string]bool{
 }
 
 // TestEveryBelaiOrVulnetixVariableTheDocsNameExists is the reverse check: a
-// BELAI_ or VULNETIX_ variable a page names must appear somewhere in the code,
+// BELAI_ or VULNESIS_ variable a page names must appear somewhere in the code,
 // scripts or workflows, so a page cannot keep describing a variable that was
 // removed. The two the development page says are not yet wired are the only
 // exemptions.

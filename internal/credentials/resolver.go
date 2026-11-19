@@ -205,7 +205,7 @@ func NewResolver(workdir string) (*Resolver, error) {
 	}, nil
 }
 
-// loadVulnetixCred resolves the Vulnetix gateway credential once.
+// loadVulnetixCred resolves the Vulnesis gateway credential once.
 func (r *Resolver) loadVulnetixCred() (vulnetixcreds.Credential, error) {
 	r.vulnetixCredOnce.Do(func() {
 		r.vulnetixCred, r.vulnetixCredErr = vulnetixcreds.Load(r.env, r.home, r.workdir, r.vulnetixKeychain)
@@ -213,7 +213,7 @@ func (r *Resolver) loadVulnetixCred() (vulnetixcreds.Credential, error) {
 	return r.vulnetixCred, r.vulnetixCredErr
 }
 
-// VulnetixAuthHeader returns the Vulnetix CLI's Authorization header value
+// VulnetixAuthHeader returns the Vulnesis CLI's Authorization header value
 // for workdir, read fresh from the environment, the CLI's credential files and
 // the vulnetix-scoped keyring. It backs the MCP "vulnetix:cli" reference.
 func VulnetixAuthHeader(workdir string) (string, error) {
@@ -243,7 +243,7 @@ func (r *Resolver) SetFirewallEnabled(on *bool) {
 	r.firewallEnabledOverride = on
 }
 
-// RefreshVulnetixCred resets the cached Vulnetix credential so the next
+// RefreshVulnetixCred resets the cached Vulnesis credential so the next
 // Firewall/FirewallState call re-reads it from disk/keyring.
 func (r *Resolver) RefreshVulnetixCred() {
 	r.vulnetixCredOnce = sync.Once{}

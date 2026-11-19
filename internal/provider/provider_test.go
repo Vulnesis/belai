@@ -260,7 +260,7 @@ func TestNewAssignsBuiltinAuth(t *testing.T) {
 }
 
 func TestHeadersGoldenForBuiltins(t *testing.T) {
-	ua := "belai/dev (+https://github.com/Vulnetix/belai)"
+	ua := "belai/dev (+https://github.com/Vulnesis/belai)"
 	cases := []struct {
 		name string
 		want map[string]string

@@ -163,7 +163,7 @@ func (t Trigger) Sentence() string {
 		}
 		return endSentence(b.String())
 	case "console":
-		b.WriteString("Started from the Vulnetix console")
+		b.WriteString("Started from the Vulnesis console")
 	case "pix_assistant":
 		b.WriteString("Started from the Pix assistant")
 	case "finding":

@@ -149,7 +149,7 @@ func TestFormClear(t *testing.T) {
 	}
 }
 
-// TestSubmitFollowsTheRecordedRedirects replays what auth.vulnetix.com did
+// TestSubmitFollowsTheRecordedRedirects replays what auth.vulnes.is did
 // with a valid sign-up: the POST answers 302, a GET answers 302 again, and
 // the next GET is the verification-email stage.
 func TestSubmitFollowsTheRecordedRedirects(t *testing.T) {

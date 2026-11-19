@@ -41,7 +41,7 @@ func (p InstallPlan) Commands() string {
 }
 
 // ManualInstallHint is shown when no supported package manager is found.
-const ManualInstallHint = "curl -fsSL https://cli.vulnetix.com/install.sh | sh   (or: go install github.com/vulnetix/cli/v3@latest)"
+const ManualInstallHint = "curl -fsSL https://cli.vulnes.is/install.sh | sh   (or: go install github.com/vulnetix/cli/v3@latest)"
 
 // PlanInstall picks Homebrew on macOS and Linux, Scoop on Windows. ok is
 // false when neither is on PATH.
@@ -56,7 +56,7 @@ func PlanInstall(goos string, lookPath func(string) (string, error)) (InstallPla
 	case "windows":
 		if _, err := lookPath("scoop"); err == nil {
 			return InstallPlan{Manager: InstallScoop, Steps: []InstallStep{
-				{Argv: []string{"scoop", "bucket", "add", "vulnetix", "https://github.com/Vulnetix/scoop-bucket"}},
+				{Argv: []string{"scoop", "bucket", "add", "vulnetix", "https://github.com/Vulnesis/scoop-bucket"}},
 				{Argv: []string{"scoop", "install", "vulnetix"}},
 			}}, true
 		}

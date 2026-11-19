@@ -560,7 +560,7 @@ func EntryMeta(node *a2a.Node, env a2a.Envelope, extra map[string]any) map[strin
 func StateText(state string) string {
 	switch state {
 	case a2a.StateLocalOnly:
-		return "A2A: local only. Agents on this host coordinate; nothing is relayed between hosts without a Vulnetix login."
+		return "A2A: local only. Agents on this host coordinate; nothing is relayed between hosts without a Vulnesis login."
 	case a2a.StateBlackout:
 		return "A2A: blackout. Your organisation stopped relay between hosts; agents on this host still coordinate and every message is audit-logged."
 	}

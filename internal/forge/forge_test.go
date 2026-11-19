@@ -51,8 +51,8 @@ func TestParseRemote(t *testing.T) {
 		raw                   string
 		url, host, slug, kind string
 	}{
-		{"git@github.com:vulnetix/belai.git", "github.com:vulnetix/belai.git", "github.com", "vulnetix/belai", KindGitHub},
-		{"https://x-access-token:ghp_secret@github.com/vulnetix/belai.git", "https://github.com/vulnetix/belai.git", "github.com", "vulnetix/belai", KindGitHub},
+		{"git@github.com:vulnesis/belai.git", "github.com:vulnesis/belai.git", "github.com", "vulnesis/belai", KindGitHub},
+		{"https://x-access-token:ghp_secret@github.com/vulnesis/belai.git", "https://github.com/vulnesis/belai.git", "github.com", "vulnesis/belai", KindGitHub},
 		{"ssh://git@gitlab.example.com:2222/group/sub/proj.git", "ssh://gitlab.example.com:2222/group/sub/proj.git", "gitlab.example.com", "group/sub/proj", KindGitLab},
 		{"https://user:pw@bitbucket.org/team/repo", "https://bitbucket.org/team/repo", "bitbucket.org", "team/repo", KindGeneric},
 	}

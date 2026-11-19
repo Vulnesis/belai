@@ -6,9 +6,9 @@ export const surfaces = {
   acp: 'An editor connected over ACP',
   cli: 'The command line: headless runs and subcommands',
   'self-hosted': 'On a machine you run yourself',
-  'pix sandbox': 'On a Pix Sandbox, the cloud machine Vulnetix runs for you',
-  'software factory': 'In the Vulnetix Software Factory, which runs on Pix Sandboxes',
-  'vulnetix only': 'Needs a Vulnetix account or service',
+  'pix sandbox': 'On a Pix Sandbox, the cloud machine Vulnesis runs for you',
+  'software factory': 'In the Vulnesis Software Factory, which runs on Pix Sandboxes',
+  'vulnetix only': 'Needs a Vulnesis account or service',
 } as const;
 
 export type Surface = keyof typeof surfaces;

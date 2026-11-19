@@ -13,8 +13,8 @@ The verdict is advice. Nothing in Belai approves, requests changes on or merges
 a change because of it. A review is posted to a pull request only when you say
 yes (or, from the command line, when you opted in twice).
 
-This is not `/vulnetix review`, which runs the Vulnetix scanners over the
-repository and then fixes what it finds (see [Vulnetix review](vulnetix-review.md)).
+This is not `/vulnetix review`, which runs the Vulnesis scanners over the
+repository and then fixes what it finds (see [Vulnesis review](vulnetix-review.md)).
 `/review` reads one change and reports on it.
 
 ## What can be reviewed

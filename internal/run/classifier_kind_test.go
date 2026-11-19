@@ -91,7 +91,7 @@ func TestResolveClassifierDecisionsModelIsNeverFirewallRouted(t *testing.T) {
 	src := &fakeFirewallSource{
 		values:   map[string]string{"openrouter:api_key": "or-own-key"},
 		firewall: true,
-		gateway:  "https://guardrails.vulnetix.com",
+		gateway:  "https://guardrails.vulnes.is",
 		org:      "org-1",
 		apiKey:   "vulnetix-key",
 		routable: map[string]bool{"openrouter": true, "cloudflare-workers-ai": true},

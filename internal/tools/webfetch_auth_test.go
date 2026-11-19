@@ -58,7 +58,7 @@ func TestWebFetchAuthenticatesTheGitHubAPIOnly(t *testing.T) {
 		{"https://API.GitHub.com/rate_limit", true},
 		{"http://api.github.com/repos/vulnetix/belai", false},
 		{"https://api.github.com:8443/repos/vulnetix/belai", false},
-		{"https://github.com/vulnetix/belai", false},
+		{"https://github.com/vulnesis/belai", false},
 		{"https://uploads.github.com/x", false},
 		{"https://api.github.com.example.com/x", false},
 		{"https://example.com/?u=api.github.com", false},

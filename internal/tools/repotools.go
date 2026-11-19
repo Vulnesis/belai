@@ -44,7 +44,7 @@ func (r *RepoList) Definition() Definition {
 		Name:        "Repos",
 		Description: "List locally available git repositories. Use this first to discover which repositories exist on this machine before calling RepoFiles or RepoRead.",
 		Properties: map[string]Property{
-			"owner": stringProp("Optional remote owner to filter by (e.g. \"Vulnetix\")."),
+			"owner": stringProp("Optional remote owner to filter by (e.g. \"Vulnesis\")."),
 		},
 	}
 }

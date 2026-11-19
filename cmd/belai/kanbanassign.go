@@ -77,7 +77,7 @@ func planAssign(it kanban.Item, profile, crew, host, thisHost string) (assignPla
 		plan.pin = &empty
 	case "this", ".":
 		if thisHost == "" {
-			return plan, errors.New("this machine has no sync host id yet; log in with the Vulnetix CLI and start a session first")
+			return plan, errors.New("this machine has no sync host id yet; log in with the Vulnesis CLI and start a session first")
 		}
 		plan.pin = &thisHost
 	default:

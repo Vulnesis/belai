@@ -29,9 +29,9 @@ func (f *fakeKeychain) Delete(account string) error      { return nil }
 func TestLoadEnvAPIKey(t *testing.T) {
 	env := func(k string) string {
 		switch k {
-		case "VULNETIX_API_KEY":
+		case "VULNESIS_API_KEY":
 			return "key-1"
-		case "VULNETIX_ORG_ID":
+		case "VULNESIS_ORG_ID":
 			return "org-1"
 		}
 		return ""
@@ -40,7 +40,7 @@ func TestLoadEnvAPIKey(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if c.OrgUUID != "org-1" || c.APIKey != "key-1" || c.Source != "$VULNETIX_API_KEY" {
+	if c.OrgUUID != "org-1" || c.APIKey != "key-1" || c.Source != "$VULNESIS_API_KEY" {
 		t.Fatalf("unexpected credential: %+v", c)
 	}
 }
@@ -153,7 +153,7 @@ func TestLoadEnvAPIKeyWithoutOrgFallsThrough(t *testing.T) {
 	// A key with no org id is incomplete; Load must not return a partial
 	// credential and instead falls through to "no credential found".
 	env := func(k string) string {
-		if k == "VULNETIX_API_KEY" {
+		if k == "VULNESIS_API_KEY" {
 			return "key-1"
 		}
 		return ""
@@ -203,7 +203,7 @@ func TestLoadCredentialsDirEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 	env := func(k string) string {
-		if k == "VULNETIX_CREDENTIALS_DIR" {
+		if k == "VULNESIS_CREDENTIALS_DIR" {
 			return dir
 		}
 		return ""
@@ -334,7 +334,7 @@ func TestAuthHeaderTokenEnvWins(t *testing.T) {
 	home := t.TempDir()
 	writeCred(t, home, `{"org_id":"org-a","api_key":"abc","method":"apikey"}`)
 	env := func(k string) string {
-		if k == "VULNETIX_API_TOKEN" {
+		if k == "VULNESIS_API_TOKEN" {
 			return "envtok"
 		}
 		return ""

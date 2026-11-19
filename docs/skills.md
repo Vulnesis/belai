@@ -127,7 +127,7 @@ in read-only sessions.
 
 ## The library
 
-With the Vulnetix CLI signed in and `belai rc` running, your skills are kept in the
+With the Vulnesis CLI signed in and `belai rc` running, your skills are kept in the
 website's library like agents are: a skill you add or edit is pushed as a new
 version, a skill saved on the website can be installed on any connected host, and
 `sync.skills` (default on) switches all of it off. `belai skill list`, `validate`,

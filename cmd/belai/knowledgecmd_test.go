@@ -16,7 +16,7 @@ import (
 func knowledgeRepo(t *testing.T) string {
 	t.Helper()
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	dir := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(dir, ".vulnetix"), 0o755); err != nil {
 		t.Fatal(err)

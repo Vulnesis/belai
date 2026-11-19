@@ -26,7 +26,7 @@ func deviceServer(t *testing.T, replies []map[string]string) (*httptest.Server, 
 		case devicePath + "/authorize":
 			json.NewEncoder(w).Encode(map[string]any{
 				"device_code": "dev-secret", "user_code": "ABCD-EFGH",
-				"verification_uri": "https://www.vulnetix.com/device", "interval": 0,
+				"verification_uri": "https://www.vulnes.is/device", "interval": 0,
 			})
 		case devicePath + "/token":
 			var body map[string]string
@@ -56,7 +56,7 @@ func fastGrant(t *testing.T, d DeviceLogin) DeviceGrant {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if g.UserCode != "ABCD-EFGH" || g.BrowseURL() != "https://www.vulnetix.com/device" {
+	if g.UserCode != "ABCD-EFGH" || g.BrowseURL() != "https://www.vulnes.is/device" {
 		t.Fatalf("grant = %+v", g)
 	}
 	g.Interval = 0
@@ -127,7 +127,7 @@ func TestSaveLoginKeepsKeyOutOfArgv(t *testing.T) {
 	}
 	dir := t.TempDir()
 	out := filepath.Join(dir, "out")
-	script := "#!/bin/sh\necho \"ARGV $*\" > " + out + "\necho \"KEY $VULNETIX_API_KEY ORG $VULNETIX_ORG_ID\" >> " + out + "\n"
+	script := "#!/bin/sh\necho \"ARGV $*\" > " + out + "\necho \"KEY $VULNESIS_API_KEY ORG $VULNESIS_ORG_ID\" >> " + out + "\n"
 	bin := filepath.Join(dir, "vulnetix")
 	if err := os.WriteFile(bin, []byte(script), 0o755); err != nil {
 		t.Fatal(err)

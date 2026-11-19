@@ -372,7 +372,7 @@ Harness-generated blocks use tags such as:
   unknown tag untouched and the block would reach the provider unsealed. The
   tool briefing uses this to seal as its own `<tools>` block.
 
-- **Canonical forwarding**: behind a Vulnetix gateway that advertises it, the
+- **Canonical forwarding**: behind a Vulnesis gateway that advertises it, the
   gateway verifies each block and forwards it as `<kind integrity="…">` with
   the nonce removed, so the provider sees the same prompt bytes from every
   session and can serve the prefix from cache. Belai's own egress still
@@ -510,7 +510,7 @@ Every outbound HTTP request Belai makes identifies itself with one
 `User-Agent`, built by `version.UserAgent()`:
 
 ```
-User-Agent: belai/<version> (+https://github.com/Vulnetix/belai)
+User-Agent: belai/<version> (+https://github.com/Vulnesis/belai)
 ```
 
 That covers provider and classifier turns, nonce fetches, the release check,
@@ -1011,7 +1011,7 @@ execution is a **fixed command shape**, not an arbitrary command string:
   tools.
 - Local repository tools — `Repos`, `RepoFiles`, `RepoRead` — are offered
   only when a sibling-directory scan finds at least one git checkout. They
-  resolve a repository name (e.g. `Vulnetix/vdb-site`) to a local path, list
+  resolve a repository name (e.g. `Vulnesis/vdb-site`) to a local path, list
   files with `git ls-files`, or read a file directly. They never fetch or
   clone; a miss lists the locally available repositories so the model can
   fall through to `GH` only when necessary. `Repos` is the one native tool
@@ -1562,9 +1562,9 @@ tool touched a path beneath it, through the same gate (see
 
 ### Release check
 
-Alongside the repo map and the Vulnetix CLI probe, startup runs one read-only
+Alongside the repo map and the Vulnesis CLI probe, startup runs one read-only
 release check (`internal/selfupdate`): a `GET` of
-`/repos/Vulnetix/belai/releases/latest` compared against the `-ldflags`
+`/repos/Vulnesis/belai/releases/latest` compared against the `-ldflags`
 version stamp. It never downloads or executes anything — a newer release adds
 an amber note to the banner's version row and one belai-panel notice naming
 both versions, the upgrade command, and the release page.
@@ -2389,7 +2389,7 @@ provider I/O — and the composer's top edge switches to a working state:
   reads `exploring N/M · <reference>` with a live spinner. The explore pill is
   *not* a Role Manager signal — it stays up until a real parent stream event
   lands, because the fan-out emits only subagent events, never parent text.
-- **Vulnetix review** (teal). While a `/vulnetix review` runs and no turn is
+- **Vulnesis review** (teal). While a `/vulnetix review` runs and no turn is
   in flight, the composer shows a `vulnetix review` pill with the review's
   progress and `⏎ steer · esc cancel review`: enter queues the text for the
   review's triage turn and esc cancels the review (see
@@ -2488,7 +2488,7 @@ output can never be promoted into the parent conversation.
 
 ### Runs panel
 
-Belai runs the Vulnetix CLI, `!shell` commands and background agents on the
+Belai runs the Vulnesis CLI, `!shell` commands and background agents on the
 user's behalf; the bottom **runs panel** is the honest register of those
 processes plus the roster of subagents pinned to the conversation. `f8` opens
 and focuses the panel on the **subagents** tab, and `f9` opens it on the
@@ -2575,7 +2575,7 @@ When the user turns it on (`F10`, `/firewall on`, `/vulnetix firewall`,
 `-firewall` or `BELAI_FIREWALL=1`), Belai routes eligible provider traffic
 through the **active** firewall instance (see [firewall.md](firewall.md)).
 `internal/firewall` holds the adapters:
-- Vulnetix (stable);
+- Vulnesis (stable);
 - Fastly ARC, Kong and AI Security Gateway (beta);
 - custom;
 - the read-only OpenRouter and Cloudflare entries.
@@ -2587,7 +2587,7 @@ provider's auth is dropped) and reads responses back into a
 The toggle is fail-closed. `run.Prepare` asks `credentials.Resolver` for the
 route. The resolver checks the instance's provider limit and the adapter's
 support for the provider's wire and auth style. It then loads the key: the
-Vulnetix CLI credential through `internal/vulnetixcreds`, or the instance's
+Vulnesis CLI credential through `internal/vulnetixcreds`, or the instance's
 secret stored under `firewall:<name>`. Any failure leaves the on-toggle
 remembered, but the run goes to the native provider.
 
@@ -3053,7 +3053,7 @@ in `handleChatKey`, so it does nothing on a full-screen view.
 | `f1` | Open the screen switcher from chat or any screen. One letter opens a screen: `a` agents, `m` model, `p` providers, `s` settings, `b` token budgets, `i` session intelligence, `k` permissions, `r` prompts, `x` processes, `l` lsp, `v` vulnetix, `h` sessions. A screen already open further down the stack is returned to, so `esc` walks back through distinct screens. It does nothing on a permission ask, a clarifying question, plan review or while an inline field edit holds text, and a chat draft is kept while it is open |
 | `f8` | Open and focus the bottom runs panel on the subagents tab (chat); press `tab` twice to reach the processes tab |
 | `f9` | Open and focus the bottom runs panel on the activity tab (chat); `tab` cycles processes, kanban, crew, then git (ci follows when the branch has a PR/MR, then intel). From the focused kanban pane it opens the kanban tab on the pane's selection |
-| `f10` | Toggle the Vulnetix AI Firewall from any screen |
+| `f10` | Toggle the Vulnesis AI Firewall from any screen |
 | `f12` | Toggle the bottom runs panel on the intel tab (chat); with the panel open on another tab it switches to intel. `enter` there opens session intelligence full screen, also `/intel` |
 | `ctrl+home` / `ctrl+end` | Jump the transcript to the top / bottom |
 | `ctrl+j` | Insert a newline in the prompt editor |
@@ -3736,7 +3736,7 @@ Business rules:
 | `/todos` | Show plan progress |
 | `/execute` | Leave plan mode and execute the plan |
 | `/refine` | Refine the extracted plan |
-| `/vulnetix` | Vulnetix code review and firewall (`review`, `configure`, `list`, `status`, `firewall`, `help`) |
+| `/vulnetix` | Vulnesis code review and firewall (`review`, `configure`, `list`, `status`, `firewall`, `help`) |
 | `/settings` | View and edit settings |
 | `/permissions` | Edit tool permissions |
 | `/help` | Open a scrollable screen of the commands and every keyboard shortcut |
@@ -4036,7 +4036,7 @@ and a call that sets it is refused rather than run in the foreground.
 Rules:
 
 - **Same gates as a foreground call.** The permission decision, the ask, the
-  hooks and the Vulnetix redirect run on the command before `Execute`, and the
+  hooks and the Vulnesis redirect run on the command before `Execute`, and the
   Jev builtin swap is skipped for a background call. The process runs under
   the sandbox policy that rode on the call's context (`sandbox.FromContext`),
   in the working directory the call had, with `proc.ScrubbedEnv` and its own
@@ -4101,7 +4101,7 @@ prevents a second Belai instance from launching a duplicate copy.
 
 ## Library items
 
-The Vulnetix website keeps a per-account library of the documents a host holds:
+The Vulnesis website keeps a per-account library of the documents a host holds:
 skills, prompts, supervised processes, git repositories, token budgets, the Bash
 rewrite table and provider sets. `internal/libitem` is the pure half: the canonical
 bytes whose SHA-256 a sync compares, and a strict validator per kind that applies the

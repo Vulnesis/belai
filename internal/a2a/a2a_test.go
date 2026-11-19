@@ -258,9 +258,9 @@ func TestBroadcasterFromGitInfo(t *testing.T) {
 		t.Fatal("broadcast with no repository")
 	}
 	root := filepath.Join(t.TempDir(), "repo")
-	b.SetGit(&gitsync.Info{Root: root, Remote: "Vulnetix/Belai", Branch: "feat/BEL-42-a2a", PR: &gitsync.PR{Number: 9, State: "open"}})
+	b.SetGit(&gitsync.Info{Root: root, Remote: "Vulnesis/Belai", Branch: "feat/BEL-42-a2a", PR: &gitsync.PR{Number: 9, State: "open"}})
 	w, ok := b.Due(now)
-	if !ok || w.Repo != "vulnetix/belai" || w.Branch != "feat/BEL-42-a2a" || w.PR != 9 || w.Ticket != "BEL-42" {
+	if !ok || w.Repo != "vulnesis/belai" || w.Branch != "feat/BEL-42-a2a" || w.PR != 9 || w.Ticket != "BEL-42" {
 		t.Fatalf("first broadcast %+v %v", w, ok)
 	}
 	if _, ok := b.Due(now.Add(time.Minute)); ok {

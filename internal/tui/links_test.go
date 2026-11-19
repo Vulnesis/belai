@@ -40,13 +40,13 @@ func TestHoverOffersThePanelsOnlyLink(t *testing.T) {
 	a := New(Options{Workdir: t.TempDir()})
 	a.width, a.height = 120, 40
 	a.messages = []components.Message{
-		{Role: "assistant", Content: "Scan finished.\n\nsnapshot · https://www.vulnetix.com/snapshots/abc"},
+		{Role: "assistant", Content: "Scan finished.\n\nsnapshot · https://www.vulnes.is/snapshots/abc"},
 		{Role: "assistant", Content: "two links: https://a.example/1 and https://b.example/2"},
 	}
 	renderFrame(t, a)
 	pointAt(a, hoverAnyLine(t, a, 0))
 	a.recomputeHover()
-	if a.hover.link != "https://www.vulnetix.com/snapshots/abc" {
+	if a.hover.link != "https://www.vulnes.is/snapshots/abc" {
 		t.Fatalf("hover link = %q", a.hover.link)
 	}
 	if hint := a.hoverHint(); !strings.Contains(hint, "ctrl+y") || !strings.Contains(hint, "open link") {
@@ -64,10 +64,10 @@ func TestHoverOffersThePanelsOnlyLink(t *testing.T) {
 
 func TestReviewCardShowsSnapshots(t *testing.T) {
 	card := reviewScanCard(commands.ScanOutcome{Name: "sast", Snapshots: []commands.Snapshot{
-		{Label: "SAST", URL: "https://www.vulnetix.com/snapshots/s"},
-		{URL: "https://www.vulnetix.com/snapshots/t"},
+		{Label: "SAST", URL: "https://www.vulnes.is/snapshots/s"},
+		{URL: "https://www.vulnes.is/snapshots/t"},
 	}}, reviewCard{headline: "3 findings"}, nil, "")
-	for _, want := range []string{"SAST snapshot · https://www.vulnetix.com/snapshots/s", "- snapshot · https://www.vulnetix.com/snapshots/t"} {
+	for _, want := range []string{"SAST snapshot · https://www.vulnes.is/snapshots/s", "- snapshot · https://www.vulnes.is/snapshots/t"} {
 		if !strings.Contains(card, want) {
 			t.Fatalf("card lacks %q:\n%s", want, card)
 		}
@@ -77,18 +77,18 @@ func TestReviewCardShowsSnapshots(t *testing.T) {
 func TestRunsOutputSnapshotPrefersTheVisibleOne(t *testing.T) {
 	a := New(Options{Workdir: t.TempDir()})
 	a.width, a.height = 120, 40
-	a.runsOutput.content = "SCA snapshot: https://www.vulnetix.com/s/1\n" + strings.Repeat("row\n", 80) +
-		"SAST snapshot: https://www.vulnetix.com/s/2\n"
+	a.runsOutput.content = "SCA snapshot: https://www.vulnes.is/s/1\n" + strings.Repeat("row\n", 80) +
+		"SAST snapshot: https://www.vulnes.is/s/2\n"
 	a.enterRunsOutput()
-	if got := a.runsOutputSnapshot(); got != "https://www.vulnetix.com/s/1" {
+	if got := a.runsOutputSnapshot(); got != "https://www.vulnes.is/s/1" {
 		t.Fatalf("top = %q", got)
 	}
 	a.runsOutput.vp.GotoBottom()
-	if got := a.runsOutputSnapshot(); got != "https://www.vulnetix.com/s/2" {
+	if got := a.runsOutputSnapshot(); got != "https://www.vulnes.is/s/2" {
 		t.Fatalf("bottom = %q", got)
 	}
 	a.runsOutput.vp.SetYOffset(30)
-	if got := a.runsOutputSnapshot(); got != "https://www.vulnetix.com/s/2" {
+	if got := a.runsOutputSnapshot(); got != "https://www.vulnes.is/s/2" {
 		t.Fatalf("none on screen = %q, want the last", got)
 	}
 	if !strings.Contains(a.runsOutputView(), "open snapshot") {

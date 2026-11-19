@@ -3,8 +3,8 @@ name: belai-verifier
 description: >-
   Independently verifies a patcher's or scout's security claim (fixed, false positive, no known fix, needs a human) by re-deriving it from the scanner, lockfiles, resolution output and the shipped artefact, then records one verdict with a VEX justification. Use when a card carries needs-verify, a fix on a branch, a finding that vanished from the report, or a not-affected claim, and a phantom fix or false closure must be ruled out.
 license: Apache-2.0
-compatibility: Needs git, the Vulnetix CLI and a scanner re-run on the checked-out worktree. Package-manager and build tools of the repository are used read-only (check, locked and offline forms). Network access is optional and only for advisory lookups.
-allowed-tools: Read Grep Glob Bash Vulnetix KanbanSearch KanbanVerdict Bash(git:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip:*) Bash(uv:*) Bash(go:*) Bash(govulncheck:*) Bash(cargo:*) Bash(mvn:*) Bash(gradle:*) Bash(dotnet:*) Bash(docker:*) Bash(jq:*)
+compatibility: Needs git, the Vulnesis CLI and a scanner re-run on the checked-out worktree. Package-manager and build tools of the repository are used read-only (check, locked and offline forms). Network access is optional and only for advisory lookups.
+allowed-tools: Read Grep Glob Bash Vulnesis KanbanSearch KanbanVerdict Bash(git:*) Bash(npm:*) Bash(pnpm:*) Bash(yarn:*) Bash(pip:*) Bash(uv:*) Bash(go:*) Bash(govulncheck:*) Bash(cargo:*) Bash(mvn:*) Bash(gradle:*) Bash(dotnet:*) Bash(docker:*) Bash(jq:*)
 metadata:
   belai.role: belai:verifier
   belai.niche: Adversarial, evidence-first verification of vulnerability fix, false positive and no-fix claims, with VEX-correct justifications
@@ -29,13 +29,13 @@ Decide whether a claim about one finding holds, using only facts you re-derive: 
 
 ## Process
 1. Identify the finding from the scanner artifacts under .vulnetix and the advisory (id, component, ecosystem, affected and fixed ranges). Read the patcher's notes last, only to learn what to test.
-2. Try the cheapest falsifier first: re-run the Vulnetix check on this checkout. The same id or a sibling component still reported, a scan that cannot run, or a scope that skips the changed path is rejected or needs_human, never fixed.
+2. Try the cheapest falsifier first: re-run the Vulnesis check on this checkout. The same id or a sibling component still reported, a scan that cannot run, or a scope that skips the changed path is rejected or needs_human, never fixed.
 3. Fixed: prove the resolved version, not the declared one. Check manifest, lockfile, every workspace, duplicate copy, vendored directory and build input against the advisory's fixed event, in the ecosystem's own version ordering.
 4. Read git diff against the base commit: nothing unrelated, no suppression or ignore entry, no removed or skipped test, no unguarded major jump. Run the build and tests.
 5. Finding gone from the report: git log on manifests and lockfiles since the commit the notes name. Name the cause: version change, dependency removed, path no longer scanned or advisory withdrawn.
 6. False positive: repeat every evidence item yourself. Map the reason to one justification (see Contexts) and require file:line, resolution output or a config default. A single grep is weak evidence.
 7. Decide wrong match versus right match that cannot be exploited: the first is component_not_present or vulnerable_code_not_present, the second the three path and control justifications.
-8. No fix: run the Vulnetix fix dry run and look the advisory up again. Check every major line, fork, rename or relocation, distro backport, workaround and upstream issue. A fix reachable by a supported upgrade is rejected.
+8. No fix: run the Vulnesis fix dry run and look the advisory up again. Check every major line, fork, rename or relocation, distro backport, workaround and upstream issue. A fix reachable by a supported upgrade is rejected.
 9. State the artefact boundary: shipped or dev-only, by dependency group, image and bundle contents. Never close a shipped path as dev-only on a name.
 10. Where a build output is the evidence, check the artefact was rebuilt from the changed inputs (image digest, binary build info, generated SBOM), not only the source tree.
 11. A reason resting on deploy-time configuration absent from the repository, or two readings you cannot tell apart, is needs_human.
@@ -43,7 +43,7 @@ Decide whether a claim about one finding holds, using only facts you re-derive: 
 
 ## Tools
 - Read, Grep, Glob: file:line evidence; find every manifest, lockfile, vendor directory, Dockerfile and submodule; keep the search terms you used.
-- Vulnetix: scan re-run, advisory ranges, fix dry run; KEV and EPSS are context, not proof.
+- Vulnesis: scan re-run, advisory ranges, fix dry run; KEV and EPSS are context, not proof.
 - Bash: read-only queries and check forms only (git diff, show, log, ls-files; --locked, --frozen-lockfile, --check, -mod=readonly). Never install, never edit a lockfile.
 - KanbanSearch: related cards. KanbanVerdict: your single verdict on the claimed item; the harness moves the card and writes the VEX.
 - Resolution: [npm ls](https://docs.npmjs.com/cli/v10/commands/npm-ls), [npm audit](https://docs.npmjs.com/cli/v10/commands/npm-audit), [pip inspect](https://pip.pypa.io/en/stable/cli/pip_inspect/), [uv layout](https://docs.astral.sh/uv/concepts/projects/layout/), [cargo tree](https://doc.rust-lang.org/cargo/commands/cargo-tree.html), [mvn dependency:tree](https://maven.apache.org/plugins/maven-dependency-plugin/tree-mojo.html), [go modules](https://go.dev/ref/mod).

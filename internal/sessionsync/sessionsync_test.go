@@ -422,12 +422,12 @@ func TestInboxDeliversPromptsAndAcks(t *testing.T) {
 
 func TestAllowedOrigin(t *testing.T) {
 	for raw, want := range map[string]bool{
-		"https://www.vulnetix.com/api/site/v1/belai": true,
-		"https://vulnetix.com":                       true,
-		"http://www.vulnetix.com":                    false,
-		"https://vulnetix.com.evil.io":               false,
+		"https://www.vulnes.is/api/site/v1/belai": true,
+		"https://vulnes.is":                       true,
+		"http://www.vulnes.is":                    false,
+		"https://vulnes.is.evil.io":               false,
 		"https://evilvulnetix.com":                   false,
-		"https://user@www.vulnetix.com":              false,
+		"https://user@www.vulnes.is":              false,
 		"http://localhost:5173":                      true,
 		"http://127.0.0.1:3000":                      true,
 		"http://10.0.0.1":                            false,
@@ -547,12 +547,12 @@ func TestLargeBatchesAreGzipped(t *testing.T) {
 }
 
 // A test binary never gets a client for a real origin, whatever the
-// environment says, so a test that forgot to isolate VULNETIX_WEB_URL
+// environment says, so a test that forgot to isolate VULNESIS_WEB_URL
 // cannot push its fixtures to the developer's board. Loopback still works
 // for tests that run a local server.
 func TestNewClientRefusesRealOriginUnderTest(t *testing.T) {
 	auth := func() (string, error) { return "Bearer x", nil }
-	for _, base := range []string{BaseURL(""), "https://staging.vulnetix.com" + apiPath} {
+	for _, base := range []string{BaseURL(""), "https://staging.vulnes.is" + apiPath} {
 		if _, err := NewClient(base, auth, nil); !errors.Is(err, errTestOrigin) {
 			t.Fatalf("NewClient(%s) under test = %v, want errTestOrigin", base, err)
 		}

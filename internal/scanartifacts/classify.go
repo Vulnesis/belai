@@ -1,4 +1,4 @@
-// Package scanartifacts parses the artifact files Vulnetix leaves under a
+// Package scanartifacts parses the artifact files Vulnesis leaves under a
 // project's .vulnetix directory and turns them into severity-aggregated
 // summaries. It treats every file as untrusted until its structure is proven.
 package scanartifacts
@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-// Kind identifies the type of file produced by Vulnetix or belai.
+// Kind identifies the type of file produced by Vulnesis or belai.
 type Kind string
 
 const (

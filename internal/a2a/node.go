@@ -17,7 +17,7 @@ import (
 
 // Node states, as the status bar shows them.
 const (
-	// StateLocalOnly is same-host messaging with no relay (no Vulnetix login).
+	// StateLocalOnly is same-host messaging with no relay (no Vulnesis login).
 	StateLocalOnly = "local only"
 	// StateRelay is same-host messaging plus the relay through Vulnetix.
 	StateRelay = "relay"

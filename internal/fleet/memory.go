@@ -20,7 +20,7 @@ import (
 // attachment, and it is capped so it can never crowd out the work.
 //
 // Each lesson is also a profile-scoped note in the shared memory store
-// (internal/repomemory), which session sync replicates to Vulnetix: a worker
+// (internal/repomemory), which session sync replicates to Vulnesis: a worker
 // on a fresh machine (a Pix Sandbox) whose .md is gone reads its lessons back
 // from the store, and the Software Factory console edits or deletes them
 // there. A note deleted in the console is a tombstone that removes it here.
@@ -68,7 +68,7 @@ func ReadMemory(profile string) string { return ReadMemoryN(profile, agentprofil
 
 // ReadMemoryN returns a profile's lessons, newest kept within maxBytes. The
 // shared store is the record once it has the profile (written here, or pulled
-// from Vulnetix on a fresh machine); the .md is read only for lessons written
+// from Vulnesis on a fresh machine); the .md is read only for lessons written
 // before the store existed.
 func ReadMemoryN(profile string, maxBytes int) string {
 	if s := profileStore(profile); s != nil && s.Exists() {

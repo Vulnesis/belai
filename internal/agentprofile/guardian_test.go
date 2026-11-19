@@ -62,7 +62,7 @@ func TestGuardianInvestigatorsAreReadOnlyTicketWriters(t *testing.T) {
 		if p.Writes() {
 			t.Errorf("%s writes", name)
 		}
-		for _, tool := range []string{"Read", "Grep", "Glob", want.cloud, "WebFetch", "Vulnetix", "mcp__vulnetix__*", "Skill"} {
+		for _, tool := range []string{"Read", "Grep", "Glob", want.cloud, "WebFetch", "Vulnesis", "mcp__vulnetix__*", "Skill"} {
 			if !slices.Contains(p.Tools, tool) {
 				t.Errorf("%s lacks %s", name, tool)
 			}
@@ -120,7 +120,7 @@ func TestGuardianRemediatorChangesCodeAndHoldsNoCloudTool(t *testing.T) {
 	if p.Kanban.Gates == nil || !p.Kanban.Gates.Draft {
 		t.Error("the remediator opens a draft pull request")
 	}
-	for _, tool := range []string{"Read", "Edit", "Write", "Grep", "Glob", "Bash", "GH", "Vulnetix"} {
+	for _, tool := range []string{"Read", "Edit", "Write", "Grep", "Glob", "Bash", "GH", "Vulnesis"} {
 		if !slices.Contains(p.Tools, tool) {
 			t.Errorf("the remediator lacks %s", tool)
 		}

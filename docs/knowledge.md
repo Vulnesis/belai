@@ -7,7 +7,7 @@ resemble what it asked for.
 
 - **Profile knowledge** is the documents an [agent profile](agent-profiles.md)
   lists: a handbook, a style guide, runbooks, a standards folder.
-- **Project knowledge** is the scanner output the Vulnetix tools leave in the
+- **Project knowledge** is the scanner output the Vulnesis tools leave in the
   project's `.vulnetix` directory (SARIF, CycloneDX, OpenVEX and the rest), and
   the files you attach to a session with `@`.
 - **The source index** is the repository's own files, cut at declarations, when
@@ -103,7 +103,7 @@ classified as third-party text, with native reports left out. The built-in
 patchers and verifier always have the review's artifacts to search. A passage
 that both a profile and the project index hold is shown once.
 
-A profile from the Vulnetix library carries its `knowledge` block like any other
+A profile from the Vulnesis library carries its `knowledge` block like any other
 field: it installs with it, a backup includes it, and a replace takes the
 library copy (or keeps the paths already on this host when the copy lists none),
 so retrieval works for a profile that came from the library as it does for one
@@ -172,7 +172,7 @@ agents can open it with their file tools too.
 ## Project knowledge
 
 Belai reads `<project>/.vulnetix` itself, at a fixed place, and never takes a
-path from a model. The index follows what the Vulnetix tools write:
+path from a model. The index follows what the Vulnesis tools write:
 
 | File | Indexed as |
 | --- | --- |

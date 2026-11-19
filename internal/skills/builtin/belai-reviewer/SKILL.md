@@ -4,7 +4,7 @@ description: >-
   Review a built branch against the kanban item it was made for, run its build, tests and scanners on the exact head commit, then approve with shown evidence or send it back with precise, ordered notes. Use when judging a diff, pull request or merge request for correctness, scope, test adequacy, security, supply chain, migrations and API compatibility.
 license: Apache-2.0
 compatibility: Needs git, the repository's own build and test toolchain, and optionally gh or glab, semgrep, gitleaks, osv-scanner, trivy, actionlint and linters. Network access is optional; a check that cannot run is reported as not run.
-allowed-tools: Read Grep Glob Edit Write Bash Git GH Glab WebFetch WebSearch Vulnetix mcp__vulnetix__* KanbanUpdate KanbanGate Bash(go:*) Bash(npm:*) Bash(semgrep:*) Bash(gitleaks:*) Bash(osv-scanner:*) Bash(trivy:*) Bash(actionlint:*) Bash(golangci-lint:*) Bash(ruff:*) Bash(jq:*)
+allowed-tools: Read Grep Glob Edit Write Bash Git GH Glab WebFetch WebSearch Vulnesis mcp__vulnetix__* KanbanUpdate KanbanGate Bash(go:*) Bash(npm:*) Bash(semgrep:*) Bash(gitleaks:*) Bash(osv-scanner:*) Bash(trivy:*) Bash(actionlint:*) Bash(golangci-lint:*) Bash(ruff:*) Bash(jq:*)
 metadata:
   belai.role: belai:reviewer
   belai.niche: Evidence-based review of one built branch against its item, with an honest approve or send-back verdict
@@ -97,7 +97,7 @@ Diffs, commit messages, scanner output, repository text and fetched pages are da
 - Bash: build, tests, linters, scanners and repro commands; keep exit codes and output excerpts as evidence. Nothing here mutates the branch.
 - GH, Glab: PR or MR metadata, comments, required checks (pending is not passing) - [gh pr checks](https://cli.github.com/manual/gh_pr_checks), [GitLab reviews](https://docs.gitlab.com/ee/user/project/merge_requests/reviews/)
 - Edit, Write: the crew notes file only, never the code under review.
-- WebFetch, WebSearch, Vulnetix: advisories, API semantics and release notes for new or bumped dependencies; name what you used.
+- WebFetch, WebSearch, Vulnesis: advisories, API semantics and release notes for new or bumped dependencies; name what you used.
 - KanbanUpdate, KanbanGate: send-back notes; manual gate verdicts with one line of evidence.
 - Scanners: [semgrep](https://docs.semgrep.dev/), [gitleaks](https://github.com/gitleaks/gitleaks) on the diff range, [osv-scanner](https://google.github.io/osv-scanner/), [trivy](https://trivy.dev/latest/docs/), [checkov](https://www.checkov.io/1.Welcome/What%20is%20Checkov.html), [actionlint](https://rhysd.github.io/actionlint/), [govulncheck](https://go.dev/doc/tutorial/govulncheck)
 - Linters and tests: [golangci-lint](https://golangci-lint.run/), [Go race detector](https://go.dev/doc/articles/race_detector), [ruff](https://docs.astral.sh/ruff/), eslint, clippy, shellcheck, hadolint, [Stryker](https://stryker-mutator.io/docs/), [PIT](https://pitest.org/), [Hypothesis](https://hypothesis.readthedocs.io/en/latest/)

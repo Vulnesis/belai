@@ -116,9 +116,9 @@ func Fetch(ctx context.Context, client *http.Client, base, accessToken, profileA
 	return fetch(ctx, client, base, accessToken, profileARN, nil)
 }
 
-// FetchRouted lists the models through the Vulnetix AI Firewall at base, which
+// FetchRouted lists the models through the Vulnesis AI Firewall at base, which
 // mints the Kiro token from the org's secrets vault and adds the profile
-// itself. bearer is the Vulnetix API key, and apply sets the route's headers.
+// itself. bearer is the Vulnesis API key, and apply sets the route's headers.
 // base is the firewall URL the route was planned with (already checked by
 // config.ValidFirewallURL), so it is not held to the Kiro host pin.
 func FetchRouted(ctx context.Context, client *http.Client, base, bearer string, apply func(http.Header)) ([]Info, error) {
