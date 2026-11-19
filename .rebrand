@@ -1,0 +1,2 @@
+# Regenerate the builtin agent-profile index from the rewritten builtins.
+post go test ./internal/agentprofile -run TestBuiltinsIndexIsCurrent -update-index
