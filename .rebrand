@@ -12,3 +12,6 @@ keep belai.vulnetix.com
 # its identifier; tools_docs_test checks every tool is documented by name).
 keep `Vulnetix`
 keep `Vulnetix(
+# docs/vulnetix.md states the default the code uses (Vulnetix; VULNETIX_BRAND
+# selects vulnes.is); env_docs_test checks the phrase.
+keep (default `https://api.vdb.vulnetix.com/v1`)
