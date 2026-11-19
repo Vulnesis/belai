@@ -1,2 +1,4 @@
 # Regenerate the builtin agent-profile index from the rewritten builtins.
 post go test ./internal/agentprofile -run TestBuiltinsIndexIsCurrent -update-index
+# The User-Agent carries the repo URL (moved); the test matches it as a substring.
+rewrite strings.Contains(ua, "github.com/Vulnetix/belai") => strings.Contains(ua, "github.com/Vulnesis/belai")
