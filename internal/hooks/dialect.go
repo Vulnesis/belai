@@ -17,7 +17,7 @@ import (
 
 // ─────────────────────────────────────────────────────────────────────────
 // The hooks dialect: the definition format Claude Code, Codex and the
-// Vulnetix CLI's `agent install` share, read from a hook BUNDLE.
+// Vulnesis CLI's `agent install` share, read from a hook BUNDLE.
 //
 // A bundle is a directory under the global hooks directory holding hooks.json
 // (the definition) and the script files its commands run:

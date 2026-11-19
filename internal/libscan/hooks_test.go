@@ -37,7 +37,7 @@ func hookSetup(t *testing.T) hookEnv {
 	t.Helper()
 	e := hookEnv{env{home: t.TempDir(), belai: t.TempDir(), repo: t.TempDir(), empty: t.TempDir()}}
 	t.Setenv("BELAI_HOME", e.belai)
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	oldH, oldR := Harnesses, TrustedRepos
 	Harnesses = hookFixture
 	TrustedRepos = func() []Repo { return nil }

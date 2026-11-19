@@ -7,7 +7,7 @@ messaging lets them coordinate:
 
 - **Broadcasts.** The harness, not a model, broadcasts what each session is
   working on: the repository, branch, files, pull request, ticket and the
-  agent's identity. Every session on the host receives them; with a Vulnetix
+  agent's identity. Every session on the host receives them; with a Vulnesis
   login, every session in the organisation does.
 - **Filtered receipt.** By default a session only hears broadcasts about its
   own repository. On a match the harness tells the model what is going on and
@@ -89,7 +89,7 @@ under `~/.vulnetix/belai/a2a/`:
   peers from their cards.
 - `audit.jsonl`: the local audit (below).
 
-Same-host messaging works with no Vulnetix login; only relay between hosts
+Same-host messaging works with no Vulnesis login; only relay between hosts
 needs one. The status bar says `A2A: local only` then.
 
 ## Broadcasts

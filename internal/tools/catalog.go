@@ -934,7 +934,7 @@ func CatalogueNames() []string {
 	for _, c := range cloudCatalog() {
 		names = append(names, c.name)
 	}
-	names = append(names, CFName, "Vulnetix", "Repos", "RepoFiles", "RepoRead")
+	names = append(names, CFName, "Vulnesis", "Repos", "RepoFiles", "RepoRead")
 	return names
 }
 
@@ -964,7 +964,7 @@ func NativeTools(root string, caps Capabilities, cwd *Cwd, ix repoindex.Index) [
 	if caps.Has(CFName) {
 		out = append(out, &Cloudflare{})
 	}
-	if caps.Has("Vulnetix") {
+	if caps.Has("Vulnesis") {
 		out = append(out, &Vulnetix{Root: root, Cwd: cwd})
 	}
 	// The index listing runs in-process and needs no binary, so it is offered
@@ -1007,7 +1007,7 @@ func DefaultWithCaps(workdir string, readOnly bool, caps Capabilities, ix repoin
 			c.Cloud = base.cloud
 		}
 	}
-	// With the Vulnetix tool present, Bash sends vulnetix calls to it: the
+	// With the Vulnesis tool present, Bash sends vulnetix calls to it: the
 	// unhardened Bash path is where scans ran for minutes and fix --yes
 	// edited manifests.
 	for _, t := range extras {

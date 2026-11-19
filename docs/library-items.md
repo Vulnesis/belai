@@ -1,6 +1,6 @@
 # Library items
 
-The Vulnetix website keeps a library for each account: the things worth keeping
+The Vulnesis website keeps a library for each account: the things worth keeping
 when a machine is wiped or a second one is set up. Agent profiles and crews were
 the first ([remote-control.md](remote-control.md#agent-library)). A **library
 item** is the same idea for the rest of what a host holds: skills, prompts,
@@ -554,7 +554,7 @@ built-in decision server.
 
 A document holds no secret value. An `env` or `headers` value is a reference
 (`env:NAME`, `cred:KEY`, `vault:NAME` in the headers of an http server, `vulnetix:cli`
-for `Authorization` on an https vulnetix.com URL) or plain text under a name that does
+for `Authorization` on an https vulnes.is URL) or plain text under a name that does
 not read as a secret. A name containing secret, token, password, passwd, credential,
 private, key, auth or cookie needs a reference, and so does a URL query parameter with
 such a name (a URL cannot hold a reference, so it is refused). Header names are unique
@@ -716,7 +716,7 @@ other, and it runs on a host only after someone installs it there.
 ## How a document travels
 
 These move a document between a host and the library. All of them need
-`belai rc` running and the Vulnetix CLI signed in, and all of them go through the
+`belai rc` running and the Vulnesis CLI signed in, and all of them go through the
 same client as session sync (same origin allowlist, same credential).
 
 **Backup (`item_backup`).** The website names a kind and a name. The host exports

@@ -1,8 +1,8 @@
 # Kanban board
 
 Belai keeps one global kanban board, shared by every session on the machine
-and mirrored to the Vulnetix website while you are logged in with the
-Vulnetix CLI. Work a session leaves open lands on it instead of scrolling away
+and mirrored to the Vulnesis website while you are logged in with the
+Vulnesis CLI. Work a session leaves open lands on it instead of scrolling away
 in a report. A later session, or you, picks it up from there.
 
 The board has five lists:
@@ -376,11 +376,11 @@ Limits:
 - a card carries at most 8 acceptance gates, each title at most 120 characters
 - the board holds at most 5000 items
 
-## Sync with the Vulnetix website
+## Sync with the Vulnesis website
 
 The board syncs whenever session sync can run: the `sync.enabled` setting is
-on and the Vulnetix CLI is logged in (see [session-sync.md](session-sync.md)).
-It uses the same client, so it only goes to `https://*.vulnetix.com` with the
+on and the Vulnesis CLI is logged in (see [session-sync.md](session-sync.md)).
+It uses the same client, so it only goes to `https://*.vulnes.is` with the
 CLI's credential.
 
 - Every change is written to the local file first. The sync worker then pushes

@@ -17,7 +17,7 @@ import (
 
 // roleMCP is the /model group for the servers Belai offers itself: the clef
 // decision server (on or off, and how confident it must be to answer an ask in
-// your place) and the hosted Vulnetix server. The switches live under the
+// your place) and the hosted Vulnesis server. The switches live under the
 // mcp.builtin key of the global settings, so the group saves there and `s`
 // does not cycle it.
 const roleMCP modelRole = "mcp"
@@ -37,11 +37,11 @@ func (a *App) clefEngineFor() *clefmcp.Engine {
 	}
 }
 
-// vulnetixAuth reads the Vulnetix credential; a test replaces it so the machine's
+// vulnetixAuth reads the Vulnesis credential; a test replaces it so the machine's
 // own login never decides a result.
 var vulnetixAuth = credentials.VulnetixAuthHeader
 
-// vulnetixCredOK reports whether Vulnetix credentials exist.
+// vulnetixCredOK reports whether Vulnesis credentials exist.
 func (a *App) vulnetixCredOK() bool {
 	_, err := vulnetixAuth(a.workdir)
 	return err == nil
@@ -80,8 +80,8 @@ func (a *App) mcpRows() []modelRow {
 	rows := []modelRow{{roleMCP, clef}, {roleMCP, skip}}
 	if a.vulnetixCredOK() {
 		rows = append(rows, modelRow{roleMCP, settingsRow{
-			key: "mcp_vulnetix", label: "Vulnetix MCP", kind: "toggle", value: boolLabel(a.settings.VulnetixMCPEnabled()), src: src,
-			help: "the hosted Vulnetix MCP server, signed in with your Vulnetix credentials",
+			key: "mcp_vulnetix", label: "Vulnesis MCP", kind: "toggle", value: boolLabel(a.settings.VulnetixMCPEnabled()), src: src,
+			help: "the hosted Vulnesis MCP server, signed in with your Vulnesis credentials",
 		}})
 	}
 	return rows
@@ -150,7 +150,7 @@ func (a *App) changeMCPRow(key string) tea.Cmd {
 	case "mcp_vulnetix":
 		next := !a.settings.VulnetixMCPEnabled()
 		err = a.mutateGlobalSetting(func(s *config.Settings) { mcpVulnetix(s).Enabled = &next })
-		say = "Vulnetix MCP: " + boolLabel(next)
+		say = "Vulnesis MCP: " + boolLabel(next)
 	default:
 		return nil
 	}
@@ -186,7 +186,7 @@ func (a *App) unsetMCPRow(key string) tea.Cmd {
 
 // applyBuiltinMCP makes the settings just written take effect in this process:
 // the clef server is switched on or off for its availability, the hosted
-// Vulnetix server is added or removed, and the next session built sees the
+// Vulnesis server is added or removed, and the next session built sees the
 // tools and the ask policy.
 func (a *App) applyBuiltinMCP() {
 	if m := mcp.Active(); m != nil {
@@ -204,7 +204,7 @@ func (a *App) applyBuiltinMCP() {
 	a.invalidateAgentSession()
 }
 
-// syncVulnetixMCP adds the hosted Vulnetix server while its switch is on,
+// syncVulnetixMCP adds the hosted Vulnesis server while its switch is on,
 // credentials exist and the user has no entry of that name, and removes it when
 // the switch is off.
 func (a *App) syncVulnetixMCP(ctx context.Context, m *mcp.Manager) {
@@ -219,7 +219,7 @@ func (a *App) syncVulnetixMCP(ctx context.Context, m *mcp.Manager) {
 		// The user's own entry is managed by /mcp and /vulnetix mcp.
 	case a.vulnetixCredOK():
 		if err := m.Upsert(ctx, config.VulnetixMCPName, config.VulnetixMCPServer()); err != nil {
-			a.addSystem(fmt.Sprintf("Vulnetix MCP: %v", err))
+			a.addSystem(fmt.Sprintf("Vulnesis MCP: %v", err))
 		}
 	}
 }

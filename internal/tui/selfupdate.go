@@ -17,7 +17,7 @@ type belaiUpdateMsg struct {
 }
 
 // checkBelaiUpdateCmd compares this binary's version against the newest
-// GitHub release, off the first frame like the repo map and the Vulnetix
+// GitHub release, off the first frame like the repo map and the Vulnesis
 // probe. It returns nil when the check is disabled, so no goroutine and no
 // request happen at all. The check is read-only: it never downloads or
 // installs anything, it only renders the command the user would run.

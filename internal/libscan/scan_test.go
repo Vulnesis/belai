@@ -60,7 +60,7 @@ func setup(t *testing.T) env {
 	t.Helper()
 	e := env{home: t.TempDir(), belai: t.TempDir(), repo: t.TempDir(), empty: t.TempDir()}
 	t.Setenv("BELAI_HOME", e.belai)
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	old, oldRepos := Harnesses, TrustedRepos
 	Harnesses = fixture
 	TrustedRepos = func() []Repo { return nil }

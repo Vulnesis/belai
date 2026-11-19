@@ -18,7 +18,7 @@ func syncSettings(kanbanOn, syncOn bool) config.Settings {
 	return config.Settings{Kanban: boolPtr(kanbanOn), Sync: &config.SyncSettings{Enabled: boolPtr(syncOn)}}
 }
 
-// tokenCredential writes the Vulnetix CLI's token credential into workdir's
+// tokenCredential writes the Vulnesis CLI's token credential into workdir's
 // .vulnetix/credentials.json: a bearer token shaped like a JWT (two dots)
 // is a usable credential for sessionsync.UsableCredential.
 func tokenCredential(t *testing.T, workdir string) {
@@ -50,12 +50,12 @@ func opaqueCredential(t *testing.T, workdir string) {
 // emptyHome points the credential lookup at a directory with no credentials.
 func emptyHome(t *testing.T) {
 	t.Helper()
-	t.Setenv("VULNETIX_API_TOKEN", "")
-	t.Setenv("VULNETIX_API_KEY", "")
-	t.Setenv("VULNETIX_ORG_ID", "")
+	t.Setenv("VULNESIS_API_TOKEN", "")
+	t.Setenv("VULNESIS_API_KEY", "")
+	t.Setenv("VULNESIS_ORG_ID", "")
 	t.Setenv("VVD_ORG", "")
 	t.Setenv("VVD_SECRET", "")
-	t.Setenv("VULNETIX_CREDENTIALS_DIR", t.TempDir())
+	t.Setenv("VULNESIS_CREDENTIALS_DIR", t.TempDir())
 }
 
 func TestHostID(t *testing.T) {
@@ -93,7 +93,7 @@ func TestHostID(t *testing.T) {
 }
 
 func TestSyncClient(t *testing.T) {
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	// The gates are tested with a usable credential in place, so only the
 	// setting can be what returns nil.
 	t.Run("kanban off returns nil", func(t *testing.T) {
@@ -135,13 +135,13 @@ func TestSyncClient(t *testing.T) {
 			t.Fatal("SyncClient() = nil, want a client with a usable credential")
 		}
 		if c.Base != "http://127.0.0.1:1/api/site/v1/belai" {
-			t.Fatalf("client.Base = %q, want the loopback VULNETIX_WEB_URL api path", c.Base)
+			t.Fatalf("client.Base = %q, want the loopback VULNESIS_WEB_URL api path", c.Base)
 		}
 	})
 }
 
 func TestA2ASyncClient(t *testing.T) {
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	// config.Settings{} has sync on (the default), so the off case sets it
 	// explicitly and supplies a usable credential: only the setting can
 	// return nil.
@@ -252,7 +252,7 @@ func outboxLen(t *testing.T, store *kanban.Store) int {
 }
 
 func TestFlushKanban(t *testing.T) {
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	t.Run("disabled settings leave the outbox alone", func(t *testing.T) {
 		store := queuedBoard(t)
 		workdir := t.TempDir()

@@ -128,7 +128,7 @@ func TestQualitySpecValidation(t *testing.T) {
 func TestSecuritySpecValidation(t *testing.T) {
 	ok := func(mutate func(*AgentProfile)) AgentProfile {
 		p := worker()
-		p.Tools = []string{"Read", "Vulnetix"}
+		p.Tools = []string{"Read", "Vulnesis"}
 		mutate(&p)
 		return p
 	}
@@ -147,7 +147,7 @@ func TestSecuritySpecValidation(t *testing.T) {
 		"sweep without the tool": {func(p *AgentProfile) {
 			p.Tools = []string{"Read"}
 			p.Kanban.Security = &SecuritySpec{Sweep: true}
-		}, "Vulnetix tool"},
+		}, "Vulnesis tool"},
 		"vex without verdicts": {func(p *AgentProfile) { p.Kanban.Security = &SecuritySpec{VEX: true} }, "needs verdicts"},
 		"unknown verdict":      {func(p *AgentProfile) { p.Kanban.Security = &SecuritySpec{Verdicts: []string{"wontfix"}} }, "not a verdict"},
 		"reject without vex":   {func(p *AgentProfile) { p.Kanban.Security = &SecuritySpec{Verdicts: []string{"rejected"}} }, "only a worker that writes the VEX"},

@@ -20,12 +20,12 @@ import (
 	"github.com/vulnetix/belai/internal/vulnetixenroll"
 )
 
-// isolate points Belai's state and the Vulnetix CLI's home at temp dirs and
-// clears any Vulnetix credential the environment carries.
+// isolate points Belai's state and the Vulnesis CLI's home at temp dirs and
+// clears any Vulnesis credential the environment carries.
 func isolate(t *testing.T) (home, workdir string) {
 	t.Helper()
 	e := testenv.Isolate(t)
-	for _, k := range []string{"VULNETIX_API_KEY", "VULNETIX_ORG_ID", "VULNETIX_API_TOKEN", "VVD_ORG", "VVD_SECRET", "VULNETIX_CREDENTIALS_DIR"} {
+	for _, k := range []string{"VULNESIS_API_KEY", "VULNESIS_ORG_ID", "VULNESIS_API_TOKEN", "VVD_ORG", "VVD_SECRET", "VULNESIS_CREDENTIALS_DIR"} {
 		t.Setenv(k, "")
 	}
 	return e.Home, e.WorkDir
@@ -172,7 +172,7 @@ func TestGettingStartedNextOnTheCLIStepSaysItChecksTheNetwork(t *testing.T) {
 	a.gsGo(gsCLI)
 	a.Update(gsCLIProbeMsg{path: "/usr/local/bin/vulnetix"})
 	page := gsPlain(a.gettingStartedView())
-	for _, want := range []string{"AI Firewall", "Vulnetix MCP server", "over the network", "next (network check)"} {
+	for _, want := range []string{"AI Firewall", "Vulnesis MCP server", "over the network", "next (network check)"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("CLI step lacks %q: %q", want, page)
 		}
@@ -390,14 +390,14 @@ func TestMCPCleanDropsHTMLFromAServerError(t *testing.T) {
 	}
 }
 
-// Vulnetix/belai#40: after the browser approved, the view kept saying "Waiting
+// Vulnesis/belai#40: after the browser approved, the view kept saying "Waiting
 // for approval" while the CLI checked the key, and then showed only the CLI's
 // error. It now says the login was approved and that a new key is being retried.
 func TestGettingStartedLoginSaysWhatHappensAfterApproval(t *testing.T) {
 	a := openWelcome(t, 110)
 	st := &a.gsState
 	st.step, st.loginBusy = gsLogin, true
-	st.grant = &vulnetixcli.DeviceGrant{UserCode: "ABCD-EFGH", VerificationURI: "https://www.vulnetix.com/cli/device"}
+	st.grant = &vulnetixcli.DeviceGrant{UserCode: "ABCD-EFGH", VerificationURI: "https://www.vulnes.is/cli/device"}
 
 	if page := gsPlain(a.gettingStartedView()); !strings.Contains(page, "Waiting for approval") {
 		t.Fatalf("before a poll, the view should wait for approval:\n%s", page)

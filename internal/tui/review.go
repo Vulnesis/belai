@@ -603,7 +603,7 @@ func reviewScanCard(o commands.ScanOutcome, card reviewCard, withheld []string, 
 	if o.Artifact != "" {
 		lines = append(lines, "`.vulnetix/"+o.Artifact+"`")
 	}
-	// Snapshot links are the CLI's own, checked to be https on vulnetix.com;
+	// Snapshot links are the CLI's own, checked to be https on vulnes.is;
 	// hovering one and pressing ctrl+y opens it.
 	for _, sn := range o.Snapshots {
 		label := "snapshot"

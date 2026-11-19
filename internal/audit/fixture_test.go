@@ -51,7 +51,7 @@ func serverFixture(t *testing.T) *Recorder {
 		Data: map[string]string{"worker": "security-1a2b", "justification": "vulnerable_code_not_in_execute_path", "path": ".vulnetix/vex/CVE-2026-12345.openvex.json"}})
 	emit(Fact{Kind: RepoPublish, ActorKind: ActorAgent, Actor: "belai:security", ItemID: card, SessionID: session, Repo: "belai",
 		Branch: "belai/K-3f9a2c/a1", VulnID: "CVE-2026-12345", Outcome: "draft",
-		Data: map[string]string{"worker": "security-1a2b", "pr": "https://github.com/vulnetix/belai/pull/12", "forge": "github.com"}})
+		Data: map[string]string{"worker": "security-1a2b", "pr": "https://github.com/vulnesis/belai/pull/12", "forge": "github.com"}})
 	emit(Fact{Kind: CardReleased, ActorKind: ActorAgent, Actor: "belai:security", ItemID: card, SessionID: session, Repo: "belai",
 		Branch: "belai/K-3f9a2c/a1", VulnID: "CVE-2026-12345", Verdict: "false_positive", Outcome: "completed",
 		Data: map[string]string{"worker": "security-1a2b", "list": "review", "attempt": "0"}})
@@ -79,14 +79,14 @@ func serverFixture(t *testing.T) *Recorder {
 		Data: map[string]string{"worker": "security-1a2b", "state": "stopped"}})
 	emit(Fact{Kind: HostRCOffline, ActorKind: ActorHarness, Data: map[string]string{"reason": "stopped"}})
 	const peer = "11111111-1111-4111-8111-111111111111:33333333-3333-4333-8333-333333333333"
-	emit(Fact{Kind: A2ASent, ActorKind: ActorHarness, SessionID: session, Repo: "vulnetix/belai", Outcome: "relayed",
+	emit(Fact{Kind: A2ASent, ActorKind: ActorHarness, SessionID: session, Repo: "vulnesis/belai", Outcome: "relayed",
 		Data: map[string]string{"message_id": "a2a-01k8z3m5x6y7z8a9b0c1d2e3f4", "kind": "broadcast"}})
-	emit(Fact{Kind: A2AReceived, ActorKind: ActorHarness, SessionID: session, Repo: "vulnetix/belai", Outcome: "matched",
+	emit(Fact{Kind: A2AReceived, ActorKind: ActorHarness, SessionID: session, Repo: "vulnesis/belai", Outcome: "matched",
 		Data: map[string]string{"message_id": "a2a-01k8z3m5x6y7z8a9b0c1d2e3f5", "kind": "message", "peer": peer}})
-	emit(Fact{Kind: A2ASent, ActorKind: ActorHarness, SessionID: session, Repo: "vulnetix/belai", Outcome: "relayed",
+	emit(Fact{Kind: A2ASent, ActorKind: ActorHarness, SessionID: session, Repo: "vulnesis/belai", Outcome: "relayed",
 		Data: map[string]string{"message_id": "a2a-01k8z3m5x6y7z8a9b0c1d2e3f6", "kind": "ack", "peer": peer, "decision": "wait"}})
 	emit(Fact{Kind: A2ABlackout, ActorKind: ActorHarness, SessionID: session, Outcome: "on"})
-	emit(Fact{Kind: A2AWithheld, ActorKind: ActorHarness, SessionID: session, Repo: "vulnetix/belai", Outcome: "withheld",
+	emit(Fact{Kind: A2AWithheld, ActorKind: ActorHarness, SessionID: session, Repo: "vulnesis/belai", Outcome: "withheld",
 		Data: map[string]string{"message_id": "a2a-01k8z3m5x6y7z8a9b0c1d2e3f7", "kind": "broadcast"}})
 	emit(Fact{Kind: HazardAsked, ActorKind: ActorHarness, SessionID: session, Outcome: "asked",
 		Data: map[string]string{"id": "exec.delete.catastrophic+exec.privilege", "tool": "Bash"}})

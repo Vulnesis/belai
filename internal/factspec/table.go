@@ -24,7 +24,7 @@ const (
 	ToolGH          = "GH"
 	ToolGlab        = "Glab"
 	ToolOnePassword = "OnePassword"
-	ToolVulnetix    = "Vulnetix"
+	ToolVulnetix    = "Vulnesis"
 )
 
 var (
@@ -363,22 +363,22 @@ var table = []Entry{
 	},
 	{Key: "vulnetix_org_id", Check: isIdent,
 		Value:  "an organization id",
-		Effect: "Sets VULNETIX_ORG_ID for the Vulnetix tool.",
-		Env:    env(ToolVulnetix, "VULNETIX_ORG_ID"),
+		Effect: "Sets VULNESIS_ORG_ID for the Vulnesis tool.",
+		Env:    env(ToolVulnetix, "VULNESIS_ORG_ID"),
 	},
 	{Key: "vulnetix_project", Check: isIdent,
 		Value:  "a project name",
-		Effect: "Sets VULNETIX_PROJECT.",
-		Env:    env(ToolVulnetix, "VULNETIX_PROJECT"),
+		Effect: "Sets VULNESIS_PROJECT.",
+		Env:    env(ToolVulnetix, "VULNESIS_PROJECT"),
 	},
 	{Key: "vulnetix_namespace", Check: isIdent,
 		Value:  "a namespace",
-		Effect: "Sets VULNETIX_NAMESPACE.",
-		Env:    env(ToolVulnetix, "VULNETIX_NAMESPACE"),
+		Effect: "Sets VULNESIS_NAMESPACE.",
+		Env:    env(ToolVulnetix, "VULNESIS_NAMESPACE"),
 	},
 	{Key: "vulnetix_environment", Check: isIdent,
 		Value:  "an environment name",
-		Effect: "Sets VULNETIX_ENVIRONMENT.",
-		Env:    env(ToolVulnetix, "VULNETIX_ENVIRONMENT"),
+		Effect: "Sets VULNESIS_ENVIRONMENT.",
+		Env:    env(ToolVulnetix, "VULNESIS_ENVIRONMENT"),
 	},
 }

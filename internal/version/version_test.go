@@ -10,7 +10,7 @@ func TestUserAgent(t *testing.T) {
 	if !strings.Contains(ua, "belai/") {
 		t.Fatalf("UserAgent = %q", ua)
 	}
-	if !strings.Contains(ua, "github.com/Vulnetix/belai") {
+	if !strings.Contains(ua, "github.com/Vulnesis/belai") {
 		t.Fatalf("UserAgent = %q", ua)
 	}
 }

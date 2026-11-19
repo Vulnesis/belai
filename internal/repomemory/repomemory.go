@@ -12,7 +12,7 @@
 // MaxNotes (the server's cap), oldest first.
 //
 // While sync is on, sessionsync's memory replicator uploads every local change
-// (outbox.jsonl) to Vulnetix and pulls the organisation's notes back, so the
+// (outbox.jsonl) to Vulnesis and pulls the organisation's notes back, so the
 // memory survives an ephemeral machine (a Pix Sandbox) and is managed from the
 // Software Factory console. A pulled note is upserted by noteId, the newest
 // updatedAt winning; a tombstone (deletedAt) removes it.

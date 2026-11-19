@@ -3,14 +3,14 @@
 **Status:** new; the identifier table may grow.
 
 When a tool result or a turn's reply names a vulnerability identifier, the
-thread gets one small row for it: a link to the Vulnetix console page, a hint
-for the Vulnetix CLI's `vdb` command, a button that sends a prepared remediation
+thread gets one small row for it: a link to the Vulnesis console page, a hint
+for the Vulnesis CLI's `vdb` command, a button that sends a prepared remediation
 prompt, and a button that starts the built-in `belai:triage` agent on that
 identifier. The website shows the same row for a synced session.
 
 ```
 ─ vulnerability  CVE-2021-44228                                drag to copy ─
-  console  https://www.vulnetix.com/vuln/CVE-2021-44228
+  console  https://www.vulnes.is/vuln/CVE-2021-44228
   vdb      vulnetix vdb vuln CVE-2021-44228
            vulnetix vdb --help lists the remediation lookups
            [ remediate ]  [ launch belai:triage ]
@@ -61,7 +61,7 @@ prefixed advisory identifier is in `vulnid`.
 The row is added when the turn ends, so it never lands inside a streaming
 reply. It is built from the canonical identifier and nothing around it:
 
-- **Link.** `https://www.vulnetix.com/vuln/` plus the identifier as one escaped
+- **Link.** `https://www.vulnes.is/vuln/` plus the identifier as one escaped
   path component (`vulnid.URL`). It is plain text: drag across it to select and
   copy it (a release copies, as everywhere in the thread). Click `[ open link ]`,
   or hover the row and press `ctrl+y`, to open it in your browser; only `https`
@@ -80,7 +80,7 @@ reply. It is built from the canonical identifier and nothing around it:
 of your own: it is echoed in the thread, admitted (sanitised and classified) and
 run like one you typed, in the mode the session is in. The prompt names the
 identifier as one `vulnerability_id:` line it calls data, then asks the model to
-look the advisory up (the Vulnetix tool or `vulnetix vdb vuln <id>`), find out
+look the advisory up (the Vulnesis tool or `vulnetix vdb vuln <id>`), find out
 whether this repository's manifests and lockfiles are affected, apply the
 smallest safe fix and run the tests when they are, and finish with the verdict,
 the evidence, what changed and how it was checked. The identifier is its only
@@ -125,7 +125,7 @@ render-only: a resumed session does not redraw it.
 ## belai:triage
 
 A built-in, read-only background agent (`internal/agentprofile/builtin/triage.json`).
-Its tools are `Vulnetix`, `Read`, `Grep` and `Glob`; it cannot edit, write,
+Its tools are `Vulnesis`, `Read`, `Grep` and `Glob`; it cannot edit, write,
 install or run a shell. It looks the identifier up with `vdb`, finds whether this
 repository's manifests and lockfiles name an affected package, and replies with a
 verdict, the evidence (file and line) and the recommended fix. The main session

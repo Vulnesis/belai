@@ -17,7 +17,7 @@ func cliKanban(workdir, sessionID string, settings config.Settings) (*kanban.Sto
 }
 
 // flushKanban pushes the board's unsynced changes once, best effort, when the
-// kanban and sync settings are on and a usable Vulnetix CLI credential
+// kanban and sync settings are on and a usable Vulnesis CLI credential
 // resolves. A headless run never pulls in the background; the next TUI does.
 func flushKanban(settings config.Settings, workdir string) {
 	headless.FlushKanban(settings, workdir)

@@ -44,7 +44,7 @@ type Bash struct {
 	ReadOnly bool
 	Timeout  time.Duration
 	MaxBytes int
-	// Vulnetix is set when the Vulnetix tool is registered: a command that
+	// Vulnesis is set when the Vulnesis tool is registered: a command that
 	// runs the vulnetix binary is refused with a pointer to that tool.
 	Vulnetix bool
 	// Launcher runs a command in the background when a call sets
@@ -150,7 +150,7 @@ func (b *Bash) ExecuteStream(ctx context.Context, args map[string]any, sink Sink
 	}
 
 	if b.Vulnetix && VulnetixInCommand(cmd) {
-		return Result{}, fmt.Errorf("run vulnetix with the Vulnetix tool, not Bash: pass the arguments after `vulnetix` as its command (it adds --no-progress, scopes --path, keeps fix to --dry-run and allows a 15-minute scan)")
+		return Result{}, fmt.Errorf("run vulnetix with the Vulnesis tool, not Bash: pass the arguments after `vulnetix` as its command (it adds --no-progress, scopes --path, keeps fix to --dry-run and allows a 15-minute scan)")
 	}
 
 	if bg, _ := argBool(args, "run_in_background"); bg {
@@ -269,7 +269,7 @@ const pixIdentityRefusal = "not_pix_identity"
 
 // pixIdentityHint follows that refusal, in the harness's words, so the model
 // credits a person through the author and leaves the committer alone.
-const pixIdentityHint = "commit identity: the committer must stay Pix [bot] <security@vulnetix.com>; do not pass -c user.name/-c user.email or GIT_COMMITTER_*, set only GIT_AUTHOR_* to credit someone else."
+const pixIdentityHint = "commit identity: the committer must stay Pix [bot] <security@vulnes.is>; do not pass -c user.name/-c user.email or GIT_COMMITTER_*, set only GIT_AUTHOR_* to credit someone else."
 
 func exitCode(err error) int {
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() != 0 {

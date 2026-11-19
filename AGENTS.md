@@ -44,8 +44,8 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   `Diff` (all `KindRead`), `SubAgentLog` and `BashOutput` (`KindProcess`),
   `SearchSessions`/`ReadSession`/`SearchMemory` (`KindAgentStore`, other
   agents' transcript and memory text), `KanbanSearch` (`KindKanban`, board
-  items other sessions' models and web users wrote), `Task` subagent reports (`KindSubagent`, model-written arbitrary text), a teleport replay's hand-over (`KindTeleport`, another host's model's text and patch parts), an A2A direct message or reply (`KindPeer`, another agent's model text, from this host or another, classified on receipt), the per-edit lint loop's rows (`KindLint`, linter messages that quote the edited file), `Outline` and `Symbol` results (`KindSymbol`, declared names from the repository's own files), `RepoMemoryRead` notes (`KindRepoMemory`, text other agents and the Software Factory console wrote), the `Vulnetix` tool (`KindRemote`,
-  database advisory text and repository snippets), the dependency hook's Vulnetix CLI
+  items other sessions' models and web users wrote), `Task` subagent reports (`KindSubagent`, model-written arbitrary text), a teleport replay's hand-over (`KindTeleport`, another host's model's text and patch parts), an A2A direct message or reply (`KindPeer`, another agent's model text, from this host or another, classified on receipt), the per-edit lint loop's rows (`KindLint`, linter messages that quote the edited file), `Outline` and `Symbol` results (`KindSymbol`, declared names from the repository's own files), `RepoMemoryRead` notes (`KindRepoMemory`, text other agents and the Software Factory console wrote), the `Vulnesis` tool (`KindRemote`,
+  database advisory text and repository snippets), the dependency hook's Vulnesis CLI
   output (`KindRemote`) and its background agents' reports (`KindProcess`,
   `internal/tui/depwatch.go`), `ReadResult` slices of offloaded results
   (`KindOffload`), a `WebFetch` answer drawn from a page (still
@@ -382,7 +382,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   launch's context bounds its startup only; a healthy server runs until its
   stop function is called.
 - **The dependency hook is deterministic up to one sentinel.** A file
-  triggers it only by matching the manifest table ported from the Vulnetix
+  triggers it only by matching the manifest table ported from the Vulnesis
   CLI (`internal/depwatch`, kept in step by a test against `../cli`). The
   fast-tier `dep_change` role sees only a sanitized, bounded line digest of
   the change, answers `DEPS_CHANGED`/`DEPS_UNCHANGED`, and fails toward
@@ -739,8 +739,8 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   schema text are sanitized and capped and reach the model only through the
   sealed tools briefing. Belai answers a server's `ping` and nothing else.
   The `vulnetix:cli` header reference (written by `/vulnetix mcp`) resolves
-  to the Vulnetix CLI's credential at dial time, only in the `Authorization`
-  header and only for `https://*.vulnetix.com`; it is never written out
+  to the Vulnesis CLI's credential at dial time, only in the `Authorization`
+  header and only for `https://*.vulnes.is`; it is never written out
   resolved. The one exception to "servers come from settings" is `clef`
   (`internal/clefmcp`, registered through `mcp.Options.Builtins`), an in-process
   decider compiled into every build: see **Decision tools** below. A settings
@@ -785,18 +785,18 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   read from the user's layers only (`resolve.go` drops the project layer's `mcp`
   key), and the bar is above 0.5 and at most 1 (default 0.90).
 - **Onboarding sends secrets only where they belong.** The Getting started
-  sign-up posts to `auth.vulnetix.com` alone (redirects off it are refused);
+  sign-up posts to `auth.vulnes.is` alone (redirects off it are refused);
   its password fields are cleared once the post returns or the form is left,
   and never reach a transcript, log, setting or model. The device-login key
   reaches `vulnetix auth login --noninteractive` through that child's
-  environment, never its argv. The Vulnetix CLI is installed only after the
+  environment, never its argv. The Vulnesis CLI is installed only after the
   user picks *Install*, with a fixed brew/scoop argv and the scrubbed
-  environment. A provider key reaches the Vulnetix AI Firewall (BYOK) only
+  environment. A provider key reaches the Vulnesis AI Firewall (BYOK) only
   while it is the active firewall and on, only through
   `vulnetix ai-firewall key set --stdin`, and a failed push keeps that
   provider unrouted rather than sent to a gateway that would refuse it.
 - **Firewalls are the user's, and their verdicts are facts.**
-  `internal/firewall` adapters (Vulnetix; beta Fastly, Kong, AI Security
+  `internal/firewall` adapters (Vulnesis; beta Fastly, Kong, AI Security
   Gateway; custom) are configured from the user's own layers only:
   `resolve.go` and `Settings.Override` drop the project layer's
   `firewall.instances` and `firewall.active`, and the project layer may set
@@ -863,7 +863,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   messages is written to stdout.
 - **Kanban text is other sessions' and the web's text.** The global board
   (`internal/kanban`, `~/.vulnetix/belai/kanban`) holds items written by
-  other sessions' models and by users on the Vulnetix website, so
+  other sessions' models and by users on the Vulnesis website, so
   `KindKanban` is in `tools.classifierKinds` unconditionally. The writers'
   confirmations (`KindKanbanWrite`) are harness-composed. The per-turn board
   directive carries counts and item ids only, never item text. The tools take
@@ -1056,7 +1056,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   and fail the attempt when the scanner still reports the finding after the last
   round, whatever the model said. No scanner text reaches a model.
 - **CLI jobs are a closed table the harness runs, and the card holds ids only.**
-  `internal/clijobs` (docs/cli-jobs.md) names every Vulnetix CLI job a card can
+  `internal/clijobs` (docs/cli-jobs.md) names every Vulnesis CLI job a card can
   ask for as a fixed argv of plain words and fixed `.vulnetix` paths; no card,
   model or setting text reaches an argument, and `TestArgvIsFixedWords` pins it.
   A worker with `kanban.cli.jobs` claims a card labelled `cli-job:<id>` (a prefix
@@ -1617,7 +1617,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   through the typed-prompt path on the user's click, or as a website prompt) and
   the `belai:triage` launch take only `vulnid.Valid`'s canonical string, never the
   text around it; the click handler validates again. `belai:triage` is read-only
-  (`Vulnetix`, `Read`, `Grep`, `Glob`), starts through
+  (`Vulnesis`, `Read`, `Grep`, `Glob`), starts through
   `bgagent.Manager.StartTask` under the ordinary permissions, trust gate and
   sandbox, and receives the identifier as one `vulnerability_id:` data line, never
   in its instance name. A remediation request (`vulnid.IsRemediation`, the prompt
@@ -1731,7 +1731,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
     takes an enum and 140 characters. Both are `KindA2A`, harness-composed
     confirmations. No argument names a path, a host or a URL.
   - **Relay is sync's, and the blackout stops it.** Cross-host relay runs only
-    while sync is on, to `https://*.vulnetix.com` with the CLI credential, and
+    while sync is on, to `https://*.vulnes.is` with the CLI credential, and
     stops in both directions during the organisation's A2A blackout; the local
     bus and the local audit go on. The local audit (`a2a/audit.jsonl`,
     hash-chained) and the uploaded one hold the `a2a.*` kinds and ids only,
@@ -1752,8 +1752,8 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
 - **Session sync mirrors the file and admits web prompts as prompts.**
   `internal/sessionsync` uploads only the lines `appendEntry` already wrote to
   the session JSONL, keyed by line index; it never composes an entry. It sends
-  them only to `https://*.vulnetix.com` (or a loopback origin), with the
-  Vulnetix CLI's credential in the `Authorization` header only. A prompt from
+  them only to `https://*.vulnes.is` (or a loopback origin), with the
+  Vulnesis CLI's credential in the `Authorization` header only. A prompt from
   the website is untrusted input: `sessionsync.CleanPrompt` strips delimiter
   markup, control and bidi runes, and the prompt then takes the typed-prompt
   path (`dispatchPrompt`) — the same mode selection, admission gate, posture,

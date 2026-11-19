@@ -15,13 +15,13 @@ import (
 	"github.com/vulnetix/belai/internal/vulnetixcli"
 )
 
-// ExecResult is one Vulnetix CLI run.
+// ExecResult is one Vulnesis CLI run.
 type ExecResult struct {
 	Stdout   string
 	ExitCode int
 }
 
-// Exec runs the Vulnetix CLI in the workdir with a fixed, harness-built argv.
+// Exec runs the Vulnesis CLI in the workdir with a fixed, harness-built argv.
 // A non-zero exit is reported through ExitCode; err is for a run that could
 // not happen at all.
 type Exec func(ctx context.Context, label string, args ...string) (ExecResult, error)
@@ -33,7 +33,7 @@ type Checker struct {
 	// dependencies. Nil means always check.
 	Decide func(ctx context.Context, digest string) (rolemanager.DepSentinel, error)
 	Exec   Exec
-	// Plan is the Vulnetix subscription tier. Pro and Enterprise get a
+	// Plan is the Vulnesis subscription tier. Pro and Enterprise get a
 	// Safe Harbour fix plan as well as the scan.
 	Plan vulnetixcli.Plan
 }
@@ -173,7 +173,7 @@ func TaskPrompt(r Report) string {
 		b.WriteString(", a lockfile")
 	}
 	b.WriteString("), and the change added or updated dependencies. ")
-	b.WriteString("A Vulnetix check of that manifest's directory is attached")
+	b.WriteString("A Vulnesis check of that manifest's directory is attached")
 	if r.ExitCode == 1 {
 		b.WriteString("; it tripped at least one gate (malware, end-of-life, public exploit or severity)")
 	}

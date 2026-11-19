@@ -176,7 +176,7 @@ func NewRegistry(workdir string) *Registry {
 		a.planReview.selected = planReviewRefine
 		return a.submitPlanRefine("")
 	})
-	r.Register("vulnetix", "Vulnetix code review and firewall", func() []string {
+	r.Register("vulnetix", "Vulnesis code review and firewall", func() []string {
 		return []string{"review", "configure", "list", "status", "firewall", "mcp", "setup", "help"}
 	}, func(a *App, arg string) tea.Cmd {
 		// A review starts on the UI loop: it registers its progress, prints
@@ -290,7 +290,7 @@ func NewRegistry(workdir string) *Registry {
 		}
 		return a.push(viewLSP)
 	})
-	r.Register("sync", "show or change session sync to the Vulnetix website", func() []string {
+	r.Register("sync", "show or change session sync to the Vulnesis website", func() []string {
 		return []string{"status", "on", "off", "backfill"}
 	}, func(a *App, arg string) tea.Cmd {
 		return a.syncCommand(arg)
@@ -595,7 +595,7 @@ func NewRegistry(workdir string) *Registry {
 			return a.openAgentsTab(agentTabLive)
 		}
 	})
-	r.Register("rc", "remote control: let the Vulnetix website start and drive Belai sessions on this machine", func() []string {
+	r.Register("rc", "remote control: let the Vulnesis website start and drive Belai sessions on this machine", func() []string {
 		return []string{"start", "stop", "status", "setup"}
 	}, func(a *App, arg string) tea.Cmd {
 		return a.rcCommand(arg)

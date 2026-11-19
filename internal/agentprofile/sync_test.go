@@ -131,7 +131,7 @@ func TestDeliveryCrewMembersShareTheCrewNotesFile(t *testing.T) {
 }
 
 // The scout and the reviewer research and patch as well as read: they have git,
-// the forge CLIs, the web and Vulnetix, including its MCP server, beside the
+// the forge CLIs, the web and Vulnesis, including its MCP server, beside the
 // file tools.
 func TestScoutAndReviewerCanResearchAndPatch(t *testing.T) {
 	for _, name := range []string{"belai:scout", "belai:reviewer"} {
@@ -139,7 +139,7 @@ func TestScoutAndReviewerCanResearchAndPatch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, tool := range []string{"Read", "Grep", "Glob", "Edit", "Write", "Bash", "Git", "GH", "Glab", "WebFetch", "WebSearch", "Vulnetix", "mcp__vulnetix__*"} {
+		for _, tool := range []string{"Read", "Grep", "Glob", "Edit", "Write", "Bash", "Git", "GH", "Glab", "WebFetch", "WebSearch", "Vulnesis", "mcp__vulnetix__*"} {
 			found := false
 			for _, have := range p.Tools {
 				if have == tool {
@@ -150,7 +150,7 @@ func TestScoutAndReviewerCanResearchAndPatch(t *testing.T) {
 				t.Errorf("%s lacks %s", name, tool)
 			}
 		}
-		if !strings.Contains(p.SystemPrompt, "WebSearch") || !strings.Contains(p.SystemPrompt, "Vulnetix MCP") {
+		if !strings.Contains(p.SystemPrompt, "WebSearch") || !strings.Contains(p.SystemPrompt, "Vulnesis MCP") {
 			t.Errorf("%s is not told what its research tools are for", name)
 		}
 	}

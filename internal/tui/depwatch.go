@@ -98,7 +98,7 @@ func (a *App) flushDepWatch() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-// planTier resolves the Vulnetix plan once per session.
+// planTier resolves the Vulnesis plan once per session.
 func (d *depState) planTier(ctx context.Context, cli vulnetixcli.CLI) vulnetixcli.Plan {
 	d.planOnce.Do(func() { d.plan = cli.AuthStatus(ctx).Plan })
 	return d.plan

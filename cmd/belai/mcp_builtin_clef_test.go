@@ -110,14 +110,14 @@ func TestClefWithoutDecisionModelIsAToolError(t *testing.T) {
 	t.Fatal("decide_boolean not offered")
 }
 
-// The hosted Vulnetix server is added in memory while credentials exist and the
+// The hosted Vulnesis server is added in memory while credentials exist and the
 // user has not switched it off or configured one.
 func TestEffectiveMCPAddsVulnetixOnlyWithCredentialsAndConsent(t *testing.T) {
-	for _, k := range []string{"VULNETIX_API_KEY", "VULNETIX_ORG_ID", "VVD_ORG", "VVD_SECRET"} {
+	for _, k := range []string{"VULNESIS_API_KEY", "VULNESIS_ORG_ID", "VVD_ORG", "VVD_SECRET"} {
 		t.Setenv(k, "") // the machine's own credentials must not decide this test
 	}
-	t.Setenv("VULNETIX_API_TOKEN", "tok")
-	t.Setenv("VULNETIX_CREDENTIALS_DIR", t.TempDir())
+	t.Setenv("VULNESIS_API_TOKEN", "tok")
+	t.Setenv("VULNESIS_CREDENTIALS_DIR", t.TempDir())
 	dir := t.TempDir()
 	got := effectiveMCP(config.Settings{}, dir)
 	if got == nil || got.Servers[config.VulnetixMCPName].URL != config.VulnetixMCPURL {
@@ -132,7 +132,7 @@ func TestEffectiveMCPAddsVulnetixOnlyWithCredentialsAndConsent(t *testing.T) {
 	if got := effectiveMCP(s, dir); got.Servers[config.VulnetixMCPName].URL != own.URL {
 		t.Fatalf("an explicit entry must win: %+v", got)
 	}
-	t.Setenv("VULNETIX_API_TOKEN", "")
+	t.Setenv("VULNESIS_API_TOKEN", "")
 	if got := effectiveMCP(config.Settings{}, dir); got != nil && len(got.Servers) != 0 {
 		t.Fatalf("without credentials: %+v", got)
 	}

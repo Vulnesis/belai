@@ -42,7 +42,7 @@ func TestCatalogueCarriesPresentationAndReadvertisesOnChange(t *testing.T) {
 // Rubber Duck, Kremvax and the rest without anything stored on the host.
 func TestLocalInventoryCarriesBuiltinPersonas(t *testing.T) {
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 
 	got := map[string]sessionsync.RCProfile{}
 	for _, p := range LocalInventory().Profiles {

@@ -49,7 +49,7 @@ func (a *App) enterFirewall() tea.Cmd {
 	return nil
 }
 
-// firewallRows lists the screen: Vulnetix, the beta adapters (their
+// firewallRows lists the screen: Vulnesis, the beta adapters (their
 // instances, or the adapter itself while unconfigured), custom instances with
 // the add row, then the provider-native entries.
 func (a *App) firewallRows() []firewallRow {
@@ -58,7 +58,7 @@ func (a *App) firewallRows() []firewallRow {
 		inst, _ := a.settings.FirewallInstanceNamed(name)
 		byAdapter[inst.Adapter] = append(byAdapter[inst.Adapter], name)
 	}
-	rows := []firewallRow{{kind: "header", label: "Vulnetix"}}
+	rows := []firewallRow{{kind: "header", label: "Vulnesis"}}
 	vx, _ := firewall.Lookup("vulnetix")
 	rows = append(rows, firewallRow{kind: "instance", instance: config.DefaultFirewall, adapter: vx, label: vx.Label()})
 	rows = append(rows, firewallRow{kind: "header", label: "Beta — built from public docs, not yet tested"})
@@ -600,7 +600,7 @@ func (a *App) firewallCommand(arg string) tea.Cmd {
 	return nil
 }
 
-// vulnetixFirewallCommand is /vulnetix firewall: it configures the Vulnetix
+// vulnetixFirewallCommand is /vulnetix firewall: it configures the Vulnesis
 // adapter through the generic path — making it active, or toggling it when it
 // already is.
 func (a *App) vulnetixFirewallCommand() tea.Cmd {

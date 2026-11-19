@@ -35,28 +35,28 @@ func TestScanFindsDepthOneRepo(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	initRepo(t, dir, "git@github.com:Vulnetix/belai.git")
+	initRepo(t, dir, "git@github.com:Vulnesis/belai.git")
 
 	ix := Scan(context.Background(), filepath.Join(root, "other"))
-	e, ok := ix.Lookup("Vulnetix/belai")
+	e, ok := ix.Lookup("Vulnesis/belai")
 	if !ok {
 		t.Fatalf("Lookup failed, entries=%v", ix.Entries())
 	}
-	if e.Name != "belai" || e.Owner != "Vulnetix" || e.Host != "github.com" {
+	if e.Name != "belai" || e.Owner != "Vulnesis" || e.Host != "github.com" {
 		t.Fatalf("Entry = %+v", e)
 	}
 }
 
 func TestScanFindsDepthTwoRepo(t *testing.T) {
 	root := t.TempDir()
-	dir := filepath.Join(root, "Vulnetix", "belai")
+	dir := filepath.Join(root, "Vulnesis", "belai")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	initRepo(t, dir, "https://github.com/Vulnetix/belai.git")
+	initRepo(t, dir, "https://github.com/Vulnesis/belai.git")
 
 	ix := Scan(context.Background(), filepath.Join(root, "other"))
-	if _, ok := ix.Lookup("Vulnetix/belai"); !ok {
+	if _, ok := ix.Lookup("Vulnesis/belai"); !ok {
 		t.Fatalf("depth-2 lookup failed, entries=%v", ix.Entries())
 	}
 }
@@ -68,7 +68,7 @@ func TestScanDoesNotFollowSymlink(t *testing.T) {
 	if err := os.MkdirAll(realDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	initRepo(t, realDir, "git@github.com:Vulnetix/real.git")
+	initRepo(t, realDir, "git@github.com:Vulnesis/real.git")
 	if err := os.Symlink(realDir, linkDir); err != nil {
 		t.Fatal(err)
 	}
@@ -125,10 +125,10 @@ func TestLookupCaseInsensitive(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	initRepo(t, dir, "git@github.com:Vulnetix/Belai.git")
+	initRepo(t, dir, "git@github.com:Vulnesis/Belai.git")
 
 	ix := Scan(context.Background(), filepath.Join(root, "other"))
-	if _, ok := ix.Lookup("vulnetix/belai"); !ok {
+	if _, ok := ix.Lookup("vulnesis/belai"); !ok {
 		t.Fatal("case-insensitive lookup failed")
 	}
 }
@@ -160,7 +160,7 @@ func TestScanFindsWorktreeGitFile(t *testing.T) {
 	if err := os.MkdirAll(mainRepo, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	initRepo(t, mainRepo, "git@github.com:Vulnetix/belai.git")
+	initRepo(t, mainRepo, "git@github.com:Vulnesis/belai.git")
 	if _, err := os.Create(filepath.Join(mainRepo, "file.txt")); err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestScanFindsWorktreeGitFile(t *testing.T) {
 	for _, e := range ix.Entries() {
 		if e.Path == worktree {
 			found = true
-			if e.Owner != "Vulnetix" || e.Name != "belai" {
+			if e.Owner != "Vulnesis" || e.Name != "belai" {
 				t.Fatalf("worktree entry malformed: %+v", e)
 			}
 			if e.Branch != "feature" {
@@ -191,11 +191,11 @@ func TestParseRemoteShapes(t *testing.T) {
 	cases := []struct {
 		raw, host, owner, name string
 	}{
-		{"git@github.com:Vulnetix/belai.git", "github.com", "Vulnetix", "belai"},
-		{"ssh://git@github.com/Vulnetix/belai.git", "github.com", "Vulnetix", "belai"},
-		{"https://github.com/Vulnetix/belai.git", "github.com", "Vulnetix", "belai"},
-		{"https://github.com/Vulnetix/belai", "github.com", "Vulnetix", "belai"},
-		{"github.com:Vulnetix/belai", "github.com", "Vulnetix", "belai"},
+		{"git@github.com:Vulnesis/belai.git", "github.com", "Vulnesis", "belai"},
+		{"ssh://git@github.com/Vulnesis/belai.git", "github.com", "Vulnesis", "belai"},
+		{"https://github.com/Vulnesis/belai.git", "github.com", "Vulnesis", "belai"},
+		{"https://github.com/Vulnesis/belai", "github.com", "Vulnesis", "belai"},
+		{"github.com:Vulnesis/belai", "github.com", "Vulnesis", "belai"},
 		{"git@gitlab.com:org/repo.git", "gitlab.com", "org", "repo"},
 	}
 	for _, tc := range cases {

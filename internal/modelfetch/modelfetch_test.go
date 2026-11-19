@@ -563,7 +563,7 @@ func TestListKindLlamaServerCustomHitsProps(t *testing.T) {
 }
 
 // OpenAI's own list is not fetched, but a firewall that serves the org's
-// curated catalogue (Vulnetix, self-hosted or not) is, with the route's
+// curated catalogue (Vulnesis, self-hosted or not) is, with the route's
 // headers.
 func TestEndpointForFirewallCuratedModels(t *testing.T) {
 	base := "https://gw.self.example/openai/org/v1"

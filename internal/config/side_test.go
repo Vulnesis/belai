@@ -89,7 +89,7 @@ func TestSideJSONRoundTrip(t *testing.T) {
 
 func TestResolveSideProjectLayer(t *testing.T) {
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
 	workdir := t.TempDir()
 	resolve := func() Effective {
 		t.Helper()

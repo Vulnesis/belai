@@ -34,7 +34,7 @@ var skipDirs = map[string]bool{
 
 // Entry describes one locally available git checkout.
 type Entry struct {
-	Owner, Name string // parsed from the origin remote, e.g. "Vulnetix", "vdb-site"
+	Owner, Name string // parsed from the origin remote, e.g. "Vulnesis", "vdb-site"
 	Host        string // "github.com", "gitlab.com", …
 	Path        string // absolute path to the checkout
 	Branch      string // current branch, via internal/gitinfo

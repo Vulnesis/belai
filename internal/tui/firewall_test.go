@@ -19,7 +19,7 @@ func TestFirewallCardCoalescesAndQuotes(t *testing.T) {
 	a := New(Options{Workdir: wd})
 	before := len(a.messages)
 	v := firewall.Verdict{
-		Firewall: "Vulnetix AI Firewall", Action: firewall.ActionBlock, Code: "request_blocked",
+		Firewall: "Vulnesis AI Firewall", Action: firewall.ActionBlock, Code: "request_blocked",
 		Rules: []string{"No `secrets` **now**"}, RequestID: "req-1", Provider: "openai", Model: "gpt-5",
 		Hint: "a guardrail refused this request",
 	}.Clean()
@@ -123,7 +123,7 @@ func TestFirewallScreenAddsAndActivatesCustom(t *testing.T) {
 	}
 }
 
-// /vulnetix firewall runs on the UI loop and configures the Vulnetix adapter
+// /vulnetix firewall runs on the UI loop and configures the Vulnesis adapter
 // through the generic path: it makes vulnetix active.
 func TestVulnetixFirewallCommandActivatesVulnetix(t *testing.T) {
 	home, wd := isolate(t)
@@ -150,7 +150,7 @@ func TestVulnetixFirewallCommandActivatesVulnetix(t *testing.T) {
 	if !a.firewallEnabled() {
 		t.Fatal("firewall not on")
 	}
-	if a.cfg.Firewall == nil || !strings.Contains(a.cfg.BaseURL, "guardrails.vulnetix.com/openai/") {
+	if a.cfg.Firewall == nil || !strings.Contains(a.cfg.BaseURL, "guardrails.vulnes.is/openai/") {
 		t.Fatalf("cfg = %v", a.cfg)
 	}
 }

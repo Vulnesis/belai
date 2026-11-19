@@ -193,7 +193,7 @@ func TestBashExplainsTheNotPixIdentityRefusal(t *testing.T) {
 	if strings.Count(res.Content, pixIdentityHint) != 1 || !strings.HasSuffix(res.Content, "\n"+pixIdentityHint) {
 		t.Fatalf("want the hint once, last: %q", res.Content)
 	}
-	if !strings.Contains(pixIdentityHint, "Pix [bot] <security@vulnetix.com>") || !strings.Contains(pixIdentityHint, "GIT_AUTHOR_*") {
+	if !strings.Contains(pixIdentityHint, "Pix [bot] <security@vulnes.is>") || !strings.Contains(pixIdentityHint, "GIT_AUTHOR_*") {
 		t.Fatalf("hint text: %q", pixIdentityHint)
 	}
 	res, err = b.Execute(context.Background(), map[string]any{"command": "echo committed"})

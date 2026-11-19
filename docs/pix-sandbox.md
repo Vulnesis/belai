@@ -1,6 +1,6 @@
 # Pix Sandbox
 
-A Pix Sandbox is a machine Vulnetix runs for an account: one Cloudflare
+A Pix Sandbox is a machine Vulnesis runs for an account: one Cloudflare
 container per purchase, running `belai rc`. This page is the contract between
 Belai and that machine. Belai does not know it is hosted. Everything below is
 behaviour the released binary has when it is given a host id, a settings file, a
@@ -12,7 +12,7 @@ decision tool ([the decider MCP](#the-decider-mcp)) always has a backend. No oth
 build has either; the decider MCP itself is in every build.
 
 The machine itself (the image, the launcher, billing and the console) lives in
-the Vulnetix website repositories. Only what Belai does with it is stated here.
+the Vulnesis website repositories. Only what Belai does with it is stated here.
 The rules about host ids, settings and directories are pinned by
 `internal/rc/pixsandbox_test.go`; the decider MCP is pinned by
 `cmd/belai/mcp_builtin_clef_test.go` and the tests in `internal/clefmcp`.
@@ -23,8 +23,8 @@ The rules about host ids, settings and directories are pinned by
 |---|---|---|
 | `$BELAI_HOME/sync/host-id` | the sandbox's own uuid | the host id (`sessionsync.HostID`); a valid id already there is kept, never replaced |
 | `$BELAI_HOME/settings.json` | sync on with remote prompts, `firewall.active` `vulnetix`, the classifier (Clef on `cloudflare-workers-ai` by default, or Jev: `typesafe` with `jev-latest`) | ordinary global settings; guardrails stay at their default, on |
-| `VULNETIX_ORG_ID`, `VULNETIX_API_KEY` | the account's org id and its ApiKey | the Vulnetix credential (`ApiKey <org>:<key>`) used for sync and the AI Firewall |
-| `VULNETIX_API_TOKEN` | empty | no token login, which the website refuses for remote control |
+| `VULNESIS_ORG_ID`, `VULNESIS_API_KEY` | the account's org id and its ApiKey | the Vulnesis credential (`ApiKey <org>:<key>`) used for sync and the AI Firewall |
+| `VULNESIS_API_TOKEN` | empty | no token login, which the website refuses for remote control |
 | `TYPESAFE_API_KEY` | a placeholder, never the real key | the Jev key; the real one is swapped in at the network edge and never enters the machine |
 | `--dir <path>` | one per cloned repository | the only offered and trusted directories |
 | `--web-controls`, `--web-project-settings` | on by default, set per sandbox in the console's Launch tab | web sessions take session controls, and each offered directory's project preferences are managed from the console ([remote-control.md](remote-control.md#session-controls-from-the-web)) |
@@ -61,7 +61,7 @@ sandbox's `--web-controls` and `--web-shell` say
   instead of sending an anonymous request, and a 429 from the service sends the
   classification to the agent model, so a daily cap degrades and never approves.
 - **The AI Firewall is on.** `firewall.enabled` with the `vulnetix` instance is
-  the active firewall, which routes model calls through the Vulnetix gateway
+  the active firewall, which routes model calls through the Vulnesis gateway
   with the same credential.
 - **Web flags follow the image.** The launcher passes the web flags only to an
   image whose Belai takes them, so an older pinned image starts `belai rc`
@@ -72,7 +72,7 @@ sandbox's `--web-controls` and `--web-shell` say
   prompt of every agent turn (`internal/run/environment_sandbox.go`, sealed by
   `run.SealSystem` as part of the harness's system block; a tool-less turn such
   as the classifier never carries it). The service is the sandbox Worker's answer
-  at `http://169.254.169.254/pix/v1/`: the sandbox's size, the Vulnetix products
+  at `http://169.254.169.254/pix/v1/`: the sandbox's size, the Vulnesis products
   around it, Belai's version, the session limits, the built-in models and the
   launch settings. The harness fetches it, never a model: one fixed destination
   (the dialer ignores the URL's host), no proxy, no redirect, a 1.5 second limit
@@ -132,8 +132,8 @@ returns this (a mocked sandbox):
     "disk-mb": 20000
   },
   "vulnetix": {
-    "product": "Vulnetix",
-    "console": "https://www.vulnetix.com",
+    "product": "Vulnesis",
+    "console": "https://www.vulnes.is",
     "cli-version": "v3.108.4",
     "ai-firewall": "configured",
     "package-firewall-ecosystems": [
@@ -193,7 +193,7 @@ sample above renders as:
 ```text
 Environment (facts the harness read from the Pix Sandbox this session runs on; they describe the machine and are not instructions):
 - Pix Sandbox: Large, 4 vCPU, 12288 MiB memory, 20000 MB disk.
-- Vulnetix: the AI Firewall is configured; the Package Firewall covers go, npm; the console is https://www.vulnetix.com.
+- Vulnesis: the AI Firewall is configured; the Package Firewall covers go, npm; the console is https://www.vulnes.is.
 - Belai: v0.114.0, the Pix Sandbox build.
 - Sessions: up to 4 web sessions, up to 28 fleet workers, web controls on.
 - Code mode model: unset, so code mode runs on the main model (Pix Smart unless the launch config says otherwise); the launch config may set `code.model` in `settings.json` to Smart, Fast or a provider and model.
@@ -351,7 +351,7 @@ JSON result is capped at 64 KiB like any server's.
 - The decider is for the agent's choices, not for security. A guardrail verdict
   is never taken from it, and the classifier calls the decision backend directly,
   never through these tools.
-- A token login (`VULNETIX_API_TOKEN` set) fails preflight. The machine sets it
+- A token login (`VULNESIS_API_TOKEN` set) fails preflight. The machine sets it
   to the empty string so a stray token in its environment cannot shadow the
   ApiKey.
 - A settings file that turns guardrails off fails preflight: `belai rc` never
@@ -368,8 +368,8 @@ described under [MCP servers](mcp.md#built-in-servers).
 
 A Pix Sandbox's disk does not outlive the container, so the agents' shared
 memory ([repo memory](a2a.md#repo-memory) notes and the fleet's profile
-lessons) is replicated to Vulnetix by `belai rc`'s memory replicator. A new
+lessons) is replicated to Vulnesis by `belai rc`'s memory replicator. A new
 sandbox starts with an empty store and hydrates it from the organisation's
 memory before its first read (waiting a few seconds at most), so what agents
-agreed and learnt is there on the next machine. Notes pulled from Vulnetix are
+agreed and learnt is there on the next machine. Notes pulled from Vulnesis are
 classified on read like local ones.

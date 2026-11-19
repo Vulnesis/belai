@@ -34,13 +34,13 @@ func TestBuildSystemPromptAcceptsTrustedBlocks(t *testing.T) {
 	mock := &mockNoncer{nonces: []string{"nonce1", "nonce2"}}
 	blocks := []SystemBlock{
 		{Source: SourceHarness, Content: "You are Belai."},
-		{Source: SourceTool, Content: "Vulnetix scan output (trusted)."},
+		{Source: SourceTool, Content: "Vulnesis scan output (trusted)."},
 	}
 	got, err := BuildSystemPrompt(blocks, mock)
 	if err != nil {
 		t.Fatalf("BuildSystemPrompt: %v", err)
 	}
-	if !strings.Contains(got, "You are Belai.") || !strings.Contains(got, "Vulnetix") {
+	if !strings.Contains(got, "You are Belai.") || !strings.Contains(got, "Vulnesis") {
 		t.Fatalf("prompt = %q", got)
 	}
 	if !strings.Contains(got, `nonce="nonce1"`) {

@@ -99,7 +99,7 @@ func withBuiltinMCP(o mcp.Options, settings config.Settings, workdir string) mcp
 }
 
 // effectiveMCP is the mcp block the manager starts: the user's servers, plus the
-// hosted Vulnetix server while Vulnetix credentials exist, the user has not
+// hosted Vulnesis server while Vulnesis credentials exist, the user has not
 // switched it off (mcp.builtin.vulnetix.enabled) and has not configured a
 // server of that name. The addition is in memory only; nothing is written.
 func effectiveMCP(settings config.Settings, workdir string) *config.MCPSettings {

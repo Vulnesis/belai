@@ -149,7 +149,7 @@ var knownToolNames = map[string]bool{
 }
 
 // extraToolNames are tools a session adds beyond the default registry: the
-// board, the Vulnetix CLI and forge CLIs when installed, deferred-tool
+// board, the Vulnesis CLI and forge CLIs when installed, deferred-tool
 // loading, supervised processes and the local repository index. A profile
 // that sets an allowlist can still keep them.
 var extraToolNames = withNativeToolNames(map[string]bool{
@@ -162,7 +162,7 @@ var extraToolNames = withNativeToolNames(map[string]bool{
 	"KanbanGate":     true,
 	"KanbanContract": true,
 	"KanbanOutcome":  true,
-	"Vulnetix":       true,
+	"Vulnesis":       true,
 	"ToolSearch":     true,
 	"SearchFetched":  true,
 	"SubAgentLog":    true,

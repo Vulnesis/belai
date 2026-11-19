@@ -37,7 +37,7 @@ func TestModelRowsReflectSettings(t *testing.T) {
 	_ = a.enterModel()
 	rows := a.modelRows()
 	// 23 fixed rows (the code-mode group's three, and the built-in MCP group's
-	// two among them: the Vulnetix row needs credentials), then one routing row per role-manager use case, so a
+	// two among them: the Vulnesis row needs credentials), then one routing row per role-manager use case, so a
 	// new use case adds a row without this count being edited by hand.
 	if want := 23 + len(routingUseCaseKeys()); len(rows) != want {
 		t.Fatalf("len(rows) = %d, want %d (23 fixed + %d use cases)", len(rows), want, len(routingUseCaseKeys()))

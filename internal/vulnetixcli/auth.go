@@ -127,10 +127,10 @@ func ParseAuthStatus(text string) AuthState {
 func classifySource(text string) (SourceID, string) {
 	upper := strings.ToUpper(text)
 	switch {
-	case strings.Contains(upper, "VULNETIX_API_TOKEN"):
-		return SourceEnvAPIToken, "VULNETIX_API_TOKEN environment variable"
-	case strings.Contains(upper, "VULNETIX_API_KEY"):
-		return SourceEnvAPIKey, "VULNETIX_API_KEY environment variable"
+	case strings.Contains(upper, "VULNESIS_API_TOKEN"):
+		return SourceEnvAPIToken, "VULNESIS_API_TOKEN environment variable"
+	case strings.Contains(upper, "VULNESIS_API_KEY"):
+		return SourceEnvAPIKey, "VULNESIS_API_KEY environment variable"
 	case strings.Contains(upper, "VVD_ORG") || strings.Contains(upper, "VVD_SECRET"):
 		return SourceEnvVVD, "VVD_* environment variables"
 	case strings.Contains(upper, "PROJECT") && strings.Contains(upper, "CREDENTIAL"):

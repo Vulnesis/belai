@@ -32,7 +32,7 @@ func TestAdmitsPixAndDrawingWithinTheLists(t *testing.T) {
 			`<circle cx="1" cy="2" r="3" fill="url(#g)"/>`),
 		"a blur filter":           svg(`<defs><filter id="f" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect x="1" y="1" width="9" height="9" filter="url(#f)"/>`),
 		"a clip path":             svg(`<clipPath id="c"><rect x="0" y="0" width="5" height="5"/></clipPath><g clip-path="url(#c)"><path d="M0 0 L 10 10 C 1 2, 3 4, 5 6 Z" stroke="#000" stroke-width="2" fill="none" stroke-linecap="round"/></g>`),
-		"a label":                 `<svg xmlns="http://www.w3.org/2000/svg" viewBox="96 26 320 320" width="512" height="512" role="img" aria-label="Pix, the Vulnetix AI assistant owl"><g/></svg>`,
+		"a label":                 `<svg xmlns="http://www.w3.org/2000/svg" viewBox="96 26 320 320" width="512" height="512" role="img" aria-label="Pix, the Vulnesis AI assistant owl"><g/></svg>`,
 		"no xmlns":                `<svg viewBox="96 26 320 320"><g/></svg>`,
 		"spaced view":             `<svg viewBox=" 96  26 320 320 "><g/></svg>`,
 		"polygon":                 svg(`<polygon points="0,0 10,0 5,8" fill="red"/><polyline points="1,1 2,2" stroke="blue"/><ellipse cx="1" cy="1" rx="2" ry="3"/><line x1="0" y1="0" x2="5" y2="5"/>`),

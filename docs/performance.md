@@ -80,7 +80,7 @@ critical path should change this page too.
 ### Live, against Clef
 
 One headless turn (`belai -prompt … -mode agent`) that reads three Go files
-and two markdown docs in one response, through the Vulnetix AI Firewall to
+and two markdown docs in one response, through the Vulnesis AI Firewall to
 OpenRouter's free router, with Clef on Workers AI as the decision backend.
 v0.154.0 (before) against this build with batching off and on, four runs
 each, all built with the same `first_token` trace event. Each row gives the

@@ -18,7 +18,7 @@ const firewallPermTimeout = 2 * time.Minute
 // host set one; headless, ACP and fleet sessions do not, so it is off there.
 // Every func is called from the pass's own goroutine, never the turn's.
 type FirewallPermissionHook struct {
-	// Enabled reports whether the pass may run now: the Vulnetix CLI is
+	// Enabled reports whether the pass may run now: the Vulnesis CLI is
 	// signed in. It is read once per prompt, before any model is asked.
 	Enabled func() bool
 	// Live reads the org's guardrails, so the writer skips rules already in

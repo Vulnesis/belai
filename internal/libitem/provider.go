@@ -460,7 +460,7 @@ func validateFirewallInstance(name string, inst map[string]any) error {
 		return refuse("%s: the vulnetix adapter is configured only as the vulnetix instance", where)
 	}
 	if name == "vulnetix" && adapter != "vulnetix" {
-		return refuse("firewall name vulnetix is reserved for the Vulnetix AI Firewall")
+		return refuse("firewall name vulnetix is reserved for the Vulnesis AI Firewall")
 	}
 	fwURL, err := optStr(inst, "url", where, MaxProviderURL, false)
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 	"github.com/vulnetix/belai/internal/httpclient"
 )
 
-// Capabilities is everything Belai knows about the local Vulnetix CLI.
+// Capabilities is everything Belai knows about the local Vulnesis CLI.
 type Capabilities struct {
 	Present        bool
 	Path, RealPath string
@@ -61,7 +61,7 @@ type APIState struct {
 
 // Probe collects capabilities from the vulnetix binary. It does as much as
 // possible without network access, then optionally checks the GitHub release
-// API and the configured Vulnetix API.
+// API and the configured Vulnesis API.
 func Probe(ctx context.Context, c CLI, opts ProbeOptions) Capabilities {
 	if opts.Now == nil {
 		opts.Now = time.Now
@@ -174,9 +174,9 @@ func Probe(ctx context.Context, c CLI, opts ProbeOptions) Capabilities {
 	}
 
 	// API reachability and web URLs.
-	baseURL := opts.Getenv("VULNETIX_API_URL")
+	baseURL := opts.Getenv("VULNESIS_API_URL")
 	if baseURL == "" {
-		baseURL = "https://api.vdb.vulnetix.com/v1"
+		baseURL = "https://api.vdb.vulnes.is/v1"
 	}
 	cap.API.URL = baseURL
 	if !opts.SkipNetwork {

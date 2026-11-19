@@ -1,7 +1,7 @@
 // Package depwatch is the deterministic dependency-manifest hook. Every file a
-// session tool changes is matched against the manifest table the Vulnetix CLI
+// session tool changes is matched against the manifest table the Vulnesis CLI
 // parses; a match is coalesced until the turn ends, then a fast-tier sentinel
-// role decides whether the change added or updated dependencies, the Vulnetix
+// role decides whether the change added or updated dependencies, the Vulnesis
 // CLI checks the manifest, and findings go to a background agent whose profile
 // knows that ecosystem's manifest quirks.
 //
@@ -35,7 +35,7 @@ func shell() Info                  { return m("shell-script", "shell") }
 func docker(typ string) Info       { return m(typ, "docker") }
 func sameAs(i Info, t string) Info { i.Type = t; return i }
 
-// manifestFiles mirrors ManifestFiles in the Vulnetix CLI
+// manifestFiles mirrors ManifestFiles in the Vulnesis CLI
 // (internal/scan/detector.go), restricted to the types the CLI can parse
 // (SupportedManifestTypes). Registry-config files (.npmrc, settings.gradle)
 // are detected by the CLI but not parsed, so they are absent here.
@@ -188,7 +188,7 @@ var manifestExtensions = map[string]Info{
 	".cmd": shell(), ".bat": shell(),
 }
 
-// Detect reports whether relPath is a manifest the Vulnetix CLI parses. It
+// Detect reports whether relPath is a manifest the Vulnesis CLI parses. It
 // follows the CLI's DetectManifest order — exact name, Dockerfile variants,
 // extension, requirements naming, then the content-checked kinds — with
 // content being the file's post-change text, so no file is read here.

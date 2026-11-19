@@ -65,7 +65,7 @@ type Options struct {
 	Sandbox func() sandbox.Policy
 	// HTTPClient reaches http servers. nil means http.DefaultClient.
 	HTTPClient *http.Client
-	// VulnetixAuth returns the Vulnetix CLI's Authorization header value. It
+	// VulnetixAuth returns the Vulnesis CLI's Authorization header value. It
 	// resolves a "vulnetix:cli" header reference on every dial, so a later
 	// login takes effect on restart. nil leaves the reference unresolved.
 	VulnetixAuth func() (string, error)
@@ -90,13 +90,13 @@ type Options struct {
 	Vault func(name string) (string, bool)
 }
 
-// VulnetixCLIRef is the header value that stands for the Vulnetix CLI's
+// VulnetixCLIRef is the header value that stands for the Vulnesis CLI's
 // credential. It is never written out resolved: settings hold the reference.
 const VulnetixCLIRef = config.VulnetixCLIRef
 
 // resolveHeaders expands every VulnetixCLIRef in an http server's headers.
 // The credential is sent only as an Authorization header, only over https,
-// and only to vulnetix.com or one of its subdomains, so a hand-edited entry
+// and only to vulnes.is or one of its subdomains, so a hand-edited entry
 // cannot hand it to another host.
 func (m *Manager) resolveHeaders(server, rawURL string, headers map[string]string) (map[string]string, error) {
 	out := make(map[string]string, len(headers))
@@ -113,7 +113,7 @@ func (m *Manager) resolveHeaders(server, rawURL string, headers map[string]strin
 			return nil, fmt.Errorf("%s is only accepted in the Authorization header", VulnetixCLIRef)
 		}
 		if !vulnetixHost(rawURL) {
-			return nil, fmt.Errorf("%s is only sent to https://*.vulnetix.com", VulnetixCLIRef)
+			return nil, fmt.Errorf("%s is only sent to https://*.vulnes.is", VulnetixCLIRef)
 		}
 		if m.opts.VulnetixAuth == nil {
 			return nil, fmt.Errorf("%s is not available in this session", VulnetixCLIRef)
@@ -184,14 +184,14 @@ func (m *Manager) resolveEnv(server string, env map[string]string) (map[string]s
 	return out, nil
 }
 
-// vulnetixHost reports whether rawURL is https on vulnetix.com or a subdomain.
+// vulnetixHost reports whether rawURL is https on vulnes.is or a subdomain.
 func vulnetixHost(rawURL string) bool {
 	u, err := url.Parse(rawURL)
 	if err != nil || u.Scheme != "https" || u.User != nil {
 		return false
 	}
 	h := strings.ToLower(u.Hostname())
-	return h == "vulnetix.com" || strings.HasSuffix(h, ".vulnetix.com")
+	return h == "vulnes.is" || strings.HasSuffix(h, ".vulnes.is")
 }
 
 // Manager owns the connections to every configured server.

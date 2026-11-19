@@ -38,7 +38,7 @@ func TestOpenBrowserStartsNothingWithoutADesktop(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			started := stubOpener(t, envOf("linux", vars))
-			err := OpenBrowser("https://www.vulnetix.com/resolve/belai-sessions")
+			err := OpenBrowser("https://www.vulnes.is/resolve/belai-sessions")
 			var nd *NoDesktopError
 			if !errors.As(err, &nd) || nd.Reason == "" {
 				t.Fatalf("err = %v, want a *NoDesktopError with a reason", err)
@@ -52,10 +52,10 @@ func TestOpenBrowserStartsNothingWithoutADesktop(t *testing.T) {
 
 func TestOpenBrowserStartsTheOpenerOnADesktop(t *testing.T) {
 	started := stubOpener(t, envOf("linux", map[string]string{"DISPLAY": ":0"}))
-	if err := OpenBrowser("https://www.vulnetix.com/x"); err != nil {
+	if err := OpenBrowser("https://www.vulnes.is/x"); err != nil {
 		t.Fatal(err)
 	}
-	if len(*started) != 1 || (*started)[0][len((*started)[0])-1] != "https://www.vulnetix.com/x" {
+	if len(*started) != 1 || (*started)[0][len((*started)[0])-1] != "https://www.vulnes.is/x" {
 		t.Fatalf("started = %v", *started)
 	}
 }
