@@ -8,3 +8,7 @@ keep VULNETIX_
 ignore internal/*
 # A transferred Pages site keeps its one custom domain (vulnes.is via a proxy).
 keep belai.vulnetix.com
+# The tool the model is offered is named Vulnetix (code formatting in the docs is
+# its identifier; tools_docs_test checks every tool is documented by name).
+keep `Vulnetix`
+keep `Vulnetix(
