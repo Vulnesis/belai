@@ -22,7 +22,7 @@ binary as `internal/harness/harnesses.json`.
 
 | Field | Meaning |
 | --- | --- |
-| `id` | Stable lower-case id. It matches the id `gh skill install --agent` and the Vulnesis CLI use. |
+| `id` | Stable lower-case id. It matches the id `gh skill install --agent` and the Vulnetix CLI use. |
 | `aliases` | Other ids the CLI sources use for the same harness (`openai-codex` for `codex`). `harness.ByID` resolves them. |
 | `name` | What the harness calls itself. |
 | `detect` | Home-relative paths whose presence means the harness is installed. Empty for a harness that has no user directory of its own. |
@@ -83,7 +83,7 @@ front matter, a file suffix such as `.prompt.md`). Every other harness uses
 ## How it is generated
 
 `harnesses.json` is not edited by hand. `tools/gen-harnesses` builds it from
-three files in the Vulnesis CLI repository and one file in this one:
+three files in the Vulnetix CLI repository and one file in this one:
 
 | Source | Gives |
 | --- | --- |

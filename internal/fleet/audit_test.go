@@ -162,7 +162,7 @@ func TestAWorkerWithoutARecorderRecordsNothing(t *testing.T) {
 }
 
 func TestHTTPSURLKeepsOnlyAPlainAddress(t *testing.T) {
-	ok := "https://github.com/vulnesis/belai/pull/12"
+	ok := "https://github.com/vulnetix/belai/pull/12"
 	if got := httpsURL(ok); got != ok {
 		t.Fatalf("httpsURL(%q) = %q", ok, got)
 	}

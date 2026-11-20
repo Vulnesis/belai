@@ -25,7 +25,7 @@ import (
 // an a2a_broadcast_in entry and a directive, sends A an A2AMessage and acks
 // the broadcast with ignore; A answers in a side-turn while its own turn is
 // still running; B receives the reply as a2a_reply_in tied to its question.
-// No Vulnesis login: same-host messaging needs none.
+// No Vulnetix login: same-host messaging needs none.
 
 // a2aMock is a provider that answers the classifiers and hands each chat
 // request to script.
@@ -331,7 +331,7 @@ func TestA2AAckIgnoreIsRecorded(t *testing.T) {
 	}
 }
 
-// With a Vulnesis login the run relays its envelopes; during the
+// With a Vulnetix login the run relays its envelopes; during the
 // organisation's A2A blackout it makes no relay call, and the local audit
 // still records each envelope (withheld) and the switch.
 func TestA2ABlackoutStopsRelayNotTheLocalAudit(t *testing.T) {
@@ -365,8 +365,8 @@ func TestA2ABlackoutStopsRelayNotTheLocalAudit(t *testing.T) {
 				time.Sleep(4 * time.Second)
 				return "", nil, "done"
 			})
-			cmd, out := startBelai(t, home, dir, srv.URL, []string{"VULNESIS_WEB_URL=" + site.URL, "VULNESIS_API_KEY=test-key",
-				"VULNESIS_ORG_ID=11111111-2222-4333-8444-555555555555", "VULNESIS_API_TOKEN=", "HOME=" + t.TempDir()}, "add widget.go")
+			cmd, out := startBelai(t, home, dir, srv.URL, []string{"VULNETIX_WEB_URL=" + site.URL, "VULNETIX_API_KEY=test-key",
+				"VULNETIX_ORG_ID=11111111-2222-4333-8444-555555555555", "VULNETIX_API_TOKEN=", "HOME=" + t.TempDir()}, "add widget.go")
 			if err := cmd.Wait(); err != nil {
 				t.Fatalf("run: %v\n%s", err, out)
 			}

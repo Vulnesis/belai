@@ -114,7 +114,7 @@ func (w *Worker) applyRounds(o outcome, rr roundsResult, it kanban.Item) outcome
 
 // scanForFinding scans the worktree and reports whether the card's finding is
 // still there. ok is false when no answer could be had (a hook says so, no
-// Vulnesis CLI, the scan failed, or the artefacts did not record the scan), and
+// Vulnetix CLI, the scan failed, or the artefacts did not record the scan), and
 // the caller then goes on without feedback.
 func (w *Worker) scanForFinding(ctx context.Context, ws *Workspace, it kanban.Item, round, max int) (scanFeedback, bool) {
 	if w.Scan != nil {

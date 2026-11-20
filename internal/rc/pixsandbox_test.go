@@ -75,7 +75,7 @@ func TestPixMalformedHostIDIsReplaced(t *testing.T) {
 }
 
 // The launcher's settings file is ordinary global settings: sync and remote
-// prompts on, the Vulnesis AI Firewall active, guardrails on by default.
+// prompts on, the Vulnetix AI Firewall active, guardrails on by default.
 func TestPixSettingsLoadAsDocumented(t *testing.T) {
 	pixHome(t)
 	s, err := config.LoadGlobal()
@@ -135,13 +135,13 @@ func TestPixClassifierIsJevOnTypeSafe(t *testing.T) {
 }
 
 // The ApiKey comes from the environment as an ApiKey header, and an empty
-// VULNESIS_API_TOKEN does not shadow it.
+// VULNETIX_API_TOKEN does not shadow it.
 func TestPixCredentialIsTheEnvApiKey(t *testing.T) {
 	env := func(k string) string {
 		switch k {
-		case "VULNESIS_ORG_ID":
+		case "VULNETIX_ORG_ID":
 			return "11111111-2222-4333-8444-555555555555"
-		case "VULNESIS_API_KEY":
+		case "VULNETIX_API_KEY":
 			return "abc123"
 		}
 		return ""
@@ -152,7 +152,7 @@ func TestPixCredentialIsTheEnvApiKey(t *testing.T) {
 	}
 	// A token login is what the website refuses for remote control.
 	withToken := func(k string) string {
-		if k == "VULNESIS_API_TOKEN" {
+		if k == "VULNETIX_API_TOKEN" {
 			return "tok"
 		}
 		return env(k)
@@ -172,20 +172,20 @@ func TestPixSecretsNeverReachToolEnvironments(t *testing.T) {
 		"HOME=/home/pix",
 		"TMPDIR=/workspace/tmp",
 		"BELAI_HOME=/home/pix/.vulnetix/belai",
-		"VULNESIS_ORG_ID=org",
-		"VULNESIS_API_KEY=abc123",
-		"VULNESIS_API_TOKEN=",
+		"VULNETIX_ORG_ID=org",
+		"VULNETIX_API_KEY=abc123",
+		"VULNETIX_API_TOKEN=",
 		"TYPESAFE_API_KEY=pixph_placeholder",
 		"BELAI_NO_UPDATE_CHECK=1",
 		"CI=1",
 	}
 	got := strings.Join(proc.ScrubEnvOf(env), "\n")
-	for _, name := range []string{"VULNESIS_API_KEY", "VULNESIS_API_TOKEN", "TYPESAFE_API_KEY", "BELAI_HOME", "BELAI_NO_UPDATE_CHECK"} {
+	for _, name := range []string{"VULNETIX_API_KEY", "VULNETIX_API_TOKEN", "TYPESAFE_API_KEY", "BELAI_HOME", "BELAI_NO_UPDATE_CHECK"} {
 		if strings.Contains(got, name+"=") {
 			t.Errorf("%s reached the tool environment", name)
 		}
 	}
-	for _, keep := range []string{"PATH=/usr/bin", "HOME=/home/pix", "TMPDIR=/workspace/tmp", "VULNESIS_ORG_ID=org", "CI=1"} {
+	for _, keep := range []string{"PATH=/usr/bin", "HOME=/home/pix", "TMPDIR=/workspace/tmp", "VULNETIX_ORG_ID=org", "CI=1"} {
 		if !strings.Contains(got, keep) {
 			t.Errorf("%s was scrubbed", keep)
 		}
@@ -261,7 +261,7 @@ func TestPixPreflight(t *testing.T) {
 		}
 	}
 
-	// A token login fails: the machine empties VULNESIS_API_TOKEN for this reason.
+	// A token login fails: the machine empties VULNETIX_API_TOKEN for this reason.
 	opts.Dirs = []Dir{{Path: "/x"}}
 	opts.AuthHeader = func(string) (string, error) { return "Bearer tok", nil }
 	if c, _ := Preflight(context.Background(), opts).Find(CheckCredential); c.Level != Fail {
@@ -294,7 +294,7 @@ func TestPixMissingCLIWithCredentialIsAWarning(t *testing.T) {
 func TestPixDocNamesTheInputs(t *testing.T) {
 	doc := docparity.Read(t, "docs/pix-sandbox.md")
 	for _, want := range []string{
-		"`$BELAI_HOME/sync/host-id`", "`$BELAI_HOME/settings.json`", "`VULNESIS_ORG_ID`", "`VULNESIS_API_KEY`", "`VULNESIS_API_TOKEN`",
+		"`$BELAI_HOME/sync/host-id`", "`$BELAI_HOME/settings.json`", "`VULNETIX_ORG_ID`", "`VULNETIX_API_KEY`", "`VULNETIX_API_TOKEN`",
 		"`" + decisions.TypeSafeKeyEnv + "`", "`" + decisions.TypeSafeBaseURL + "`", "`" + decisions.TypeSafeDefaultModel + "`",
 		"`" + decisions.TypeSafeProvider + "`", "`" + config.DefaultFirewall + "`", "`--dir <path>`",
 		"`proc.ScrubbedEnv`", "`rc.Collect`", "`sessionsync.HostID`",

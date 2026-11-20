@@ -109,7 +109,7 @@ func TestPlanVulnetix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.BaseURL != "https://guardrails.vulnes.is/anthropic/org-1" || r.APIKey != "vxkey" || r.KeepProviderKey || r.DropProviderAuth {
+	if r.BaseURL != "https://guardrails.vulnetix.com/anthropic/org-1" || r.APIKey != "vxkey" || r.KeepProviderKey || r.DropProviderAuth {
 		t.Fatalf("route = %+v", r)
 	}
 	if !CapabilitiesOf(vulnetixAdapter{}).KeySync || NeedsSecret(config.FirewallInstance{Adapter: "vulnetix"}) {
@@ -117,9 +117,9 @@ func TestPlanVulnetix(t *testing.T) {
 	}
 }
 
-// TestPlanKiroOnlyThroughVulnetix routes Kiro through the Vulnesis AI Firewall,
+// TestPlanKiroOnlyThroughVulnetix routes Kiro through the Vulnetix AI Firewall,
 // which mints Kiro's token from the org's secrets vault, and through nothing
-// else: a generic gateway would forward a Vulnesis key Kiro cannot use, or
+// else: a generic gateway would forward a Vulnetix key Kiro cannot use, or
 // need the Kiro token Belai only mints for a pinned AWS host.
 func TestPlanKiroOnlyThroughVulnetix(t *testing.T) {
 	kiroT := Target{Provider: "kiro", Surface: wire.SurfaceKiro, Auth: provider.AuthKiro, BaseURL: "https://q.us-east-1.amazonaws.com"}
@@ -127,11 +127,11 @@ func TestPlanKiroOnlyThroughVulnetix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.BaseURL != "https://guardrails.vulnes.is/kiro/org-1/v1" || r.APIKey != "vxkey" || r.KeepProviderKey {
+	if r.BaseURL != "https://guardrails.vulnetix.com/kiro/org-1/v1" || r.APIKey != "vxkey" || r.KeepProviderKey {
 		t.Fatalf("route = %+v", r)
 	}
 	if !r.MintsKiroToken() {
-		t.Fatal("a Vulnesis route mints the Kiro token at the gateway")
+		t.Fatal("a Vulnetix route mints the Kiro token at the gateway")
 	}
 	for _, inst := range []config.FirewallInstance{
 		{Adapter: "custom", URL: "https://gw.example/v1", Mode: "authorization"},
@@ -145,7 +145,7 @@ func TestPlanKiroOnlyThroughVulnetix(t *testing.T) {
 	}
 	var none *Route
 	if none.MintsKiroToken() || (&Route{AdapterID: "custom"}).MintsKiroToken() {
-		t.Fatal("only a Vulnesis route mints the Kiro token")
+		t.Fatal("only a Vulnetix route mints the Kiro token")
 	}
 }
 
@@ -195,7 +195,7 @@ func TestInspectVulnetixHeaders(t *testing.T) {
 		t.Fatalf("verdicts = %+v", got)
 	}
 	v := got[0]
-	if v.Action != ActionRedact || v.Redactions != 2 || v.RequestID != "req-123" || v.Firewall != "Vulnesis AI Firewall" || v.Instance != "vulnetix" {
+	if v.Action != ActionRedact || v.Redactions != 2 || v.RequestID != "req-123" || v.Firewall != "Vulnetix AI Firewall" || v.Instance != "vulnetix" {
 		t.Fatalf("verdict = %+v", v)
 	}
 	if !slices.Equal(v.Rules, []string{"No emails", "PII, cards"}) {

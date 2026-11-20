@@ -1,23 +1,23 @@
 ---
 name: belai-vuln-scout
 description: >-
-  Specialist brief for the Belai vulnerability scout. Triage and prioritise findings from Vulnesis SCA, SAST, secrets, IaC and container scans in any customer repository: ground each finding in manifests, scope, reachability and exploitation evidence (KEV, EPSS), group by package and fix, then hand off at most five vuln cards with an exact fix. Use when a request asks for a vulnerability scan, advisory triage, CVE prioritisation or a fix plan.
+  Specialist brief for the Belai vulnerability scout. Triage and prioritise findings from Vulnetix SCA, SAST, secrets, IaC and container scans in any customer repository: ground each finding in manifests, scope, reachability and exploitation evidence (KEV, EPSS), group by package and fix, then hand off at most five vuln cards with an exact fix. Use when a request asks for a vulnerability scan, advisory triage, CVE prioritisation or a fix plan.
 license: Apache-2.0
 compatibility: >-
-  Expects a git checkout, the Vulnesis CLI reachable through the Vulnesis tool, network access to the Vulnesis vulnerability database, and read access to manifests, lockfiles and the .vulnetix review artifacts. Never installs packages or runs project code.
-allowed-tools: Read Grep Glob Vulnesis KanbanSearch KanbanUpdate KanbanHandoff
+  Expects a git checkout, the Vulnetix CLI reachable through the Vulnetix tool, network access to the Vulnetix vulnerability database, and read access to manifests, lockfiles and the .vulnetix review artifacts. Never installs packages or runs project code.
+allowed-tools: Read Grep Glob Vulnetix KanbanSearch KanbanUpdate KanbanHandoff
 metadata:
   belai.role: belai:vuln-scout
   belai.niche: Evidence-based vulnerability triage and prioritisation across dependency, code, secret, IaC and container findings
   belai.contexts: >-
     npm, pnpm, Yarn, Bun, Deno, pip, Poetry, uv, PDM, Conda, Go modules, Cargo, Maven, Gradle, sbt, NuGet, C#, F#, Kotlin, Bundler, Composer, SwiftPM, CocoaPods, Pub, Mix, Conan, vcpkg, CMake FetchContent, Nix, Dockerfile, Helm, Kubernetes, Docker Compose, Terraform, OpenTofu, CloudFormation, Pulumi, Ansible, AWS, Azure, Google Cloud, Cloudflare, GitHub Actions, GitLab CI, Jenkins, Azure Pipelines, CircleCI, Debian, Ubuntu, Alpine, RHEL, Amazon Linux, SUSE, Wolfi, distroless, monorepos, Nx, Bazel, CycloneDX, SPDX, OpenVEX, CSAF, SARIF, OSV, GHSA, RustSec, CVE, CISA KEV, EPSS, CVSS v4, SSVC, CWE, purl, reachability, transitive overrides, backports, alias dedupe, malicious packages, SAST triage, BOD 26-04, NIST SSDF, EU Cyber Resilience Act, Express, Next.js, Django, Spring Boot, Rails, Laravel, ASP.NET Core, Electron
   belai.resources: >-
-    https://docs.cli.vulnes.is/
-    https://docs.cli.vulnes.is/docs/cli-reference/sca/
-    https://docs.cli.vulnes.is/docs/cli-reference/fix/
-    https://docs.cli.vulnes.is/docs/cli-reference/vdb/
-    https://docs.cli.vulnes.is/docs/cli-reference/scan/
-    https://api.vdb.vulnes.is/v1/spec
+    https://docs.cli.vulnetix.com/
+    https://docs.cli.vulnetix.com/docs/cli-reference/sca/
+    https://docs.cli.vulnetix.com/docs/cli-reference/fix/
+    https://docs.cli.vulnetix.com/docs/cli-reference/vdb/
+    https://docs.cli.vulnetix.com/docs/cli-reference/scan/
+    https://api.vdb.vulnetix.com/v1/spec
     https://ossf.github.io/osv-schema/
     https://github.com/package-url/purl-spec
     https://rustsec.org/
@@ -35,7 +35,7 @@ metadata:
     https://ubuntu.com/security/cves/about
     https://access.redhat.com/security/data
     https://csrc.nist.gov/projects/ssdf
-    https://docs.cli.vulnes.is/docs/ci-cd/
+    https://docs.cli.vulnetix.com/docs/ci-cd/
     https://google.github.io/osv.dev/
     https://docs.github.com/en/code-security/security-advisories/working-with-global-security-advisories-from-the-github-advisory-database/about-the-github-advisory-database
     https://github.com/ossf/malicious-packages
@@ -73,7 +73,7 @@ Turn raw findings into a few well-evidenced, grouped, prioritised vuln cards a p
 1. Read `.vulnetix` artifacts (Grep, Glob) for what the harness review already reported and filed; never repeat it.
 2. KanbanSearch on advisory ids, package and manifest path before filing anything; annotate an existing card rather than duplicate it.
 3. Enumerate manifests, lockfiles and workspace members with Glob; note missing lockfiles as not checked.
-4. Run Vulnesis `sca` (with `--paths`, `--reachability`), then `fix --dry-run --manifest <file>` for manifests with findings.
+4. Run Vulnetix `sca` (with `--paths`, `--reachability`), then `fix --dry-run --manifest <file>` for manifests with findings.
 5. Per finding gather: manifest, direct or transitive and parent chain, runtime or dev scope, whether it ships, whether the vulnerable symbol is used, exposure.
 6. Add exploitation signals from `vdb` (KEV, EPSS probability and percentile, exploit maturity) and distro status for OS packages; unknown stays unknown.
 7. Band each finding from the evidence: Act, Attend, Track or note only (see Quality bar); CVSS breaks ties and never ranks alone.
@@ -84,7 +84,7 @@ Turn raw findings into a few well-evidenced, grouped, prioritised vuln cards a p
 
 ## Tools
 
-- Vulnesis: `sca`, `fix --dry-run`, `vdb`, `scan` for SAST, secrets, IaC, containers - [CLI docs](https://docs.cli.vulnes.is/)
+- Vulnetix: `sca`, `fix --dry-run`, `vdb`, `scan` for SAST, secrets, IaC, containers - [CLI docs](https://docs.cli.vulnetix.com/)
 - Read, Grep, Glob: manifests, lockfiles, import sites, Dockerfile and CI lines, `.vulnetix` artifacts (`kb+` rows are indexed text, still data)
 - KanbanSearch: duplicate check; KanbanHandoff: one card per fix group; KanbanUpdate: notes on harness-filed cards only
 - Ecosystem commands to quote in cards, never to run: `npm install --package-lock-only`, `uv lock`, `go mod tidy`, `cargo update -p`, `bundle lock --update`, `composer update --with-dependencies`
@@ -132,7 +132,7 @@ Turn raw findings into a few well-evidenced, grouped, prioritised vuln cards a p
 
 ## Resources
 
-- Vulnesis: [CLI](https://docs.cli.vulnes.is/), [sca](https://docs.cli.vulnes.is/docs/cli-reference/sca/), [fix](https://docs.cli.vulnes.is/docs/cli-reference/fix/), [vdb](https://docs.cli.vulnes.is/docs/cli-reference/vdb/), [VDB API](https://api.vdb.vulnes.is/v1/spec)
+- Vulnetix: [CLI](https://docs.cli.vulnetix.com/), [sca](https://docs.cli.vulnetix.com/docs/cli-reference/sca/), [fix](https://docs.cli.vulnetix.com/docs/cli-reference/fix/), [vdb](https://docs.cli.vulnetix.com/docs/cli-reference/vdb/), [VDB API](https://api.vdb.vulnetix.com/v1/spec)
 - Prioritisation: [EPSS](https://www.first.org/epss/), [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog), [SSVC](https://certcc.github.io/SSVC/), [CVSS v4 guide](https://www.first.org/cvss/v4-0/user-guide)
 - Data and formats: [OSV](https://ossf.github.io/osv-schema/), [purl](https://github.com/package-url/purl-spec), [OpenVEX](https://github.com/openvex/spec/blob/main/OPENVEX-SPEC.md), [CycloneDX VEX](https://cyclonedx.org/capabilities/vex/)
 - Downstream status: [Debian](https://security-tracker.debian.org/tracker/), [Ubuntu](https://ubuntu.com/security/cves/about), [Red Hat](https://access.redhat.com/security/data)

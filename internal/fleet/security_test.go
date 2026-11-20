@@ -25,7 +25,7 @@ const (
 func sweeper() agentprofile.AgentProfile {
 	p := scoutProfile()
 	p.Name = "t-vuln-scout"
-	p.Tools = []string{"Read", "Vulnesis"}
+	p.Tools = []string{"Read", "Vulnetix"}
 	p.Kanban.Survey = nil
 	p.Kanban.Labels = []string{"vuln-scan"}
 	p.Kanban.Security = &agentprofile.SecuritySpec{Sweep: true}

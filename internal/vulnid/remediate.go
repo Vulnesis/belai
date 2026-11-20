@@ -3,6 +3,8 @@ package vulnid
 import (
 	"strings"
 	"unicode"
+
+	"github.com/vulnetix/belai/internal/brand"
 )
 
 // remediationPromptMax bounds the prompt IsRemediation reads. A request that
@@ -36,7 +38,7 @@ func IsRemediation(prompt string) bool {
 	}
 	// Find skips an identifier inside a URL, so the console's own link is
 	// opened up first; any other URL stays a longer token.
-	ids := Find(strings.ReplaceAll(p, ConsoleBase, " "), 8)
+	ids := Find(strings.ReplaceAll(strings.ReplaceAll(p, ConsoleBase, " "), brand.URL(ConsoleBase), " "), 8)
 	if len(ids) == 0 {
 		return false
 	}

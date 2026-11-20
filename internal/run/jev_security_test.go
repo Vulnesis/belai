@@ -59,7 +59,7 @@ func TestSecurityGuardUsesJevForDecisionsModel(t *testing.T) {
 func TestSecurityGuardSkipsJevThroughAFirewall(t *testing.T) {
 	cfg := jevClassifierConfig("https://example.invalid")
 	cfg.Classifier.APIKey = "firewall-secret"
-	cfg.Classifier.Firewall = &firewall.Route{Mode: "vulnetix", BaseURL: "https://guardrails.vulnes.is/openrouter/org-1", APIKey: "firewall-secret"}
+	cfg.Classifier.Firewall = &firewall.Route{Mode: "vulnetix", BaseURL: "https://guardrails.vulnetix.com/openrouter/org-1", APIKey: "firewall-secret"}
 	g := securityGuard(cfg, http.DefaultClient, nil)
 	if _, ok := g.(*jev.Security); ok {
 		t.Fatalf("securityGuard = %T: a firewall-routed classifier would send its credential to OpenRouter", g)

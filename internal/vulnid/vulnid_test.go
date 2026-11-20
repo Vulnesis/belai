@@ -118,7 +118,7 @@ func TestSentenceEndsAreBoundaries(t *testing.T) {
 }
 
 func TestURLAndHint(t *testing.T) {
-	if got := URL("cve-2021-44228"); got != "https://www.vulnes.is/vuln/CVE-2021-44228" {
+	if got := URL("cve-2021-44228"); got != "https://www.vulnetix.com/vuln/CVE-2021-44228" {
 		t.Errorf("URL = %q", got)
 	}
 	if got := URL("RHSA-2023:1234"); !strings.HasPrefix(got, ConsoleBase+"RHSA-2023") {

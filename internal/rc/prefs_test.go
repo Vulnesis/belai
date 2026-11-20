@@ -13,7 +13,7 @@ import (
 func prefsDaemon(t *testing.T, on bool) (*Daemon, string) {
 	t.Helper()
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	dir, _ := Normalize(t.TempDir())
 	client, err := sessionsync.NewClient("http://127.0.0.1:1", func() (string, error) { return "ApiKey o:k", nil }, nil)
 	if err != nil {

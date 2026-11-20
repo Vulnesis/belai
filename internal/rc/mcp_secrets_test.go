@@ -43,7 +43,7 @@ type mcpSecretsHarness struct {
 func newMCPSecretsHarness(t *testing.T) *mcpSecretsHarness {
 	t.Helper()
 	t.Setenv("BELAI_HOME", t.TempDir())
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	h := &mcpSecretsHarness{t: t, on: true, store: &memMCPStore{stored: map[string]string{}}}
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h.mu.Lock()

@@ -3,7 +3,7 @@ package config
 import "testing"
 
 func TestVulnetixGatewayURLOrDefault(t *testing.T) {
-	if got := (VulnetixSettings{}).GatewayURLOrDefault(); got != "https://guardrails.vulnes.is" {
+	if got := (VulnetixSettings{}).GatewayURLOrDefault(); got != "https://guardrails.vulnetix.com" {
 		t.Fatalf("default gateway = %q", got)
 	}
 	if got := (VulnetixSettings{GatewayURL: "https://self.example.com"}).GatewayURLOrDefault(); got != "https://self.example.com" {

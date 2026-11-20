@@ -13,7 +13,7 @@ import (
 func TestVulnetixPageStatesTheCLIEnvironment(t *testing.T) {
 	doc := strings.Join(strings.Fields(docparity.Read(t, "docs/vulnetix.md")), " ")
 	for _, want := range []string{
-		"whether the API is reachable at `$VULNESIS_API_URL` (default `https://api.vdb.vulnes.is/v1`)",
+		"whether the API is reachable at `$VULNETIX_API_URL` (default `https://api.vdb.vulnetix.com/v1`)",
 		"Variables starting `OPENAI_`, `ANTHROPIC_`, `CLOUDFLARE_` or `BELAI_`, and any ending `_API_KEY`, `_TOKEN` or `_SECRET`, are removed",
 		"`NO_COLOR=1`, `TERM=dumb` and `HOMEBREW_NO_AUTO_UPDATE=1` are set",
 	} {
@@ -21,7 +21,7 @@ func TestVulnetixPageStatesTheCLIEnvironment(t *testing.T) {
 			t.Errorf("docs/vulnetix.md does not say %q", want)
 		}
 	}
-	kept := []string{"VULNESIS_API_TOKEN", "VULNESIS_API_KEY", "VULNESIS_ORG_ID", "VULNESIS_API_URL", "VULNESIS_WEB_URL", "VVD_ORG", "VVD_SECRET"}
+	kept := []string{"VULNETIX_API_TOKEN", "VULNETIX_API_KEY", "VULNETIX_ORG_ID", "VULNETIX_API_URL", "VULNETIX_WEB_URL", "VVD_ORG", "VVD_SECRET"}
 	removed := []string{"OPENAI_BASE", "ANTHROPIC_VERSION", "CLOUDFLARE_ZONE", "BELAI_HOME", "GITHUB_TOKEN", "STRIPE_API_KEY", "DB_SECRET"}
 	passed := []string{"PATH_EXTRA_FOR_TEST", "HOME_FOR_TEST"}
 	for _, k := range append(append(slices.Clone(kept), removed...), passed...) {

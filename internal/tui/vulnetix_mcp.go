@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/mcp"
@@ -27,7 +28,7 @@ func (a *App) vulnetixMCPCommand(args []string) tea.Cmd {
 	}
 	switch sub {
 	case "install", "add", "on":
-		a.addSystem("vulnetix mcp: connecting " + config.VulnetixMCPURL + "…")
+		a.addSystem("vulnetix mcp: connecting " + brand.URL(config.VulnetixMCPURL) + "…")
 		ctx, wd := a.ctx, a.workdir
 		return func() tea.Msg {
 			n, err := installVulnetixMCP(ctx, wd)
@@ -53,13 +54,13 @@ func (a *App) vulnetixMCPCommand(args []string) tea.Cmd {
 	}
 }
 
-// installVulnetixMCP writes the Vulnesis server to the user's global
+// installVulnetixMCP writes the Vulnetix server to the user's global
 // settings and connects it in this session. The CLI credential is checked
 // first but never written: the entry carries config.VulnetixCLIRef, which the
 // MCP manager resolves on every dial. It returns the server's tool count.
 func installVulnetixMCP(ctx context.Context, workdir string) (int, error) {
 	if _, err := credentials.VulnetixAuthHeader(workdir); err != nil {
-		return 0, fmt.Errorf("no Vulnesis CLI credential (%v) · run /vulnetix setup or `vulnetix auth login`", err)
+		return 0, fmt.Errorf("no Vulnetix CLI credential (%v) · run /vulnetix setup or `vulnetix auth login`", err)
 	}
 	entry := config.VulnetixMCPServer()
 	if err := config.Mutate(config.ScopeGlobal, workdir, func(s *config.Settings) error {
@@ -90,7 +91,7 @@ func installVulnetixMCP(ctx context.Context, workdir string) (int, error) {
 	return n, nil
 }
 
-// removeVulnetixMCP deletes the Vulnesis server from the global settings and
+// removeVulnetixMCP deletes the Vulnetix server from the global settings and
 // stops it.
 func removeVulnetixMCP(workdir string) error {
 	if err := config.Mutate(config.ScopeGlobal, workdir, func(s *config.Settings) error {
@@ -118,6 +119,6 @@ func (a *App) handleVulnetixMCPDone(m vulnetixMCPDoneMsg) {
 	case m.removed:
 		a.addSystem("vulnetix mcp: removed from global settings")
 	default:
-		a.addSystem(fmt.Sprintf("vulnetix mcp: connected · %d tools · authenticated with the Vulnesis CLI credential · /vulnetix mcp remove to undo", m.tools))
+		a.addSystem(fmt.Sprintf("vulnetix mcp: connected · %d tools · authenticated with the Vulnetix CLI credential · /vulnetix mcp remove to undo", m.tools))
 	}
 }

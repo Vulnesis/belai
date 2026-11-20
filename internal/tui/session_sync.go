@@ -12,6 +12,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/vulnetix/belai/internal/audit"
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/httpclient"
@@ -50,7 +51,7 @@ func (a *App) createSessionFile() {
 	}
 }
 
-// startSessionSync starts the syncer when sync is on and a usable Vulnesis
+// startSessionSync starts the syncer when sync is on and a usable Vulnetix
 // CLI credential resolves. It records why when it does not. Only a real run
 // calls it; New alone (every test) never touches the network.
 func (a *App) startSessionSync() {
@@ -65,14 +66,14 @@ func (a *App) startSessionSync() {
 	workdir := a.workdir
 	header, err := credentials.VulnetixAuthHeader(workdir)
 	if err != nil {
-		a.syncNote = "off (not logged in with the Vulnesis CLI)"
+		a.syncNote = "off (not logged in with the Vulnetix CLI)"
 		return
 	}
 	if err := sessionsync.UsableCredential(header); err != nil {
 		a.syncNote = "off (" + err.Error() + ")"
 		return
 	}
-	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNESIS_WEB_URL")), cachedAuth(workdir), httpclient.Default())
+	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")), cachedAuth(workdir), httpclient.Default())
 	if err != nil {
 		a.syncNote = "off (" + err.Error() + ")"
 		return
@@ -382,7 +383,7 @@ func (a *App) syncStatusText() string {
 	if st.LastError != "" {
 		b.WriteString("\n  last error: " + st.LastError)
 	}
-	b.WriteString("\n  History: https://www.vulnes.is/resolve/belai-history")
+	b.WriteString("\n  History: " + brand.URL("https://www.vulnetix.com/resolve/belai-history"))
 	b.WriteString("\n  Sessions and hosts: " + rcURL() + " · /rc lets the website start sessions here")
 	return b.String()
 }

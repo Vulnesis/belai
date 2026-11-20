@@ -202,18 +202,18 @@ message directly. Both follow the rules in [Images](image-attachments.md). An
 image the service would refuse (over 3.75 MB, or a format it does not list)
 is named in the message or the tool result rather than dropped silently.
 
-## Through the Vulnesis AI Firewall
+## Through the Vulnetix AI Firewall
 
-Kiro is routed through the Vulnesis AI Firewall, and through no other
+Kiro is routed through the Vulnetix AI Firewall, and through no other
 firewall. The gateway, not Belai, holds the Kiro sign-in. An organisation
 admin stores it once in the secrets vault with
 `vulnetix ai-firewall kiro login`, and the gateway mints a Kiro access token
 from it for every request. While routed:
 
 - **Where requests go.** The base URL is
-  `https://guardrails.vulnes.is/kiro/{org}/v1`. Requests and the model list
+  `https://guardrails.vulnetix.com/kiro/{org}/v1`. Requests and the model list
   go there.
-- **What Belai sends.** Its Vulnesis API key, as the Bearer token. It neither
+- **What Belai sends.** Its Vulnetix API key, as the Bearer token. It neither
   reads nor refreshes the local Kiro sign-in, so none is needed on the machine.
 - **The profile.** Belai sends no `profileArn`; the gateway sets the profile of
   the vault's sign-in.
@@ -223,7 +223,7 @@ from it for every request. While routed:
   `vulnetix ai-firewall kiro login` again.
 
 Saving a Kiro login in `/providers` does not push it to the firewall. The
-organisation's sign-in is provisioned with the Vulnesis CLI instead, so the
+organisation's sign-in is provisioned with the Vulnetix CLI instead, so the
 gateway never shares a refresh token with this machine.
 
 Other firewalls refuse Kiro. They cannot mint its token, and Belai only sends

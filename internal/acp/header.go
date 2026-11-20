@@ -4,12 +4,13 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/sanitize"
 	"github.com/vulnetix/belai/internal/version"
 )
 
 // tagline is the brand line the TUI's compact header carries.
-const tagline = "a safer LLM harness · vulnes.is"
+func tagline() string { return "a safer LLM harness · " + brand.Host("vulnetix.com") }
 
 // headerText is the TUI's compact header as plain markdown for an editor's
 // chat: the wordmark and tagline, then the build facts and the model the
@@ -17,7 +18,7 @@ const tagline = "a safer LLM harness · vulnes.is"
 // identifiers and the mode), never a path, a prompt or model output.
 func headerText(provider, model string) string {
 	var b strings.Builder
-	b.WriteString("**belai** · " + tagline + "\n\n")
+	b.WriteString("**belai** · " + tagline() + "\n\n")
 	var facts []string
 	known := func(s string) bool { return s != "" && s != "dev" && s != "unknown" }
 	if known(version.Version) {

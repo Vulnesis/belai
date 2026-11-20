@@ -5,7 +5,7 @@ import "path/filepath"
 // GitRepo is one repository the user wants kept on this machine: where to clone
 // it from, which refs to keep, and where. It is deployment configuration only.
 // `belai repo sync` (docs/library-items.md) clones and updates it with git;
-// nothing here holds a credential, and the Vulnesis library never clones.
+// nothing here holds a credential, and the Vulnetix library never clones.
 //
 // The list is the user's own: the project layer is dropped in Resolve, so a
 // repository cannot make a host clone another.

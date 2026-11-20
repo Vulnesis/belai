@@ -133,7 +133,7 @@ func newItemHarness(t *testing.T) *itemHarness {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("BELAI_HOME", home)
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	site := &itemSite{acks: map[string][3]string{}}
 	srv := httptest.NewServer(site)
 	t.Cleanup(srv.Close)

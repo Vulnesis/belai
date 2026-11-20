@@ -23,7 +23,7 @@ A rule table in your own settings that changes the command a model sends to
 
 ## The library
 
-With the Vulnesis CLI signed in and `belai rc` running, the table is kept in the
+With the Vulnetix CLI signed in and `belai rc` running, the table is kept in the
 website's library as one item named `bash_rewrite`: a change here is pushed as a new
 version, and a table saved on the website can be installed on any connected host.
 `sync.rewrites` (default on) switches all of it off. An install replaces the table, so

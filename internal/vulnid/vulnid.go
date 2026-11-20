@@ -25,15 +25,17 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/vulnetix/belai/internal/brand"
 )
 
 // MaxLen bounds an identifier. The longest shape (a CVE with a 12 digit
 // sequence) is well inside it.
 const MaxLen = 40
 
-// ConsoleBase is the fixed https origin and path under which the Vulnesis
+// ConsoleBase is the fixed https origin and path under which the Vulnetix
 // console publishes one page per identifier.
-const ConsoleBase = "https://www.vulnes.is/vuln/"
+const ConsoleBase = "https://www.vulnetix.com/vuln/"
 
 // shapes is the table of recognised identifiers. Each entry is a whole
 // identifier; the caller anchors or bounds it.
@@ -166,10 +168,10 @@ func URL(id string) string {
 	if !ok {
 		return ""
 	}
-	return ConsoleBase + url.PathEscape(c)
+	return brand.URL(ConsoleBase) + url.PathEscape(c)
 }
 
-// Hint is the one line that points at the Vulnesis CLI's vdb command for an
+// Hint is the one line that points at the Vulnetix CLI's vdb command for an
 // identifier's remediation strategy. It is empty for anything Valid refuses.
 func Hint(id string) string { return hintLine(id) }
 

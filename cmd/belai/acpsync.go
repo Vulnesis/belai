@@ -17,7 +17,7 @@ import (
 )
 
 // acpMirror mirrors the editor sessions of one `belai acp` connection to the
-// Vulnesis website through the ordinary session syncer. It uploads only lines
+// Vulnetix website through the ordinary session syncer. It uploads only lines
 // the session log already wrote. It takes no remote prompts and no remote
 // answers: the editor owns the conversation, so nothing from the website can
 // drive the session or answer its asks. The syncer follows one live session
@@ -34,7 +34,7 @@ type acpMirror struct {
 }
 
 // newACPMirror starts the mirror, or returns nil when session sync is off, no
-// usable Vulnesis CLI credential resolves or the state directory is unusable.
+// usable Vulnetix CLI credential resolves or the state directory is unusable.
 // The check is silent: an editor session works the same without it.
 func newACPMirror(settings config.Settings, workdir, provider, model string) *acpMirror {
 	if !settings.SyncEnabled() {
@@ -44,7 +44,7 @@ func newACPMirror(settings config.Settings, workdir, provider, model string) *ac
 	if err != nil || sessionsync.UsableCredential(header) != nil {
 		return nil
 	}
-	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNESIS_WEB_URL")),
+	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")),
 		func() (string, error) { return header, nil }, httpclient.Default())
 	if err != nil {
 		return nil

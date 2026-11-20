@@ -84,11 +84,11 @@ type KanbanSpec struct {
 	// merge-conflict (docs/merge-conflicts.md). Nil: none.
 	Conflicts *ConflictsSpec `json:"conflicts,omitempty"`
 	// CLI lets the worker claim a card labelled cli-job:<id> and have the
-	// harness run that Vulnesis CLI job (docs/cli-jobs.md). Nil: none.
+	// harness run that Vulnetix CLI job (docs/cli-jobs.md). Nil: none.
 	CLI *CLISpec `json:"cli,omitempty"`
 }
 
-// CLISpec is a worker's harness-run Vulnesis CLI jobs. The worker claims a card
+// CLISpec is a worker's harness-run Vulnetix CLI jobs. The worker claims a card
 // labelled cli-job:<id> for an id in Jobs; the harness runs that job's fixed argv
 // (internal/clijobs), reads the artifacts it leaves and records the result on
 // the card. No model runs the CLI, and the card's text reaches no argument.
@@ -276,7 +276,7 @@ func (k *KanbanSpec) CandidateCount() int {
 type SecuritySpec struct {
 	// Sweep makes sure a review ran on the repository's HEAD (running it when
 	// no artefact records that commit) and that every finding it reports has
-	// a card. It needs the Vulnesis tool.
+	// a card. It needs the Vulnetix tool.
 	Sweep bool `json:"sweep,omitempty"`
 	// Reconcile compares the cards with the latest artefacts before each
 	// claim: a finding that left the report becomes a gone card for the
@@ -845,8 +845,8 @@ func (k *KanbanSpec) validateCandidates(p AgentProfile) error {
 
 // validate checks the security block against the profile's tool list.
 func (s SecuritySpec) validate(tools []string) error {
-	if s.Sweep && !slices.Contains(tools, "Vulnesis") {
-		return errors.New("kanban.security.sweep needs the Vulnesis tool in tools")
+	if s.Sweep && !slices.Contains(tools, "Vulnetix") {
+		return errors.New("kanban.security.sweep needs the Vulnetix tool in tools")
 	}
 	if s.VEX && len(s.Verdicts) == 0 {
 		return errors.New("kanban.security.vex needs verdicts: a VEX documents a verdict")

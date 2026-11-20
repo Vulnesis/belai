@@ -41,7 +41,7 @@ const releaseCurrentTTL = 30 * time.Minute
 
 // repo is the releases repository this binary is built from.
 const (
-	repoOwner = "Vulnesis"
+	repoOwner = "Vulnetix"
 	repoName  = "belai"
 )
 
@@ -207,7 +207,7 @@ func upgradeHint(m vulnetixcli.InstallMethod, tag string, opts Options) (string,
 	if goos == "windows" {
 		return "download " + asset, asset
 	}
-	return "curl -fsSL https://raw.githubusercontent.com/Vulnesis/belai/main/install.sh | sh", asset
+	return "curl -fsSL https://raw.githubusercontent.com/Vulnetix/belai/main/install.sh | sh", asset
 }
 
 // AssetURL returns the release download URL for one platform. Asset names

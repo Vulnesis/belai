@@ -9,11 +9,11 @@ const sealText =
 
 const installs = [
   { name: 'Homebrew', cmd: 'brew install vulnetix/tap/belai' },
-  { name: 'Scoop', cmd: 'scoop bucket add vulnetix https://github.com/Vulnesis/scoop-bucket && scoop install belai' },
+  { name: 'Scoop', cmd: 'scoop bucket add vulnetix https://github.com/Vulnetix/scoop-bucket && scoop install belai' },
   { name: 'install.sh, checksum-verified', cmd: 'curl -fsSL https://raw.githubusercontent.com/vulnetix/belai/main/install.sh | sh' },
   { name: 'install.sh, another variant', cmd: 'curl -fsSL https://raw.githubusercontent.com/vulnetix/belai/main/install.sh | sh -s -- --variant bert-guardrails-jailbreak' },
   { name: 'go install', cmd: 'go install github.com/vulnetix/belai/cmd/belai@latest' },
-  { name: 'source', cmd: 'git clone https://github.com/vulnesis/belai && cd belai && go build ./cmd/belai' },
+  { name: 'source', cmd: 'git clone https://github.com/vulnetix/belai && cd belai && go build ./cmd/belai' },
 ];
 
 // Sizes drive the bars, relative to the largest family.
@@ -116,8 +116,8 @@ const firstSteps = [
 
   <footer class="mt-16 flex flex-wrap items-center justify-between gap-4 border-t-2 border-vx-ink pt-6 text-vx-ink/70">
     <p class="mono text-sm">
-      belai · Apache-2.0 · <a class="underline" href="https://github.com/vulnesis/belai">github.com/vulnetix/belai</a>
+      belai · Apache-2.0 · <a class="underline" href="https://github.com/vulnetix/belai">github.com/vulnetix/belai</a>
     </p>
-    <p class="text-sm">Free and open source, like the Vulnesis scanners, AI Firewall and MCP server.</p>
+    <p class="text-sm">Free and open source, like the Vulnetix scanners, AI Firewall and MCP server.</p>
   </footer>
 </SealedSection>

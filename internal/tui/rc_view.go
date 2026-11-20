@@ -19,7 +19,7 @@ import (
 )
 
 // The remote control view (/rc) is a Getting started for `belai rc`: what
-// remote control is, a live checklist of what it needs (the Vulnesis CLI, a
+// remote control is, a live checklist of what it needs (the Vulnetix CLI, a
 // browser login, sync, guardrails, a directory to offer) with a step for each
 // gap, then the daemon's status with the Sessions page one key away. The
 // daemon itself runs detached (`belai rc --detach`), so it outlives this TUI.
@@ -86,7 +86,7 @@ type rcOption struct {
 }
 
 // rcURL is the Sessions page on the configured origin.
-func rcURL() string { return rc.ManageURL(os.Getenv("VULNESIS_WEB_URL")) }
+func rcURL() string { return rc.ManageURL(os.Getenv("VULNETIX_WEB_URL")) }
 
 // openRC opens /rc: the status page while the daemon runs, else the intro.
 func (a *App) openRC() tea.Cmd {
@@ -133,10 +133,10 @@ func (a *App) rcOptions() []rcOption {
 		}
 		switch c.Name {
 		case rc.CheckCLI:
-			out = append(out, rcOption{"Install the Vulnesis CLI (Getting started)", rcActInstall})
+			out = append(out, rcOption{"Install the Vulnetix CLI (Getting started)", rcActInstall})
 		case rc.CheckCredential:
 			if _, ok := st.checks.Find(rc.CheckCLI); ok {
-				out = append(out, rcOption{"Log in to Vulnesis in your browser", rcActLogin})
+				out = append(out, rcOption{"Log in to Vulnetix in your browser", rcActLogin})
 			}
 		case rc.CheckSync:
 			out = append(out, rcOption{"Turn session sync on", rcActSync})
@@ -150,7 +150,7 @@ func (a *App) rcOptions() []rcOption {
 	return append(out, rcOption{"Check again", rcActRecheck})
 }
 
-// rcStartLogin runs the Vulnesis device login, as Getting started does.
+// rcStartLogin runs the Vulnetix device login, as Getting started does.
 func (a *App) rcStartLogin() tea.Cmd {
 	st := &a.rcState
 	st.grant, st.loginErr = nil, ""
@@ -363,7 +363,7 @@ func (a *App) rcView() string {
 
 	switch st.page {
 	case rcIntro:
-		line(muted.Render("Remote control makes this machine a Belai host you can drive from the Vulnesis website."))
+		line(muted.Render("Remote control makes this machine a Belai host you can drive from the Vulnetix website."))
 		line("")
 		for _, c := range []struct{ term, desc string }{
 			{"host", "`belai rc` runs in the background and shows this machine under Belai → Sessions"},
@@ -371,7 +371,7 @@ func (a *App) rcView() string {
 			{"where", "only in projects you already trust on this machine (/trusted manages them), and directories you pass with --dir"},
 			{"asks", "off: nobody is at this terminal, so the posture and permission rules decide"},
 			{"guardrails", "must stay on; remote control will not run without them"},
-			{"login", "needs a Vulnesis CLI browser login (vulnetix auth login); API-token logins cannot connect"},
+			{"login", "needs a Vulnetix CLI browser login (vulnetix auth login); API-token logins cannot connect"},
 			{"stop", "/rc stop, `belai rc --stop`, or Stop session on the website for one session"},
 		} {
 			line(fmt.Sprintf("  %s  %s", components.KeyStyle.Render(fmt.Sprintf("%-10s", c.term)), c.desc))
@@ -412,7 +412,7 @@ func (a *App) rcView() string {
 			help = components.HelpBar("o", "open the login page again", "esc", "cancel")
 		case st.loginBusy:
 			line("")
-			line(muted.Render("Starting the Vulnesis login…"))
+			line(muted.Render("Starting the Vulnetix login…"))
 		case st.loginErr != "":
 			line("")
 			line(components.DangerStyle.Render("✗ " + mcpClean(st.loginErr, 300)))

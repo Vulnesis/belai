@@ -13,7 +13,7 @@ func TestDispatchDecodesAskAndTrigger(t *testing.T) {
 	raw := `{"id":"d1","kind":"start","cwd":"/p","prompt":"hi","ask":false,
 		"trigger":{"source":"workflow","via":"webhook","runId":"r_123","workflowName":"Nightly triage",
 		"event":"pull_request","action":"opened","delivery":"72d3162e-cc78-11e3-81ab-4c9367dc0958",
-		"subject":"vulnesis/website#12","repo":"vulnesis/website","extra":"x","workflowId":42}}`
+		"subject":"vulnetix/website#12","repo":"vulnetix/website","extra":"x","workflowId":42}}`
 	var d Dispatch
 	if err := json.Unmarshal([]byte(raw), &d); err != nil {
 		t.Fatal(err)
@@ -22,7 +22,7 @@ func TestDispatchDecodesAskAndTrigger(t *testing.T) {
 		t.Fatalf("ask = %v, want false", d.Ask)
 	}
 	want := Trigger{Source: "workflow", Via: "webhook", RunID: "r_123", WorkflowName: "Nightly triage", Event: "pull_request",
-		Action: "opened", Delivery: "72d3162e-cc78-11e3-81ab-4c9367dc0958", Subject: "vulnesis/website#12", Repo: "vulnesis/website"}
+		Action: "opened", Delivery: "72d3162e-cc78-11e3-81ab-4c9367dc0958", Subject: "vulnetix/website#12", Repo: "vulnetix/website"}
 	if d.Trigger == nil || *d.Trigger != want {
 		t.Fatalf("trigger = %+v, want %+v", d.Trigger, want)
 	}
@@ -104,10 +104,10 @@ func TestTriggerSentence(t *testing.T) {
 		in   Trigger
 		want string
 	}{
-		{"webhook", Trigger{Source: "workflow", Via: "webhook", WorkflowName: "Nightly triage", RunID: "r_123", Event: "pull_request", Action: "opened", Subject: "vulnesis/website#12"},
-			`Started by workflow "Nightly triage" (run r_123), triggered by a GitHub pull_request opened webhook on vulnesis/website#12.`},
-		{"webhook repo only", Trigger{Source: "workflow", Via: "webhook", WorkflowName: "Scan", Event: "push", Repo: "vulnesis/cli"},
-			`Started by workflow "Scan", triggered by a GitHub push webhook on vulnesis/cli.`},
+		{"webhook", Trigger{Source: "workflow", Via: "webhook", WorkflowName: "Nightly triage", RunID: "r_123", Event: "pull_request", Action: "opened", Subject: "vulnetix/website#12"},
+			`Started by workflow "Nightly triage" (run r_123), triggered by a GitHub pull_request opened webhook on vulnetix/website#12.`},
+		{"webhook repo only", Trigger{Source: "workflow", Via: "webhook", WorkflowName: "Scan", Event: "push", Repo: "vulnetix/cli"},
+			`Started by workflow "Scan", triggered by a GitHub push webhook on vulnetix/cli.`},
 		{"cron", Trigger{Source: "workflow", Via: "cron", WorkflowName: "X", RunID: "r_9"},
 			`Started by a scheduled run of workflow "X" (run r_9).`},
 		{"manual unnamed", Trigger{Source: "workflow", Via: "manual"}, `Started by a manual run of a workflow.`},
@@ -124,8 +124,8 @@ func TestTriggerSentence(t *testing.T) {
 		{"pix call with note", Trigger{Source: "pix_call", Note: "patch the log4j finding in the API"},
 			`Started from a Pix Call at the user's request: patch the log4j finding in the API.`},
 		{"pix call", Trigger{Source: "pix_call"}, `Started from a Pix Call at the user's request.`},
-		{"console", Trigger{Source: "console"}, `Started from the Vulnesis console.`},
-		{"console with note", Trigger{Source: "console", Note: "retry after the outage!"}, `Started from the Vulnesis console. Note: retry after the outage!`},
+		{"console", Trigger{Source: "console"}, `Started from the Vulnetix console.`},
+		{"console with note", Trigger{Source: "console", Note: "retry after the outage!"}, `Started from the Vulnetix console. Note: retry after the outage!`},
 		{"finding", Trigger{Source: "finding", Subject: "CVE-2021-44228", Repo: "o/r"}, `Started from a finding (CVE-2021-44228) in o/r.`},
 		{"pull request", Trigger{Source: "pull_request", Subject: "o/r#7"}, `Started from pull request o/r#7.`},
 		{"pull request repo", Trigger{Source: "pull_request", Repo: "o/r"}, `Started from a pull request in o/r.`},

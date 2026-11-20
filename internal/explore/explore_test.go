@@ -133,8 +133,8 @@ func TestPlanUsesPerKindPrompts(t *testing.T) {
 	}{
 		{"file.txt", "Read the file", budgetFile},
 		{"docs/arch", "In the directory", budgetFocus},
-		{"Vulnesis/vdb-site", "In the repository", budgetRepo},
-		{"Vulnesis", "Find which repositories under", budgetRepo},
+		{"Vulnetix/vdb-site", "In the repository", budgetRepo},
+		{"Vulnetix", "Find which repositories under", budgetRepo},
 		{"https://example.com", "Fetch", budgetURL},
 		{"concept", "Find where", budgetLocate},
 	}
@@ -206,7 +206,7 @@ func TestDropAttachedSkipsAttachedFiles(t *testing.T) {
 }
 
 func TestPlanRepoPromptIncludesLocalFirstRule(t *testing.T) {
-	tasks := Plan("reuse @Vulnesis/vdb-site", rolemanager.ModeDecision{Mode: modes.ModePlan, Explore: true})
+	tasks := Plan("reuse @Vulnetix/vdb-site", rolemanager.ModeDecision{Mode: modes.ModePlan, Explore: true})
 	if len(tasks) != 1 {
 		t.Fatalf("expected 1 task, got %d", len(tasks))
 	}
@@ -234,9 +234,9 @@ func TestClassifyRef(t *testing.T) {
 		{"docs/arch.md", RefFile},
 		{"docs/arch", RefDir},
 		{"./internal", RefDir},
-		{"Vulnesis/vdb-site", RefRepo},
+		{"Vulnetix/vdb-site", RefRepo},
 		{"org/repo-name", RefRepo},
-		{"Vulnesis", RefOrg},
+		{"Vulnetix", RefOrg},
 		{"GitHub", RefOrg},
 		{"https://example.com", RefURL},
 		{"http://x.y", RefURL},

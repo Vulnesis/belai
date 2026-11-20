@@ -1,5 +1,5 @@
 // Package rc is Belai remote control: `belai rc` runs a coordinator daemon
-// that registers this machine with the Vulnesis website, advertises the
+// that registers this machine with the Vulnetix website, advertises the
 // directories it will work in, and starts a headless, synced Belai session
 // whenever the website asks for one. Each session is its own child process
 // (`belai rc-session`), so one crashing never takes the daemon or another
@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/sessionsync"
@@ -26,12 +27,12 @@ import (
 )
 
 // SessionsURL is the website page that lists hosts and starts sessions on them.
-const SessionsURL = "https://www.vulnes.is/resolve/belai-sessions"
+const SessionsURL = "https://www.vulnetix.com/resolve/belai-sessions"
 
-// ManageURL is SessionsURL on the configured origin ($VULNESIS_WEB_URL).
+// ManageURL is SessionsURL on the configured origin ($VULNETIX_WEB_URL).
 func ManageURL(webURL string) string {
 	if webURL == "" {
-		return SessionsURL
+		return brand.URL(SessionsURL)
 	}
 	return strings.TrimRight(webURL, "/") + "/resolve/belai-sessions"
 }
@@ -82,12 +83,12 @@ func (cs Checks) Find(name string) (Check, bool) {
 
 // Check names, stable for the TUI's setup screens.
 const (
-	CheckCLI        = "Vulnesis CLI"
-	CheckCredential = "Vulnesis login"
+	CheckCLI        = "Vulnetix CLI"
+	CheckCredential = "Vulnetix login"
 	CheckSync       = "Session sync"
 	CheckGuardrails = "Guardrails"
 	CheckDirs       = "Directories"
-	CheckServer     = "Vulnesis website"
+	CheckServer     = "Vulnetix website"
 )
 
 // PreflightOptions are the inputs Preflight reads. Zero functions take the
@@ -131,15 +132,15 @@ func Preflight(ctx context.Context, o PreflightOptions) Checks {
 	switch {
 	case credErr != nil:
 		out = append(out, Check{Name: CheckCredential, Level: Fail,
-			Detail: "no Vulnesis credential found",
+			Detail: "no Vulnetix credential found",
 			Fix:    "run `vulnetix auth login` (it opens your browser)"})
 	case sessionsync.UsableCredential(header) != nil:
 		detail := "this credential is not accepted by the website"
 		if errors.Is(sessionsync.UsableCredential(header), sessionsync.ErrTokenCredential) {
-			detail = "the Vulnesis CLI is logged in with an API token, which the website does not accept for remote control"
+			detail = "the Vulnetix CLI is logged in with an API token, which the website does not accept for remote control"
 		}
 		out = append(out, Check{Name: CheckCredential, Level: Fail, Detail: detail,
-			Fix: "run `vulnetix auth login` and sign in through the browser (not --token), and unset VULNESIS_API_TOKEN"})
+			Fix: "run `vulnetix auth login` and sign in through the browser (not --token), and unset VULNETIX_API_TOKEN"})
 	default:
 		out = append(out, Check{Name: CheckCredential, Level: OK, Detail: credentialKind(header)})
 	}
@@ -200,12 +201,12 @@ func credentialKind(header string) string {
 	return "browser login"
 }
 
-// InstallHint is how to install the Vulnesis CLI on this OS.
+// InstallHint is how to install the Vulnetix CLI on this OS.
 func InstallHint() string {
 	if plan, ok := vulnetixcli.PlanInstall(runtime.GOOS, nil); ok && len(plan.Steps) > 0 {
 		return "install it: " + plan.Commands()
 	}
-	return "install it: " + vulnetixcli.ManualInstallHint
+	return "install it: " + brand.Text(vulnetixcli.ManualInstallHint)
 }
 
 // Render writes checks as ✓ / ! / ✗ lines, each non-passing line followed by

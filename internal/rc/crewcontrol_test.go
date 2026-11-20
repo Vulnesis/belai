@@ -20,7 +20,7 @@ func crewControlRig(t *testing.T, webControls bool) (crewControlEnv, fleet.CrewR
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("BELAI_HOME", home)
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	reg := fleet.NewRegistry(filepath.Join(home, "agents", "run"), nil)
 	a, b := t.TempDir(), t.TempDir()
 	run, err := reg.LaunchCrew(fleet.CrewRun{Crew: "delivery", Scope: []fleet.ScopeDir{{Path: a, Weight: 2}},

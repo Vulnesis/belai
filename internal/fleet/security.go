@@ -26,7 +26,7 @@ import (
 // finding exists, and no scanner or advisory text reaches a card: a card
 // holds identifiers, versions, paths and a severity word.
 
-// artefactDir is where the Vulnesis CLI leaves a repository's scan artefacts.
+// artefactDir is where the Vulnetix CLI leaves a repository's scan artefacts.
 func (w *Worker) artefactDir() string { return filepath.Join(w.Repo, ".vulnetix") }
 
 // headRef is the full commit id of the repository's HEAD.
@@ -383,7 +383,7 @@ const (
 // enrichmentBody is the harness-composed brief for the scout's model turn. It
 // names no card: the harness derives them from board facts (enrichmentTargets).
 const enrichmentBody = "The harness ran the review on this commit and filed one card per new finding. " +
-	"Plan the fixes so the agent that fixes them starts with the answer. For each manifest the new cards name, run the Vulnesis fix dry run " +
+	"Plan the fixes so the agent that fixes them starts with the answer. For each manifest the new cards name, run the Vulnetix fix dry run " +
 	"(fix --dry-run --manifest FILE). Then add one note to each card the KanbanUpdate tool accepts, giving the fixed version, " +
 	"the exact edit and the command that regenerates the lockfile, or saying that no fix exists. " +
 	"You may only add notes to those cards; do not edit or move them, and do not file new ones for these findings. " +

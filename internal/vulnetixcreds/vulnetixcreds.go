@@ -1,4 +1,4 @@
-// Package vulnetixcreds reads the Vulnesis CLI credential for the AI Firewall
+// Package vulnetixcreds reads the Vulnetix CLI credential for the AI Firewall
 // gateway. It mirrors the CLI's own load precedence without shelling out to a
 // binary that cannot print its secret.
 package vulnetixcreds
@@ -37,7 +37,7 @@ type Credential struct {
 // authenticate to the AI Firewall gateway.
 var ErrNoGatewayCredential = errors.New("logged in with an API token; the Firewall needs an API key")
 
-// diskCredential matches the shape the Vulnesis CLI writes to
+// diskCredential matches the shape the Vulnetix CLI writes to
 // .vulnetix/credentials.json (cli/pkg/auth/auth.go).
 type diskCredential struct {
 	OrgID           string `json:"org_id"`
@@ -52,17 +52,17 @@ type diskCredential struct {
 
 // Load resolves the gateway credential using the CLI's precedence:
 //
-//  1. VULNESIS_API_KEY + VULNESIS_ORG_ID env.
+//  1. VULNETIX_API_KEY + VULNETIX_ORG_ID env.
 //  2. VVD_ORG + VVD_SECRET env (APIKey = HMAC-SHA256(secret, org)).
 //  3. .vulnetix/credentials.json in the workdir.
-//  4. $VULNESIS_CREDENTIALS_DIR, else ~/.vulnetix/credentials.json.
+//  4. $VULNETIX_CREDENTIALS_DIR, else ~/.vulnetix/credentials.json.
 //
 // The keychain seam lets tests inject a fake; production callers pass the
 // vulnetix-scoped keyring from credentials.NewKeyringBackend.
 func Load(getenv func(string) string, home string, workdir string, kc Keychain) (Credential, error) {
-	if key := getenv("VULNESIS_API_KEY"); key != "" {
-		if org := getenv("VULNESIS_ORG_ID"); org != "" {
-			return Credential{OrgUUID: org, APIKey: key, Source: "$VULNESIS_API_KEY"}, nil
+	if key := getenv("VULNETIX_API_KEY"); key != "" {
+		if org := getenv("VULNETIX_ORG_ID"); org != "" {
+			return Credential{OrgUUID: org, APIKey: key, Source: "$VULNETIX_API_KEY"}, nil
 		}
 	}
 	if org := getenv("VVD_ORG"); org != "" {
@@ -76,28 +76,28 @@ func Load(getenv func(string) string, home string, workdir string, kc Keychain) 
 		}
 	}
 	path := filepath.Join(home, ".vulnetix", "credentials.json")
-	if dir := getenv("VULNESIS_CREDENTIALS_DIR"); dir != "" {
+	if dir := getenv("VULNETIX_CREDENTIALS_DIR"); dir != "" {
 		path = filepath.Join(dir, "credentials.json")
 	}
 	if c, ok, err := loadFile(path, kc); err != nil || ok {
 		return c, err
 	}
-	return Credential{}, errors.New("no Vulnesis credential found")
+	return Credential{}, errors.New("no Vulnetix credential found")
 }
 
-// AuthHeader returns the Authorization header value the Vulnesis CLI would
+// AuthHeader returns the Authorization header value the Vulnetix CLI would
 // send: "ApiKey <org>:<key>" for an API-key or SigV4 credential, or
 // "Bearer <token>" for a token login. Unlike Load it accepts a token-only
-// credential, because the Vulnesis API (and its MCP server) takes either.
+// credential, because the Vulnetix API (and its MCP server) takes either.
 // It never falls back to the CLI's shared Community credential.
 func AuthHeader(getenv func(string) string, home, workdir string, kc Keychain) (string, error) {
-	if tok := strings.TrimSpace(getenv("VULNESIS_API_TOKEN")); tok != "" {
+	if tok := strings.TrimSpace(getenv("VULNETIX_API_TOKEN")); tok != "" {
 		return "Bearer " + tok, nil
 	}
 	c, err := Load(getenv, home, workdir, kc)
 	if err == nil {
 		if c.OrgUUID == "" || c.APIKey == "" {
-			return "", errors.New("the Vulnesis credential has no org id or key")
+			return "", errors.New("the Vulnetix credential has no org id or key")
 		}
 		return "ApiKey " + c.OrgUUID + ":" + c.APIKey, nil
 	}
@@ -119,7 +119,7 @@ func credentialPaths(getenv func(string) string, home, workdir string) []string 
 		out = append(out, filepath.Join(workdir, ".vulnetix", "credentials.json"))
 	}
 	path := filepath.Join(home, ".vulnetix", "credentials.json")
-	if dir := getenv("VULNESIS_CREDENTIALS_DIR"); dir != "" {
+	if dir := getenv("VULNETIX_CREDENTIALS_DIR"); dir != "" {
 		path = filepath.Join(dir, "credentials.json")
 	}
 	return append(out, path)

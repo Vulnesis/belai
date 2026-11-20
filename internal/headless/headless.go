@@ -125,7 +125,7 @@ type Params struct {
 // OpenA2A opens the A2A endpoint for a session about to be built from p
 // (docs/a2a.md): profile names its Agent Card, ticket its work (a fleet
 // worker's card), and rec writes its a2a_* transcript entries. It relays
-// through Vulnesis when sync is on. nil when a2a.enabled is off. Close it when
+// through Vulnetix when sync is on. nil when a2a.enabled is off. Close it when
 // the session ends.
 func OpenA2A(ctx context.Context, p Params, profile, ticket string, rec a2alink.Recorder) *a2alink.Link {
 	var raw func() json.RawMessage
@@ -292,13 +292,13 @@ func HostID() string {
 }
 
 // SyncClient returns the session-sync client when the kanban and sync
-// settings are on and a usable Vulnesis CLI credential resolves, or nil.
+// settings are on and a usable Vulnetix CLI credential resolves, or nil.
 func SyncClient(settings config.Settings, workdir string) *sessionsync.Client {
 	return syncClient(settings, workdir)
 }
 
 // syncClient returns the session-sync client when the kanban and sync
-// settings are on and a usable Vulnesis CLI credential resolves.
+// settings are on and a usable Vulnetix CLI credential resolves.
 func syncClient(settings config.Settings, workdir string) *sessionsync.Client {
 	if !settings.KanbanEnabled() || !settings.SyncEnabled() {
 		return nil
@@ -307,7 +307,7 @@ func syncClient(settings config.Settings, workdir string) *sessionsync.Client {
 	if err != nil || sessionsync.UsableCredential(header) != nil {
 		return nil
 	}
-	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNESIS_WEB_URL")),
+	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")),
 		func() (string, error) { return header, nil }, httpclient.Default())
 	if err != nil {
 		return nil
@@ -325,7 +325,7 @@ func a2aSyncClient(settings config.Settings, workdir string) *sessionsync.Client
 	if err != nil || sessionsync.UsableCredential(header) != nil {
 		return nil
 	}
-	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNESIS_WEB_URL")),
+	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")),
 		func() (string, error) { return header, nil }, httpclient.Default())
 	if err != nil {
 		return nil

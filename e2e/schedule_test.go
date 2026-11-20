@@ -81,7 +81,7 @@ func TestScheduledAgentRunsThroughTheDaemon(t *testing.T) {
 	// Nothing here may reach a real account: sync goes to the stub below only.
 	site := scheduleSite()
 	t.Cleanup(site.Close)
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 
 	// A short poll keeps the drain wait (two polls) to ten seconds.
 	md := filepath.Join(t.TempDir(), "t-builder.md")
@@ -186,10 +186,10 @@ func TestBelaiRCCommandFiresAStoredSchedule(t *testing.T) {
 	t.Setenv("BELAI_BASE_URL", e.url)
 	t.Setenv("OPENAI_API_KEY", "test")
 	// The stub is the only website this run can reach, under a made-up login.
-	t.Setenv("VULNESIS_WEB_URL", site.URL)
-	t.Setenv("VULNESIS_API_KEY", "test-key")
-	t.Setenv("VULNESIS_ORG_ID", "11111111-2222-4333-8444-555555555555")
-	t.Setenv("VULNESIS_API_TOKEN", "")
+	t.Setenv("VULNETIX_WEB_URL", site.URL)
+	t.Setenv("VULNETIX_API_KEY", "test-key")
+	t.Setenv("VULNETIX_ORG_ID", "11111111-2222-4333-8444-555555555555")
+	t.Setenv("VULNETIX_API_TOKEN", "")
 	t.Setenv("HOME", t.TempDir())
 
 	md := filepath.Join(t.TempDir(), "t-builder.md")

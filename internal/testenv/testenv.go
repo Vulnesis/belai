@@ -1,6 +1,6 @@
-// Package testenv keeps a test's Belai state, home directory and Vulnesis
+// Package testenv keeps a test's Belai state, home directory and Vulnetix
 // account apart from the developer's own: Belai's home and model directory
-// and $HOME move to temp dirs, and the Vulnesis web URL points at a closed
+// and $HOME move to temp dirs, and the Vulnetix web URL points at a closed
 // loopback port so no request can reach a real account.
 //
 // Only test files import this package.
@@ -8,7 +8,7 @@ package testenv
 
 import "testing"
 
-// OfflineWebURL is a loopback address nothing listens on. A Vulnesis client
+// OfflineWebURL is a loopback address nothing listens on. A Vulnetix client
 // aimed at it fails fast with a refused connection.
 const OfflineWebURL = "http://127.0.0.1:1"
 
@@ -25,10 +25,10 @@ type Env struct {
 	WorkDir string
 }
 
-// Offline points VULNESIS_WEB_URL at OfflineWebURL for the rest of the test.
+// Offline points VULNETIX_WEB_URL at OfflineWebURL for the rest of the test.
 func Offline(t testing.TB) {
 	t.Helper()
-	t.Setenv("VULNESIS_WEB_URL", OfflineWebURL)
+	t.Setenv("VULNETIX_WEB_URL", OfflineWebURL)
 }
 
 // Isolate gives BELAI_HOME, BELAI_MODELS_DIR and HOME their own fresh temp

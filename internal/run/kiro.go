@@ -226,7 +226,7 @@ func kiroImages(atts []Attachment) []wire.KiroImage {
 // the catalogue with token when the process holds none younger than
 // kiromodels.TTL. A failed fetch is remembered as empty, so it is not
 // retried on every request and the request falls back to the plain shape.
-// Through the Vulnesis AI Firewall, token is the Vulnesis key and the gateway
+// Through the Vulnetix AI Firewall, token is the Vulnetix key and the gateway
 // lists the models with the Kiro token it mints.
 func kiroModelInfo(ctx context.Context, base, model, token, profileARN string, route *firewall.Route) kiromodels.Info {
 	info, found, fresh := kiromodels.Lookup(base, model)

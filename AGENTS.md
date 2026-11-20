@@ -44,7 +44,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   `Diff` (all `KindRead`), `SubAgentLog` and `BashOutput` (`KindProcess`),
   `SearchSessions`/`ReadSession`/`SearchMemory` (`KindAgentStore`, other
   agents' transcript and memory text), `KanbanSearch` (`KindKanban`, board
-  items other sessions' models and web users wrote), `Task` subagent reports (`KindSubagent`, model-written arbitrary text), a teleport replay's hand-over (`KindTeleport`, another host's model's text and patch parts), an A2A direct message or reply (`KindPeer`, another agent's model text, from this host or another, classified on receipt), the per-edit lint loop's rows (`KindLint`, linter messages that quote the edited file), `Outline` and `Symbol` results (`KindSymbol`, declared names from the repository's own files), `RepoMemoryRead` notes (`KindRepoMemory`, text other agents and the Software Factory console wrote), the `Vulnesis` tool (`KindRemote`,
+  items other sessions' models and web users wrote), `Task` subagent reports (`KindSubagent`, model-written arbitrary text), a teleport replay's hand-over (`KindTeleport`, another host's model's text and patch parts), an A2A direct message or reply (`KindPeer`, another agent's model text, from this host or another, classified on receipt), the per-edit lint loop's rows (`KindLint`, linter messages that quote the edited file), `Outline` and `Symbol` results (`KindSymbol`, declared names from the repository's own files), `RepoMemoryRead` notes (`KindRepoMemory`, text other agents and the Software Factory console wrote), the `Vulnetix` tool (`KindRemote`,
   database advisory text and repository snippets), the dependency hook's Vulnesis CLI
   output (`KindRemote`) and its background agents' reports (`KindProcess`,
   `internal/tui/depwatch.go`), `ReadResult` slices of offloaded results
@@ -1617,7 +1617,7 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   through the typed-prompt path on the user's click, or as a website prompt) and
   the `belai:triage` launch take only `vulnid.Valid`'s canonical string, never the
   text around it; the click handler validates again. `belai:triage` is read-only
-  (`Vulnesis`, `Read`, `Grep`, `Glob`), starts through
+  (`Vulnetix`, `Read`, `Grep`, `Glob`), starts through
   `bgagent.Manager.StartTask` under the ordinary permissions, trust gate and
   sandbox, and receives the identifier as one `vulnerability_id:` data line, never
   in its instance name. A remediation request (`vulnid.IsRemediation`, the prompt

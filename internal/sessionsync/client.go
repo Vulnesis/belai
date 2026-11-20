@@ -1,4 +1,4 @@
-// Package sessionsync mirrors Belai sessions to the Vulnesis website and
+// Package sessionsync mirrors Belai sessions to the Vulnetix website and
 // carries prompts typed there back into the live session.
 //
 // The host is the source of truth. The Syncer never builds a transcript entry
@@ -10,8 +10,8 @@
 // JSONL like a typed prompt; only then, through the same tail, does it reach
 // the website as a transcript line.
 //
-// Requests go only to the Vulnesis console (https://*.vulnes.is, or a
-// loopback origin for local development) with the Vulnesis CLI's own
+// Requests go only to the Vulnetix console (https://*.vulnetix.com, or a
+// loopback origin for local development) with the Vulnetix CLI's own
 // credential in the Authorization header. See docs/session-sync.md.
 package sessionsync
 
@@ -33,13 +33,14 @@ import (
 
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/netguard"
 	"github.com/vulnetix/belai/internal/sessionmeasure"
 )
 
-// DefaultWebURL is the Vulnesis console origin; $VULNESIS_WEB_URL overrides it
+// DefaultWebURL is the Vulnetix console origin; $VULNETIX_WEB_URL overrides it
 // exactly as it does for the CLI device login.
-const DefaultWebURL = "https://www.vulnes.is"
+const DefaultWebURL = "https://www.vulnetix.com"
 
 // apiPath is where the console proxies vdb-site's /v1/belai routes.
 const apiPath = "/api/site/v1/belai"
@@ -51,7 +52,7 @@ const requestTimeout = 20 * time.Second
 var ErrNotFound = errors.New("sessionsync: not found")
 
 // ErrUnauthorized is a 401: the credential was refused.
-var ErrUnauthorized = errors.New("sessionsync: the Vulnesis credential was refused")
+var ErrUnauthorized = errors.New("sessionsync: the Vulnetix credential was refused")
 
 // ErrConflict is a 409: the request no longer applies (a draft cancelled or
 // expired on the website, an answer already given).
@@ -72,13 +73,13 @@ func IsConflict(err error) bool { return errors.Is(err, ErrConflict) }
 func BaseURL(origin string) string {
 	origin = strings.TrimRight(strings.TrimSpace(origin), "/")
 	if origin == "" {
-		origin = DefaultWebURL
+		origin = brand.URL(DefaultWebURL)
 	}
 	return origin + apiPath
 }
 
 // AllowedOrigin reports whether the credential may be sent to rawURL: https on
-// vulnes.is or a subdomain, or any scheme on a loopback host (local dev).
+// vulnetix.com or a subdomain, or any scheme on a loopback host (local dev).
 func AllowedOrigin(rawURL string) bool {
 	u, err := url.Parse(rawURL)
 	if err != nil || u.User != nil || u.Host == "" {
@@ -88,7 +89,7 @@ func AllowedOrigin(rawURL string) bool {
 		return u.Scheme == "http" || u.Scheme == "https"
 	}
 	h := strings.ToLower(u.Hostname())
-	return u.Scheme == "https" && (h == "vulnes.is" || strings.HasSuffix(h, ".vulnes.is"))
+	return u.Scheme == "https" && brand.OwnsHost(h)
 }
 
 func loopback(u *url.URL) bool {
@@ -96,10 +97,10 @@ func loopback(u *url.URL) bool {
 }
 
 // errTestOrigin refuses a real origin from a test binary. A developer's
-// machine holds a real Vulnesis CLI credential and sync is on by default,
-// so a test that forgot to isolate VULNESIS_WEB_URL pushed its fixture
+// machine holds a real Vulnetix CLI credential and sync is on by default,
+// so a test that forgot to isolate VULNETIX_WEB_URL pushed its fixture
 // items ("Survey tests") to the developer's own board on every go test run.
-var errTestOrigin = errors.New("sessionsync: a test binary never syncs to a non-loopback origin; set VULNESIS_WEB_URL to a loopback server")
+var errTestOrigin = errors.New("sessionsync: a test binary never syncs to a non-loopback origin; set VULNETIX_WEB_URL to a loopback server")
 
 // Client is the thin HTTP client for /v1/belai. AuthHeader is read on every
 // request so a re-login takes effect without a restart.
@@ -112,7 +113,7 @@ type Client struct {
 // NewClient validates base and returns a client for it.
 func NewClient(base string, auth func() (string, error), hc *http.Client) (*Client, error) {
 	if !AllowedOrigin(base) {
-		return nil, fmt.Errorf("sessionsync: refusing to send the Vulnesis credential to %s", base)
+		return nil, fmt.Errorf("sessionsync: refusing to send the Vulnetix credential to %s", base)
 	}
 	if u, _ := url.Parse(base); testing.Testing() && !loopback(u) {
 		return nil, errTestOrigin
@@ -1057,7 +1058,7 @@ type Controls struct {
 	// GitSync switches the session's git sync (internal/gitsync) on or off.
 	GitSync *bool `json:"gitSync,omitempty"`
 	// A2ABlackout is the organisation's A2A blackout (docs/a2a.md): on, the
-	// host relays no A2A envelope through Vulnesis in either direction. It is
+	// host relays no A2A envelope through Vulnetix in either direction. It is
 	// the factory's state, sent with every registration and heartbeat.
 	A2ABlackout *bool `json:"a2aBlackout,omitempty"`
 }

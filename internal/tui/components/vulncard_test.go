@@ -10,7 +10,7 @@ import (
 func vulnCard() *VulnCard {
 	return &VulnCard{
 		ID:      "CVE-2021-44228",
-		URL:     "https://www.vulnes.is/vuln/CVE-2021-44228",
+		URL:     "https://www.vulnetix.com/vuln/CVE-2021-44228",
 		Command: "vulnetix vdb vuln CVE-2021-44228",
 	}
 }
@@ -18,7 +18,7 @@ func vulnCard() *VulnCard {
 func TestVulnCardShowsLinkHintAndLaunch(t *testing.T) {
 	out, lm := vulnPanel(Message{Role: VulnRole, Vuln: vulnCard()}, 110)
 	plain := ansi.Strip(out)
-	for _, want := range []string{"CVE-2021-44228", "https://www.vulnes.is/vuln/CVE-2021-44228", "vulnetix vdb vuln CVE-2021-44228", "launch belai:triage"} {
+	for _, want := range []string{"CVE-2021-44228", "https://www.vulnetix.com/vuln/CVE-2021-44228", "vulnetix vdb vuln CVE-2021-44228", "launch belai:triage"} {
 		if !strings.Contains(plain, want) {
 			t.Errorf("no %q in\n%s", want, plain)
 		}
@@ -49,7 +49,7 @@ func TestVulnCardShowsLinkHintAndLaunch(t *testing.T) {
 func TestVulnCardCopiesTheLinkAndTheCommandOnly(t *testing.T) {
 	out, lm := vulnPanel(Message{Role: VulnRole, Vuln: vulnCard()}, 110)
 	got := lm.Text(Pos{Line: 0, Col: 0}, Pos{Line: len(lm) - 1, Col: 200})
-	for _, want := range []string{"https://www.vulnes.is/vuln/CVE-2021-44228", "vulnetix vdb vuln CVE-2021-44228"} {
+	for _, want := range []string{"https://www.vulnetix.com/vuln/CVE-2021-44228", "vulnetix vdb vuln CVE-2021-44228"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("a selection lost %q: %q", want, got)
 		}

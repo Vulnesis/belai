@@ -404,13 +404,13 @@ func TestActivityDirective(t *testing.T) {
 		Dir: "/repo", State: activity.StateFailed, ExitCode: 1, Started: start, Ended: start.Add(95 * time.Second),
 	}
 	d := activityDirective(failed)
-	for _, want := range []string{"`vulnetix fix` ran as `/bin/vulnetix --no-banner fix --dry-run` in /repo", "exited 1", "after 1m35s", "Diagnose the failure", "Vulnesis tool"} {
+	for _, want := range []string{"`vulnetix fix` ran as `/bin/vulnetix --no-banner fix --dry-run` in /repo", "exited 1", "after 1m35s", "Diagnose the failure", "Vulnetix tool"} {
 		if !strings.Contains(d, want) {
 			t.Errorf("directive lacks %q: %s", want, d)
 		}
 	}
 	ok := activity.Activity{Kind: activity.KindShell, Label: "!ls", Argv: []string{"ls"}, Dir: "/repo", State: activity.StateDone}
-	if d := activityDirective(ok); !strings.Contains(d, "exited 0") || strings.Contains(d, "Diagnose") || strings.Contains(d, "Vulnesis tool") {
+	if d := activityDirective(ok); !strings.Contains(d, "exited 0") || strings.Contains(d, "Diagnose") || strings.Contains(d, "Vulnetix tool") {
 		t.Errorf("success directive = %s", d)
 	}
 }

@@ -41,7 +41,7 @@ const goodReply = `<thinking>a reviewer that judges, never fixes</thinking>
   "system_prompt": {"value": "Review the branch's manifests.", "why": ""},
   "mode": {"value": "worker", "why": "it hands items on"},
   "autonomy": {"value": "autonomous"},
-  "tools": {"value": ["Read", "Grep", "Shell", "Vulnesis", "Read"]},
+  "tools": {"value": ["Read", "Grep", "Shell", "Vulnetix", "Read"]},
   "kanban.lists": {"value": ["review"]},
   "kanban.labels": {"value": ["Deps Review"]},
   "kanban.on_success": {"value": {"list": "done", "drop_labels": ["deps-review"]}},
@@ -64,7 +64,7 @@ func TestParseReplyCleansAndDrops(t *testing.T) {
 	if _, ok := f["ask_permission"]; ok {
 		t.Fatal("a draft offered ask_permission")
 	}
-	if got := f["tools"].Value; !reflect.DeepEqual(got, []string{"Read", "Grep", "Vulnesis"}) {
+	if got := f["tools"].Value; !reflect.DeepEqual(got, []string{"Read", "Grep", "Vulnetix"}) {
 		t.Fatalf("tools = %v", got)
 	}
 	if got := f["kanban.labels"].Value; !reflect.DeepEqual(got, []string{"deps-review"}) {

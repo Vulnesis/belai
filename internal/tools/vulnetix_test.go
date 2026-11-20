@@ -119,10 +119,10 @@ func TestVulnetixInCommand(t *testing.T) {
 		"vulnetix sca":                                   true,
 		"/home/u/.local/bin/vulnetix fix --yes":          true,
 		"cd site && vulnetix sca --path .":               true,
-		"VULNESIS_ORG_ID=x vulnetix sca 2>&1 | tail -60": true,
+		"VULNETIX_ORG_ID=x vulnetix sca 2>&1 | tail -60": true,
 		"timeout 60 vulnetix sca":                        true,
 		"grep -r vulnetix internal":                      false,
-		"ls ~/GitHub/Vulnesis/cli":                       false,
+		"ls ~/GitHub/Vulnetix/cli":                       false,
 		"echo $(vulnetix --version)":                     true,
 	} {
 		if got := VulnetixInCommand(cmd); got != want {
@@ -134,8 +134,8 @@ func TestVulnetixInCommand(t *testing.T) {
 func TestBashRedirectsVulnetix(t *testing.T) {
 	b := &Bash{Root: t.TempDir(), Vulnetix: true}
 	_, err := b.Execute(context.Background(), map[string]any{"command": "vulnetix fix --yes 2>&1 | tail -50"})
-	if err == nil || !strings.Contains(err.Error(), "Vulnesis tool") {
-		t.Fatalf("err = %v, want a pointer to the Vulnesis tool", err)
+	if err == nil || !strings.Contains(err.Error(), "Vulnetix tool") {
+		t.Fatalf("err = %v, want a pointer to the Vulnetix tool", err)
 	}
 	if _, err := b.Execute(context.Background(), map[string]any{"command": "echo vulnetix"}); err != nil {
 		t.Fatalf("a mention is not a run: %v", err)
@@ -175,7 +175,7 @@ func TestVulnetixExecute(t *testing.T) {
 
 // The tool is offered when vulnetix is on PATH, and then Bash redirects.
 func TestDefaultWithCapsWiresVulnetix(t *testing.T) {
-	caps := Capabilities{local: map[string]bool{"Vulnesis": true}}
+	caps := Capabilities{local: map[string]bool{"Vulnetix": true}}
 	reg := DefaultWithCaps(t.TempDir(), false, caps, repoindex.Index{})
 	var sawTool, redirected bool
 	for _, tl := range reg.tools {
@@ -187,6 +187,6 @@ func TestDefaultWithCapsWiresVulnetix(t *testing.T) {
 		}
 	}
 	if !sawTool || !redirected {
-		t.Fatalf("Vulnesis tool %v, Bash redirect %v", sawTool, redirected)
+		t.Fatalf("Vulnetix tool %v, Bash redirect %v", sawTool, redirected)
 	}
 }

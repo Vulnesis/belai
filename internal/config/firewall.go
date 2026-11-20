@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/netguard"
 )
 
@@ -80,8 +81,8 @@ const (
 // DefaultFirewall is the instance used when none is named.
 const DefaultFirewall = "vulnetix"
 
-// DefaultVulnetixGateway is the production Vulnesis AI Firewall host.
-const DefaultVulnetixGateway = "https://guardrails.vulnes.is"
+// DefaultVulnetixGateway is the production Vulnetix AI Firewall host.
+const DefaultVulnetixGateway = "https://guardrails.vulnetix.com"
 
 // FirewallAdapterIDs are the adapters an instance may name. The
 // provider-native entries (OpenRouter, Cloudflare AI Gateway) are read-only
@@ -128,7 +129,7 @@ func (s Settings) FirewallInstanceNamed(name string) (FirewallInstance, bool) {
 			inst.URL = s.Vulnetix.GatewayURL
 		}
 		if inst.URL == "" {
-			inst.URL = DefaultVulnetixGateway
+			inst.URL = brand.URL(DefaultVulnetixGateway)
 		}
 		return inst, true
 	}
@@ -288,7 +289,7 @@ func ValidateFirewallInstance(name string, inst FirewallInstance) error {
 		return fmt.Errorf("firewall %q: the vulnetix adapter is configured only as the %q instance", name, DefaultFirewall)
 	}
 	if name == DefaultFirewall && inst.Adapter != "vulnetix" {
-		return fmt.Errorf("firewall name %q is reserved for the Vulnesis AI Firewall", name)
+		return fmt.Errorf("firewall name %q is reserved for the Vulnetix AI Firewall", name)
 	}
 	if inst.URL != "" {
 		if err := ValidFirewallURL(inst.URL); err != nil {

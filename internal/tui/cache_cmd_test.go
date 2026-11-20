@@ -12,7 +12,7 @@ import (
 
 func cacheApp(t *testing.T) *App {
 	t.Helper()
-	t.Setenv("VULNESIS_WEB_URL", "")
+	t.Setenv("VULNETIX_WEB_URL", "")
 	a := newPersistApp(t)
 	t.Cleanup(a.keepAliveFor().Close)
 	return a

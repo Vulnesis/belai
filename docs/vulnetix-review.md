@@ -1,7 +1,7 @@
-# `/vulnetix review`: the Vulnesis code review
+# `/vulnetix review`: the Vulnetix code review
 
 `/vulnetix review` scans the repository in the working directory with nine
-Vulnesis CLI scanners, has a read-only agent check each scanner's findings
+Vulnetix CLI scanners, has a read-only agent check each scanner's findings
 against the code, and then hands everything to the session, which fixes what
 has one clear fix, asks you about what has several, and writes a report.
 
@@ -16,17 +16,17 @@ classification, card rendering, severity parsing) are in
 
 ## Prerequisites
 
-- **The Vulnesis CLI on `PATH`.** Belai looks for `vulnetix` when the review
+- **The Vulnetix CLI on `PATH`.** Belai looks for `vulnetix` when the review
   starts. Without it the review stops with `vulnetix failed: vulnetix not found
   on PATH`. The [Getting started](vulnetix.md#getting-started) view offers to
   install it (`brew install vulnetix/tap/vulnetix`, or Scoop on Windows), and
   `/vulnetix setup` reopens that view.
 - **A model provider.** The scanner agents and the triage turn run on the
   session's model, so the session needs a working provider like any other turn.
-- **A Vulnesis credential (optional).** With no credential the CLI runs on its
-  built-in [Community](https://www.vulnes.is/features/community) key. The review still works, but the key's daily quota is
+- **A Vulnetix credential (optional).** With no credential the CLI runs on its
+  built-in [Community](https://www.vulnetix.com/features/community) key. The review still works, but the key's daily quota is
   shared with everyone else using it and scans leave no snapshot on the
-  Vulnesis website. Log in from Getting started, or run `vulnetix auth login`,
+  Vulnetix website. Log in from Getting started, or run `vulnetix auth login`,
   for a key of your own. `/vulnetix status` shows what the CLI is logged in as.
 
 ## What it runs
@@ -70,7 +70,7 @@ Two scope limits are worth knowing:
    one scanner without stopping the others.
 2. **A card per scanner.** As each scanner finishes, a card titled `vulnetix
    <scanner>` appears with its headline counts, its artifact, and a link to the
-   scan's snapshot on the Vulnesis website when the CLI is logged in to your
+   scan's snapshot on the Vulnetix website when the CLI is logged in to your
    own organisation. Exit status 1 means the scanner found something; it is not
    a failure.
 3. **A read-only agent per scanner.** A scanner with findings immediately starts
@@ -114,10 +114,10 @@ added to the triage turn as your direction. Scans and scanner agents already
 running are not redirected. `esc` cancels the whole review: the scans are
 killed, the scanner agents stop, and no triage turn runs.
 
-## How Vulnesis data is used
+## How Vulnetix data is used
 
 The SAST, secrets, IaC, container, malscan, AI-BOM and crypto-BOM scanners run
-locally with the CLI's built-in rules. Vulnesis vulnerability database (VDB)
+locally with the CLI's built-in rules. Vulnetix vulnerability database (VDB)
 data enters the review in three places:
 
 - **`sca`** matches the repository's packages against the VDB. The advisories,
@@ -126,19 +126,19 @@ data enters the review in three places:
 - **`vulnetix fix`** builds its upgrade plan from the VDB's fixed versions. Even
   as a dry run it queries the VDB; it only skips editing manifests.
 - **During triage** the session can make further VDB lookups through the
-  [`Vulnesis` tool](vulnetix.md#the-vulnesis-tool) (`vulnetix vdb ...`), and
-  through the Vulnesis MCP server's tools if you have added it with
+  [`Vulnetix` tool](vulnetix.md#the-vulnetix-tool) (`vulnetix vdb ...`), and
+  through the Vulnetix MCP server's tools if you have added it with
   `/vulnetix mcp`.
 
-These lookups count against your Vulnesis key's daily query limit, the same as
+These lookups count against your Vulnetix key's daily query limit, the same as
 any other CLI call. See the CLI's
-[rate limiting](https://docs.cli.vulnes.is/docs/cli-reference/vdb/#rate-limiting)
+[rate limiting](https://docs.cli.vulnetix.com/docs/cli-reference/vdb/#rate-limiting)
 reference for the limits and headers.
 
 ## What it costs
 
-- **The scanners and the Vulnesis MCP server are free.** They work on the
-  [Community plan](https://www.vulnes.is/features/community).
+- **The scanners and the Vulnetix MCP server are free.** They work on the
+  [Community plan](https://www.vulnetix.com/features/community).
 - **Your model provider bills the model work.** The scanner agents, any explore
   subagents the triage turn starts, and the triage turn itself use your
   configured provider and are billed by it at its rates. With the

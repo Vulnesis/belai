@@ -154,7 +154,7 @@ func (a *App) modelRoleBlurb(role modelRole) string {
 	case rolePosture:
 		return "session safety switches; not model settings, so they keep their own save target"
 	case roleMCP:
-		return "the decision server and the hosted Vulnesis server; saved to the mcp.builtin key of your global settings"
+		return "the decision server and the hosted Vulnetix server; saved to the mcp.builtin key of your global settings"
 	}
 	return ""
 }

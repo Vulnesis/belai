@@ -13,7 +13,7 @@ INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
 VERSION="${VERSION:-latest}"
 VARIANT="${BELAI_VARIANT:-bert-guardrails}"
 BINARY_NAME="belai"
-GITHUB_REPO="Vulnesis/belai"
+GITHUB_REPO="Vulnetix/belai"
 GITHUB_BASE="https://github.com/${GITHUB_REPO}/releases"
 
 # ---------------------------------------------------------------------------
@@ -307,7 +307,7 @@ verify_checksum() {
     echo "error:   size:     $(wc -c < "$tmp_binary" 2>/dev/null || echo unknown) bytes" >&2
     echo "error: if the size above looks short, the download was interrupted — run the installer again." >&2
     echo "error: if it is the full size, do not install this binary. Report it at" >&2
-    echo "error:   https://github.com/Vulnesis/belai/issues" >&2
+    echo "error:   https://github.com/Vulnetix/belai/issues" >&2
     rm -f "$tmp_binary"
     exit 1
   fi
@@ -408,7 +408,7 @@ main() {
   echo "      $BINARY_NAME -version"
   echo ""
   echo "Set an API key first, e.g. OPENAI_API_KEY or ANTHROPIC_API_KEY, or run"
-  echo "/credentials inside the UI. See https://github.com/Vulnesis/belai"
+  echo "/credentials inside the UI. See https://github.com/Vulnetix/belai"
 }
 
 main "$@"

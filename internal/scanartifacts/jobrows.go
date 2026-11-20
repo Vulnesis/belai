@@ -11,7 +11,7 @@ import (
 
 // BOMRow is one component of a CBOM or AIBOM reduced to identifier fields: a
 // name and version cleaned to identifier characters, the CycloneDX type, and
-// the Vulnesis category and post-quantum status properties. No description,
+// the Vulnetix category and post-quantum status properties. No description,
 // evidence or free text is read.
 type BOMRow struct {
 	Type     string

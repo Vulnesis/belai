@@ -12,7 +12,7 @@ import (
 
 func contextApp(t *testing.T) *App {
 	t.Helper()
-	t.Setenv("VULNESIS_WEB_URL", "")
+	t.Setenv("VULNETIX_WEB_URL", "")
 	a := intelApp(t)
 	a.settings.ContextWindows = map[string]int{"claude-sonnet-4-5": 200_000}
 	a.cfg.Provider, a.cfg.Model = "anthropic", "claude-sonnet-4-5"

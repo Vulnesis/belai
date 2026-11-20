@@ -51,7 +51,7 @@ func TestDiagnosticsPrefersTheCallersGate(t *testing.T) {
 }
 
 func TestPullKanban(t *testing.T) {
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	t.Run("no board is a no-op", func(t *testing.T) {
 		PullKanban(context.Background(), nil, syncSettings(true, true), t.TempDir())
 	})

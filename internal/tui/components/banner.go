@@ -8,6 +8,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/muesli/termenv"
+
+	"github.com/vulnetix/belai/internal/brand"
 )
 
 var versionStyle = lipgloss.NewStyle().Foreground(ColorMuted)
@@ -93,13 +95,13 @@ func (b Banner) View() string {
 
 // Tagline is the brand line both banners carry: the owl's subtitle and the
 // compact header.
-const Tagline = "a safer LLM harness · vulnes.is"
+func Tagline() string { return "a safer LLM harness · " + brand.Host("vulnetix.com") }
 
 // compactView is the header past a first run: the wordmark and tagline (plus
 // the resumed note) on one line, the full build facts on the next, each cut
 // to the width.
 func (b Banner) compactView() string {
-	line := AccentStyle.Bold(true).Render("belai") + MutedStyle.Render(" · "+Tagline)
+	line := AccentStyle.Bold(true).Render("belai") + MutedStyle.Render(" · "+Tagline())
 	if b.Resumed != "" {
 		note := "resumed " + b.Resumed
 		if b.RestoredTurns > 0 {
@@ -197,7 +199,7 @@ func (b Banner) pixView() string {
 	// the banner to six rows and leaves the transcript more of the screen.
 	// Six rows, always: the owl is six rows tall, and an unstamped build must
 	// not change the banner's height and reflow the transcript under it.
-	subtitle := Tagline
+	subtitle := Tagline()
 	if b.Resumed != "" {
 		subtitle = "resumed " + b.Resumed
 		if b.RestoredTurns > 0 {
@@ -254,7 +256,7 @@ func (b Banner) ropeTail() string {
 
 func (b Banner) textView() string {
 	var out []string
-	out = append(out, "BELAI · "+Tagline)
+	out = append(out, "BELAI · "+Tagline())
 	if v := b.versionLine(); v != "" {
 		out = append(out, v)
 	}

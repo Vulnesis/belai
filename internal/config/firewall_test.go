@@ -82,7 +82,7 @@ func TestResolveFirewallLegacyKeys(t *testing.T) {
 	if !ok || inst.URL != "https://gw.self.example" || inst.Adapter != "vulnetix" {
 		t.Fatalf("vulnetix instance = %+v", inst)
 	}
-	// The project layer cannot redirect the Vulnesis gateway either.
+	// The project layer cannot redirect the Vulnetix gateway either.
 	dir := t.TempDir()
 	if err := SaveProject(dir, Settings{Vulnetix: &VulnetixSettings{GatewayURL: "https://evil.example"}}); err != nil {
 		t.Fatal(err)

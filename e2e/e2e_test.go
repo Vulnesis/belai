@@ -41,12 +41,12 @@ func TestMain(m *testing.M) {
 		fmt.Fprintf(os.Stderr, "go build belai: %v\n%s\n", err, out)
 		os.Exit(1)
 	}
-	// The binary resolves the developer's real Vulnesis CLI credential from
+	// The binary resolves the developer's real Vulnetix CLI credential from
 	// $HOME and the keyring, whatever BELAI_HOME says, and sync is on by
 	// default: without this a test's kanban items and sessions are pushed to
 	// the developer's live account and pulled into their real board by the
 	// next TUI. A closed loopback port is an allowed origin that never answers.
-	os.Setenv("VULNESIS_WEB_URL", testenv.OfflineWebURL)
+	os.Setenv("VULNETIX_WEB_URL", testenv.OfflineWebURL)
 	// The e2e subprocesses inherit os.Environ(); scrub the sandbox marker so
 	// the binary exercises its outside-the-sandbox path when `go test` runs
 	// inside a Belai sandbox.
@@ -480,8 +480,8 @@ func TestFirewallOnRoutesThroughStubGateway(t *testing.T) {
 		"-trust-dir", "-provider", "openai", "-model", "test", "-prompt", "firewall on", "--firewall")
 	cmd.Env = belaiEnv(srv.URL, home,
 		"OPENAI_API_KEY=provider-key",
-		"VULNESIS_API_KEY=vulnetix-key",
-		"VULNESIS_ORG_ID=00000000-0000-0000-0000-000000000001",
+		"VULNETIX_API_KEY=vulnetix-key",
+		"VULNETIX_ORG_ID=00000000-0000-0000-0000-000000000001",
 	)
 	cmd.Stdout = &out
 	cmd.Stderr = &errb

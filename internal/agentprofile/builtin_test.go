@@ -90,7 +90,7 @@ func TestBuiltinTriageByIdentifierIsReadOnly(t *testing.T) {
 	if !p.Builtin || p.Mode != ModeSingle || p.Autonomy != AutonomySupervised {
 		t.Fatalf("unexpected fields: builtin=%v mode=%q autonomy=%q", p.Builtin, p.Mode, p.Autonomy)
 	}
-	want := map[string]bool{"Vulnesis": true, "Read": true, "Grep": true, "Glob": true}
+	want := map[string]bool{"Vulnetix": true, "Read": true, "Grep": true, "Glob": true}
 	for _, tool := range p.Tools {
 		if !want[tool] {
 			t.Errorf("belai:triage lists %q: it must stay read-only", tool)

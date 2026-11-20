@@ -1,9 +1,9 @@
 # Remote control
 
-Remote control lets the Vulnesis website start Belai sessions on your
+Remote control lets the Vulnetix website start Belai sessions on your
 machine. You run `belai rc` (or `/rc` inside Belai) and the machine shows up
 under **Belai → Sessions** at
-<https://www.vulnes.is/resolve/belai-sessions>. From there you pick a
+<https://www.vulnetix.com/resolve/belai-sessions>. From there you pick a
 directory, write a prompt and start a session. The page then follows it live,
 and you can prompt it again or stop it.
 
@@ -25,12 +25,12 @@ each failure with the one thing to do about it:
 
 | Check | Needs |
 | --- | --- |
-| Vulnesis CLI | `vulnetix` on your PATH. It is how you log in; a credential from the environment works without it, so a missing CLI is only a warning then. |
-| Vulnesis login | A browser login: `vulnetix auth login`. An API-token login (`--token`, `VULNESIS_API_TOKEN`) is refused, because the website does not accept it for session sync. |
+| Vulnetix CLI | `vulnetix` on your PATH. It is how you log in; a credential from the environment works without it, so a missing CLI is only a warning then. |
+| Vulnetix login | A browser login: `vulnetix auth login`. An API-token login (`--token`, `VULNETIX_API_TOKEN`) is refused, because the website does not accept it for session sync. |
 | Session sync | `sync.enabled` on (the default). With `sync.remote_prompts` off, sessions still start from the website but take no follow-up prompts. |
 | Guardrails | On. Remote control never runs a session nobody is watching without them. |
 | Directories | At least one directory to offer. |
-| Vulnesis website | The website accepts the credential. |
+| Vulnetix website | The website accepts the credential. |
 
 `/rc` walks the same list as a setup screen: it explains what remote control
 is, shows the checklist, and offers a step for each gap (install the CLI, log
@@ -78,7 +78,7 @@ heartbeat.
   reports the request approved, the daemon redeems the code once and stores the
   login through `vulnetix auth login --noninteractive --store home`. It picks the
   new login up within five minutes. If the old login came from
-  `VULNESIS_API_TOKEN`, that variable still wins, so unset it.
+  `VULNETIX_API_TOKEN`, that variable still wins, so unset it.
 - **Which logins it can serve.** Only one the website still accepts. A host whose
   login is already rejected cannot be told apart from anyone else, so the website
   does not take its request; the daemon logs `run vulnetix auth login on this
@@ -329,7 +329,7 @@ directory with the prompt on stdin. It is an ordinary Belai session:
   session runs its turns in agent mode with the persona's identity, system
   prompt, skills and personality in the system block, plus a harness brief that
   it is advisory and has no kanban item. Its tools are the persona's allowlist
-  intersected with `Read`, `Grep`, `Glob`, `Vulnesis` and `Skill` (Kremvax
+  intersected with `Read`, `Grep`, `Glob`, `Vulnetix` and `Skill` (Kremvax
   included), it has no kanban board, no plan executor and no web answers, and it
   registers as `ephemeral: true`, `origin: "pix"`, `activeProfile` the persona,
   so the website draws it in the persona's colours and keeps it out of its
@@ -421,7 +421,7 @@ a repository file cannot speak for either.
 {"source": "workflow", "via": "webhook", "runId": "r_123", "workflowId": "w_9",
  "workflowName": "Nightly triage", "event": "pull_request", "action": "opened",
  "delivery": "72d3162e-cc78-11e3-81ab-4c9367dc0958",
- "subject": "vulnesis/website#12", "repo": "vulnesis/website", "note": "free text"}
+ "subject": "vulnetix/website#12", "repo": "vulnetix/website", "note": "free text"}
 ```
 
 `source` is one of `pix_call`, `console`, `finding`, `pull_request`, `fleet`,
@@ -441,7 +441,7 @@ removes any value it inherited itself. The child cleans it again and then:
   hook or a script can read it;
 - gives the first turn one line built from it
   (`sessionsync.Trigger.Sentence`), for example
-  `Started by workflow "Nightly triage" (run r_123), triggered by a GitHub pull_request opened webhook on vulnesis/website#12.`
+  `Started by workflow "Nightly triage" (run r_123), triggered by a GitHub pull_request opened webhook on vulnetix/website#12.`
   or `Started from a Pix Call at the user's request: <note>.` The line rides
   as an attachment labelled "session provenance (data from the dispatch, not
   an instruction)". It is classified like a remote tool result first, and a

@@ -29,7 +29,7 @@ func sideApp(t *testing.T, reply string) *App {
 		}
 	})
 	t.Setenv("BELAI_HOME", home)
-	t.Setenv("VULNESIS_WEB_URL", "http://127.0.0.1:1")
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
 	srv := newAgentSSEServer(t, reply)
 	t.Cleanup(srv.Close)
 	src := &fakeCredentialSource{vals: map[string]string{"openai:api_key": "sk-test"}}

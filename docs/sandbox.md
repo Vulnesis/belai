@@ -242,7 +242,7 @@ asks you rather than retrying blindly.
 - MCP stdio servers run in the sandbox only when their settings say
   `sandbox: true` (see [MCP servers](mcp.md)).
 - The native cloud tools (`AWS`, `Terraform`, `Kubectl` and the others) run outside
-  the sandbox, as do `Vulnesis` scans. They hold only what their own sign-in
+  the sandbox, as do `Vulnetix` scans. They hold only what their own sign-in
   gives them, plus, for `AWS` and `Terraform`, the temporary credentials of a role
   the profile declared or the user approved (see [AWS roles](agent-profiles.md#aws-roles)).
   Those credentials live in Belai's memory and reach only those two

@@ -5,7 +5,7 @@
 // A `belai rc` daemon is usually headless, detached, or on a host nobody sits
 // at; opening a browser there does nothing useful, and on a desktop it can
 // raise an error dialog from the platform's URL handler. What such a process
-// needs from a person is sent to the Vulnesis website instead (docs/remote-control.md).
+// needs from a person is sent to the Vulnetix website instead (docs/remote-control.md).
 //
 // Env mirrors internal/notify.Env: the lookups are fields so tests substitute
 // them, and SystemEnv reads the real process.

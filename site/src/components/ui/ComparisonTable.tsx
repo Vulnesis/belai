@@ -75,7 +75,7 @@ export const ROWS: Row[] = [
 
   // integrations
   row('integrations', 'local providers in the box (ollama, llama-server)', 'yes', 'no', 'yes', 'no', 'no'),
-  row('integrations', 'security scanners and an AI firewall built in (Vulnesis)', 'yes', 'no', 'no', 'no', 'no'),
+  row('integrations', 'security scanners and an AI firewall built in (Vulnetix)', 'yes', 'no', 'no', 'no', 'no'),
   row('integrations', 'credential import', 'yes', 'yes', 'yes', 'yes', 'yes'),
 ];
 

@@ -44,7 +44,7 @@ func TestFirewallPageNamesEveryMode(t *testing.T) {
 }
 
 // TestFirewallPageNamesTheVulnetixHeaders keeps the response headers the page
-// says the Vulnesis adapter reads equal to the ones the code reads.
+// says the Vulnetix adapter reads equal to the ones the code reads.
 func TestFirewallPageNamesTheVulnetixHeaders(t *testing.T) {
 	doc := docparity.Read(t, "docs/firewall.md")
 	for _, h := range []string{
@@ -60,7 +60,7 @@ func TestFirewallPageNamesTheVulnetixHeaders(t *testing.T) {
 		"X-Vulnetix-Firewall-Stripped", "X-Vulnetix-Firewall-Request-Id", "X-Vulnetix-Firewall-Nonce",
 	} {
 		if !strings.Contains(src, h) {
-			t.Errorf("the page lists %s but the Vulnesis adapter no longer reads it", h)
+			t.Errorf("the page lists %s but the Vulnetix adapter no longer reads it", h)
 		}
 	}
 }

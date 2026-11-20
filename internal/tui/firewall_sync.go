@@ -24,8 +24,8 @@ type firewallSyncMsg struct {
 // syncFirewallKey pushes provider's API key to the org's AI Firewall (BYOK)
 // in the background, so a routed turn is not refused with
 // provider_key_missing. It runs only while the firewall is on and the active
-// adapter syncs keys (Vulnesis), the provider
-// has a gateway slug, a Vulnesis credential loads and the CLI is installed.
+// adapter syncs keys (Vulnetix), the provider
+// has a gateway slug, a Vulnetix credential loads and the CLI is installed.
 // The key reaches the CLI on stdin, never its argv or environment.
 func (a *App) syncFirewallKey(provider string) tea.Cmd {
 	if a.resolver == nil || !a.firewallEnabled() {

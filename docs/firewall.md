@@ -10,7 +10,7 @@ project.
 
 | Adapter | Status | What it is |
 | --- | --- | --- |
-| Vulnesis AI Firewall | stable | Guardrails, redaction and BYOK provider keys for your Vulnesis organisation. Configured by the Vulnesis features (Getting started, `/vulnetix firewall`). |
+| Vulnetix AI Firewall | stable | Guardrails, redaction and BYOK provider keys for your Vulnetix organisation. Configured by the Vulnetix features (Getting started, `/vulnetix firewall`). |
 | Fastly AI Runtime Control | beta | ARC virtual keys and the ARC AI Firewall (log or block mode). |
 | Kong AI Gateway | beta | Your Kong route with `ai-proxy` and the AI prompt-guard, sanitizer or guardrails plugins. |
 | AI Security Gateway | beta | The self-hosted [aisecuritygateway](https://github.com/aisecuritygateway/aisecuritygateway) (DLP and prompt-injection detection, OpenAI chat completions only). |
@@ -25,7 +25,7 @@ generically.
 
 ## Modes
 
-Every adapter except Vulnesis (and the read-only entries) takes a mode:
+Every adapter except Vulnetix (and the read-only entries) takes a mode:
 
 - **transparent**: only the base URL changes. Belai sends the provider's own
   key in the provider's own header, exactly as it would directly.
@@ -38,9 +38,9 @@ The URL may carry `{provider}`, which is replaced with the provider name, for
 example `https://kong.example/ai/{provider}`. As with any base URL,
 OpenAI-style providers expect it to end in `/v1` and Anthropic's does not.
 
-The Vulnesis adapter builds its own URL,
+The Vulnetix adapter builds its own URL,
 `<gateway>/<slug>/<org>/v1` (Anthropic: `<gateway>/anthropic/<org>`). It sends
-the Vulnesis API key from the Vulnesis CLI login in the provider's own auth
+the Vulnetix API key from the Vulnetix CLI login in the provider's own auth
 header. Only the providers the gateway relays are routed; the rest go direct.
 
 ## Where things are stored
@@ -59,7 +59,7 @@ Instances live in the **global** settings file under `firewall`:
 
 - The `vulnetix` instance always exists. Its URL comes from its own entry,
   then the legacy `vulnetix.gateway_url`, then
-  `https://guardrails.vulnes.is`.
+  `https://guardrails.vulnetix.com`.
 - An empty `active` means `vulnetix`.
 - `providers` limits a firewall to those providers; the rest go direct.
 - The legacy `vulnetix.firewall_enabled` key is still read as
@@ -98,10 +98,10 @@ consulted for a firewall key.
 - **Sign-in providers are not routed, except Kiro through Vulnetix.**
   - Copilot and the Cloudflare AI Gateway provider are never routed through a
     firewall.
-  - Kiro is routed only through the Vulnesis AI Firewall. That gateway mints
+  - Kiro is routed only through the Vulnetix AI Firewall. That gateway mints
     Kiro's token from the organisation's secrets vault
-    (`vulnetix ai-firewall kiro login`), and Belai sends only its Vulnesis key.
-  - Every other adapter refuses Kiro. See [Kiro](kiro.md#through-the-vulnesis-ai-firewall).
+    (`vulnetix ai-firewall kiro login`), and Belai sends only its Vulnetix key.
+  - Every other adapter refuses Kiro. See [Kiro](kiro.md#through-the-vulnetix-ai-firewall).
 - **Decision backends are never routed.** The local decision model
   (`decision-local`), Strands Decider-2B (`strands-decider`), the hosted
   `typesafe` provider and `systemone` profiles (kind `systemone`, once `jev`)
@@ -133,14 +133,14 @@ What each firewall reports:
 
 | Firewall | Read from |
 | --- | --- |
-| Vulnesis | The `X-Vulnetix-Firewall-Decision`, `-Rules`, `-Redactions`, `-Stripped`, `-Request-Id` and `-Nonce` response headers (see [Response headers](https://docs.cli.vulnes.is/docs/ai-firewall/responses/)). Also the 403 refusal body in the OpenAI or Anthropic envelope (`code`, `blocked_by`, `violations[].policy_name`), and gateway refusals such as `provider_key_missing` or `model_denied`, each with a hint. |
+| Vulnetix | The `X-Vulnetix-Firewall-Decision`, `-Rules`, `-Redactions`, `-Stripped`, `-Request-Id` and `-Nonce` response headers (see [Response headers](https://docs.cli.vulnetix.com/docs/ai-firewall/responses/)). Also the 403 refusal body in the OpenAI or Anthropic envelope (`code`, `blocked_by`, `violations[].policy_name`), and gateway refusals such as `provider_key_missing` or `model_denied`, each with a hint. |
 | AI Security Gateway | A 400 `pii_policy_violation` (entity types as rules), 402/403/500 credential and DLP-engine refusals, `x-request-id`, and on non-streamed calls the `aisg_metadata` of a success body (redact or detect). |
 | Kong | The opaque 400 `bad request` of `ai-prompt-guard` (reported as a probable prompt-guard block), 403 from the semantic guard and content-safety plugins, and `X-Kong-Request-Id`. |
 | Fastly, custom | Any of the shapes above, plus OpenAI- or Anthropic-shaped refusals whose type, code or message names a policy. |
 | OpenRouter | A 403 with guardrail `metadata.patterns`, or moderation `metadata.reasons`. `flagged_input` is deliberately not shown. |
 | Cloudflare AI Gateway | Error codes 2016/2017 (guardrail blocked the prompt or response), 2029/2030 (DLP), the `cf-aig-dlp` header (FLAG or BLOCK), and `cf-aig-log-id`. |
 
-A matched value is never shown. The Vulnesis gateway never reports one, and
+A matched value is never shown. The Vulnetix gateway never reports one, and
 Belai never reads one.
 
 ## Nonces
@@ -148,7 +148,7 @@ Belai never reads one.
 A session's delimiter nonces are fetched from the active firewall first, then
 the provider, then minted locally (see
 [nonce-endpoint-spec.md](nonce-endpoint-spec.md)). When every nonce comes from
-the Vulnesis gateway, requests carry `X-Vulnetix-Nonce-Mode: enforce`, and the
+the Vulnetix gateway, requests carry `X-Vulnetix-Nonce-Mode: enforce`, and the
 gateway strips sealed blocks it cannot verify. When the gateway advertises
 canonical mode, Belai sends `canonical` instead: the gateway also forwards
 verified blocks without their nonce, so the provider sees the same prompt
@@ -165,4 +165,4 @@ across session rebuilds, so their blocks verify at the gateway as well. The `/fi
 | `/firewall on` / `off` | Turn the active firewall on or off for this project (like `F10`) |
 | `/firewall use NAME` | Make NAME active and turn it on |
 | `/firewall status` | One line: the active firewall, its route for the current provider, the nonce source, and event counts |
-| `/vulnetix firewall` | Make the Vulnesis AI Firewall active, or toggle it when it already is |
+| `/vulnetix firewall` | Make the Vulnetix AI Firewall active, or toggle it when it already is |

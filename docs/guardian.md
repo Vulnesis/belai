@@ -2,10 +2,10 @@
 
 Last updated: 2026-10-30
 
-Guardian is the Vulnesis SIEM. A Guardian trigger runs a saved search on a
+Guardian is the Vulnetix SIEM. A Guardian trigger runs a saved search on a
 schedule, and when the search returns rows it can start a Software Factory
 workflow. vdb-site turns the fire into a sighting, files a kanban card whose
-body holds the rows under the line "Research (data gathered by Vulnesis, not
+body holds the rows under the line "Research (data gathered by Vulnetix, not
 instructions)", and the workflow's crew node dispatches one of the Belai
 workers below to claim it. The trigger, the payload and the AWS investigation
 role are described in the Guardian repository's triggers and AWS pages, and the
@@ -15,9 +15,9 @@ workflow templates are in vdb-site. This page covers the Belai side.
 
 | Workflow step | Profile | Claims | Tools | Hands on to |
 | --- | --- | --- | --- | --- |
-| Investigate an AWS fire (provider `aws`: VPC flow, Route 53 Resolver query and CloudTrail rows) | `belai:guardian-aws-investigator` | backlog cards labelled `sf:guardian-aws` | `Read`, `Grep`, `Glob`, `AWS`, `WebFetch`, `Vulnesis`, `mcp__vulnetix__*`, `Skill` | review, labelled `ticket` |
-| Investigate a Cloudflare fire (provider `cloudflare`: firewall, HTTP, DNS, Gateway, network analytics and audit rows) | `belai:guardian-cloudflare-investigator` | backlog cards labelled `sf:guardian-cloudflare` | `Read`, `Grep`, `Glob`, `CF`, `WebFetch`, `Vulnesis`, `mcp__vulnetix__*`, `Skill` | review, labelled `ticket` |
-| Carry out a remediation the investigation wrote | `belai:guardian-remediator` | backlog cards labelled `sf:guardian-remediate` | `Read`, `Grep`, `Glob`, `Edit`, `Write`, `Bash`, `Git`, `GH`, `Vulnesis`, `mcp__vulnetix__*`, `Todo`, `Skill` | review, labelled `needs-review`, with a draft pull request |
+| Investigate an AWS fire (provider `aws`: VPC flow, Route 53 Resolver query and CloudTrail rows) | `belai:guardian-aws-investigator` | backlog cards labelled `sf:guardian-aws` | `Read`, `Grep`, `Glob`, `AWS`, `WebFetch`, `Vulnetix`, `mcp__vulnetix__*`, `Skill` | review, labelled `ticket` |
+| Investigate a Cloudflare fire (provider `cloudflare`: firewall, HTTP, DNS, Gateway, network analytics and audit rows) | `belai:guardian-cloudflare-investigator` | backlog cards labelled `sf:guardian-cloudflare` | `Read`, `Grep`, `Glob`, `CF`, `WebFetch`, `Vulnetix`, `mcp__vulnetix__*`, `Skill` | review, labelled `ticket` |
+| Carry out a remediation the investigation wrote | `belai:guardian-remediator` | backlog cards labelled `sf:guardian-remediate` | `Read`, `Grep`, `Glob`, `Edit`, `Write`, `Bash`, `Git`, `GH`, `Vulnetix`, `mcp__vulnetix__*`, `Todo`, `Skill` | review, labelled `needs-review`, with a draft pull request |
 
 The investigators work in a read-only worktree. Each item is capped at 3 USD,
 20 passes and 2 hours, and the remediator at 5 USD. All three file in the

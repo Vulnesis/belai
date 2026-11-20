@@ -1,18 +1,22 @@
-# Regenerate the builtin agent-profile index from the rewritten builtins.
-post go test ./internal/agentprofile -run TestBuiltinsIndexIsCurrent -update-index
-# The User-Agent carries the repo URL (moved); the test matches it as a substring.
-rewrite strings.Contains(ua, "github.com/Vulnetix/belai") => strings.Contains(ua, "github.com/Vulnesis/belai")
-# Commit trailers are data shared with the website and the vdb-site API (both keep
-# them as in Vulnetix); the package and its fixture stay byte-identical.
-imports-only internal/attribution/*
-# A transferred Pages site keeps its one custom domain (vulnes.is via a proxy):
-# belai.vulnetix.com stays the site's real host in CNAME, pages.yml and tests.
+# scripts/rebrand.py config (Vulnesis/ops).
+# belai is shared by both brands: only documents are rebranded. The code keeps
+# Vulnetix defaults and VULNETIX_BRAND=vulnesis selects vulnes.is at run time.
+docs-only
+keep VULNETIX_
+# Embedded skills and prompts (Markdown under internal/) ship in the binary and
+# are followed by agents at run time: they stay as in Vulnetix.
+ignore internal/*
+# A transferred Pages site keeps its one custom domain (vulnes.is via a proxy).
 keep belai.vulnetix.com
-# A slug followed by .git is not rewritten by the slug rule; its test input must
-# match the rewritten expectation.
-rewrite "vulnetix/vdb-site.git": => "vulnesis/vdb-site.git":
-# Consumers' tests of the shared trailers expect them as the package emits them.
-imports-only internal/fleet/attribution_test.go
-# A slug before a full stop is not rewritten by the slug rule; the expectation
-# must follow its rewritten input (Repo: "vulnesis/cli").
-rewrite push webhook on vulnetix/cli. => push webhook on vulnesis/cli.
+# The tool the model is offered is named Vulnetix (code formatting in the docs is
+# its identifier; tools_docs_test checks every tool is documented by name).
+keep `Vulnetix`
+keep `Vulnetix(
+# docs/vulnetix.md states the default the code uses (Vulnetix; VULNETIX_BRAND
+# selects vulnes.is); env_docs_test checks the phrase.
+keep (default `https://api.vdb.vulnetix.com/v1`)
+# docs/ is checked against the code (facts table, adapter rows, defaults): it
+# describes the shared, Vulnetix-default product, so only the README moves.
+ignore docs/*
+# security.txt is served on the shared belai.vulnetix.com site: its contact stays.
+ignore site/public/.well-known/*

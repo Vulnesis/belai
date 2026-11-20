@@ -40,7 +40,7 @@ func initRepo(t *testing.T, dir string) {
 	cmd = exec.Command("git", "commit", "--no-gpg-sign", "-q", "-m", "initial")
 	cmd.Dir = dir
 	cmd.Run()
-	cmd = exec.Command("git", "remote", "add", "origin", "git@github.com:Vulnesis/belai.git")
+	cmd = exec.Command("git", "remote", "add", "origin", "git@github.com:Vulnetix/belai.git")
 	cmd.Dir = dir
 	cmd.Run()
 }
@@ -124,7 +124,7 @@ func TestRepoReadConfinesToCheckout(t *testing.T) {
 	if !ok {
 		t.Fatal("RepoRead not registered")
 	}
-	res, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnesis/belai", "path": "file.txt"})
+	res, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnetix/belai", "path": "file.txt"})
 	if err != nil {
 		t.Fatalf("RepoRead: %v", err)
 	}
@@ -147,7 +147,7 @@ func TestRepoReadRejectsEscape(t *testing.T) {
 	ix := repoindex.Scan(context.Background(), filepath.Join(dir, "other-dir"))
 	reg := DefaultWithCaps(t.TempDir(), true, repoTestCaps(), ix)
 	tool, _ := reg.Find("RepoRead")
-	_, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnesis/belai", "path": "../other.txt"})
+	_, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnetix/belai", "path": "../other.txt"})
 	if err == nil {
 		t.Fatal("expected path escape to be rejected")
 	}
@@ -166,7 +166,7 @@ func TestRepoFilesListsFiles(t *testing.T) {
 	if !ok {
 		t.Fatal("RepoFiles not registered")
 	}
-	res, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnesis/belai"})
+	res, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnetix/belai"})
 	if err != nil {
 		t.Fatalf("RepoFiles: %v", err)
 	}
@@ -192,10 +192,10 @@ func TestRepoFilesMissListsAvailable(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected miss error")
 	}
-	if !slices.Contains([]string{"Vulnesis/belai"}, "Vulnesis/belai") {
+	if !slices.Contains([]string{"Vulnetix/belai"}, "Vulnetix/belai") {
 		// sanity: available repo name is what we expect
 	}
-	if !strings.Contains(err.Error(), "Vulnesis/belai") {
+	if !strings.Contains(err.Error(), "Vulnetix/belai") {
 		t.Fatalf("miss error should list available repo: %v", err)
 	}
 }
@@ -232,11 +232,11 @@ func TestReposExecutesInProcess(t *testing.T) {
 	if res.Kind != KindNative {
 		t.Fatalf("Repos kind = %q, want %q", res.Kind, KindNative)
 	}
-	if !strings.Contains(res.Content, "Vulnesis/belai") || !strings.Contains(res.Content, repo) {
+	if !strings.Contains(res.Content, "Vulnetix/belai") || !strings.Contains(res.Content, repo) {
 		t.Fatalf("Repos listing missing the indexed repo:\n%s", res.Content)
 	}
-	if got := tool.Subject(map[string]any{"owner": "Vulnesis"}); got != "Vulnesis" {
-		t.Fatalf("Repos subject = %q, want Vulnesis", got)
+	if got := tool.Subject(map[string]any{"owner": "Vulnetix"}); got != "Vulnetix" {
+		t.Fatalf("Repos subject = %q, want Vulnetix", got)
 	}
 }
 
@@ -251,11 +251,11 @@ func TestReposOwnerFilter(t *testing.T) {
 	reg := DefaultWithCaps(t.TempDir(), true, Capabilities{}, ix)
 	tool, _ := reg.Find("Repos")
 
-	res, err := tool.Execute(context.Background(), map[string]any{"owner": "Vulnesis"})
+	res, err := tool.Execute(context.Background(), map[string]any{"owner": "Vulnetix"})
 	if err != nil {
 		t.Fatalf("Repos(owner): %v", err)
 	}
-	if !strings.Contains(res.Content, "Vulnesis/belai") {
+	if !strings.Contains(res.Content, "Vulnetix/belai") {
 		t.Fatalf("owner filter dropped the matching repo:\n%s", res.Content)
 	}
 
@@ -304,7 +304,7 @@ func TestRepoReadPathSurvivesCd(t *testing.T) {
 	if !ok {
 		t.Fatal("RepoRead not registered")
 	}
-	res, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnesis/belai", "path": "file.txt"})
+	res, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnetix/belai", "path": "file.txt"})
 	if err != nil {
 		t.Fatalf("RepoRead after Cd: %v", err)
 	}
@@ -317,7 +317,7 @@ func TestRepoReadPathSurvivesCd(t *testing.T) {
 		t.Fatalf("RepoRead subject after Cd = %q, want file.txt", got)
 	}
 	// An escape is still refused after the move, against the checkout.
-	if _, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnesis/belai", "path": "../outside.txt"}); err == nil {
+	if _, err := tool.Execute(context.Background(), map[string]any{"repo": "Vulnetix/belai", "path": "../outside.txt"}); err == nil {
 		t.Fatal("path escape after Cd must be rejected")
 	}
 }
