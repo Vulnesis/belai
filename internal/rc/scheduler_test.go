@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"os"
 	"path/filepath"
 	"strings"
@@ -551,5 +552,25 @@ func TestScheduleObserverReportsOnceAndSkipsFinishedSchedules(t *testing.T) {
 	h.d.observeScheduleRuns(context.Background())
 	if again := h.get(schedA); again.LastStatus != schedule.StatusWorked {
 		t.Fatalf("a reported run was rewritten to %q", again.LastStatus)
+	}
+}
+
+// A stopped Keleustes factory fires no schedule; a resume fires the next due.
+func TestStoppedFactoryFiresNoSchedule(t *testing.T) {
+	h := newSchedHarness(t)
+	h.d.o.Factory = &fakeFactory{}
+	h.add(schedA, "*/15 * * * *")
+	h.d.fireDue(context.Background(), h.now)
+	h.d.setFactoryControl(factorylink.Control{Stopped: true, Reason: "maintenance"})
+	h.at(9, 15, 10)
+	h.d.fireDue(context.Background(), h.now)
+	if h.starting() != 0 {
+		t.Fatal("fired while the factory was stopped")
+	}
+	h.d.setFactoryControl(factorylink.Control{})
+	h.at(9, 30, 5)
+	h.d.fireDue(context.Background(), h.now)
+	if h.starting() != 1 {
+		t.Fatalf("starts after resume = %d", h.starting())
 	}
 }

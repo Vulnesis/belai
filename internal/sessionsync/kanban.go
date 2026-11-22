@@ -24,7 +24,12 @@ type KanbanMove struct {
 // KanbanItem is a kanban item on the wire. Version is the server's; the host
 // sends the last one it saw.
 type KanbanItem struct {
-	ID         string `json:"id"`
+	ID string `json:"id"`
+	// Key is the server's display key for the item (a Keleustes card's
+	// "K-7f21"). The server assigns it and it is authoritative: a host never
+	// makes one up and takes whatever the server last sent. The website sends
+	// none.
+	Key        string `json:"key,omitempty"`
 	Title      string `json:"title"`
 	Body       string `json:"body,omitempty"`
 	List       string `json:"list"`
@@ -42,6 +47,10 @@ type KanbanItem struct {
 	History   []KanbanMove `json:"history,omitempty"`
 	Version   int64        `json:"version,omitempty"`
 	Deleted   bool         `json:"deleted,omitempty"`
+	// Meta is the server's own JSON object for the item (a Keleustes card's
+	// meta_json without the host's part), carried back unchanged on a push so
+	// the host never drops what the server keeps there. The website sends none.
+	Meta json.RawMessage `json:"meta,omitempty"`
 	// Agent carries the routing and claim fields. It is always sent. A
 	// backend that predates them omits it on a pull, and the host then keeps
 	// its own values rather than clearing them.

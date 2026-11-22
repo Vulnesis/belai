@@ -82,6 +82,10 @@ type Options struct {
 	Posture posture.Policy
 	// Sync, when set (sync is on), relays through Vulnetix.
 	Sync *sessionsync.Client
+	// Factory, when set, relays through a Keleustes server instead of
+	// Vulnetix (a host joined to one; Sync is then nil). Its inbound stream
+	// replaces the website's inbox poll.
+	Factory FactoryRelay
 	// Ticket is the work's ticket: a fleet worker's claimed card.
 	Ticket string
 	// Git returns the session's repository reading (gitsync.Info as JSON);
@@ -96,6 +100,13 @@ type Options struct {
 	PollEvery time.Duration
 	// Debounce overrides the broadcaster's (10s).
 	Debounce time.Duration
+}
+
+// FactoryRelay is a Keleustes A2A relay (factorylink.A2ARelay): the relay's
+// client for outbound envelopes, and the inbound stream that feeds it.
+type FactoryRelay interface {
+	a2a.RelayClient
+	Receive(ctx context.Context, relay *a2a.Relay, session func() string)
 }
 
 // Link is one session's A2A endpoint.
@@ -152,7 +163,13 @@ func Open(ctx context.Context, o Options) *Link {
 	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
 	l := &Link{o: o, node: node, hostID: hostID, cancel: cancel}
 	l.SetRecorder(o.Record)
-	if o.Sync != nil {
+	if o.Factory != nil {
+		l.relay = a2a.NewRelay(o.Factory, hostID, node.Bus(), node.Audit(), func() string { return node.Self().SessionID })
+		l.relay.OnBlackout = func(bool) { node.NotifyState() }
+		node.SetRelay(l.relay)
+		l.goRun(func() { l.relay.Run(ctx) })
+		l.goRun(func() { o.Factory.Receive(ctx, l.relay, func() string { return node.Self().SessionID }) })
+	} else if o.Sync != nil {
 		l.relay = a2a.NewRelay(o.Sync, hostID, node.Bus(), node.Audit(), func() string { return node.Self().SessionID })
 		l.relay.OnBlackout = func(bool) { node.NotifyState() }
 		node.SetRelay(l.relay)
@@ -329,6 +346,9 @@ func (l *Link) Close() {
 	l.node.Close()
 	l.cancel()
 	l.wg.Wait()
+	if c, ok := l.o.Factory.(interface{ Close() error }); ok {
+		_ = c.Close()
+	}
 }
 
 func (l *Link) session() Session {
@@ -564,7 +584,7 @@ func StateText(state string) string {
 	case a2a.StateBlackout:
 		return "A2A: blackout. Your organisation stopped relay between hosts; agents on this host still coordinate and every message is audit-logged."
 	}
-	return "A2A: relaying between hosts through Vulnetix."
+	return "A2A: relaying between hosts."
 }
 
 // WorkLine is "repo@branch, PR #n, ticket T".

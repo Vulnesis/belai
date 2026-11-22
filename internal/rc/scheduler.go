@@ -94,6 +94,11 @@ func (d *Daemon) scheduleTick(ctx context.Context) {
 		return
 	}
 	remote := d.o.ScheduleRemote
+	if remote == nil {
+		// No website (a Keleustes host): local schedules fire, nothing syncs.
+		d.observeScheduleRuns(ctx)
+		return
+	}
 	n, err := schedule.Pull(ctx, d.o.Schedules, remote, d.o.HostID)
 	d.noteScheduleSync(ctx, "pull", err)
 	if err == nil && n > 0 {
@@ -133,6 +138,11 @@ func (d *Daemon) noteScheduleSync(ctx context.Context, what string, err error) {
 // fires the ones that are due.
 func (d *Daemon) fireDue(ctx context.Context, now time.Time) {
 	st := d.o.Schedules
+	// A stopped Keleustes factory fires nothing; the next tick after a resume
+	// fires what came due (a run missed while stopped is skipped as usual).
+	if d.o.Factory != nil && d.factoryControl().Stopped {
+		return
+	}
 	recs, err := st.Live()
 	if err != nil {
 		d.logf("schedules: %v", err)

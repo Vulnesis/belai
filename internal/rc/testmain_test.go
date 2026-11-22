@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/vulnetix/belai/internal/gittest"
+	"github.com/vulnetix/belai/internal/vaultenv"
 )
 
 // TestMain points the whole package at a scratch home. A test's t.Setenv is
@@ -28,6 +29,8 @@ func TestMain(m *testing.M) {
 	// Drop inherited git redirection so the workspace fixtures the tests
 	// build resolve to their own repositories, not the wrapper's.
 	gittest.IsolateProcess()
+	// A test grant must not wrap the test binary's own output.
+	vaultenv.SkipProtect = true
 	code := m.Run()
 	_ = os.RemoveAll(home)
 	os.Exit(code)

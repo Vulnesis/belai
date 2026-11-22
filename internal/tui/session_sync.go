@@ -15,6 +15,7 @@ import (
 	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/httpclient"
 	"github.com/vulnetix/belai/internal/repomemory"
 	"github.com/vulnetix/belai/internal/rolemanager"
@@ -62,6 +63,14 @@ func (a *App) startSessionSync() {
 	if !a.settings.SyncEnabled() {
 		a.syncNote = "off (sync.enabled is false)"
 		return
+	}
+	// A host that joined a Keleustes server mirrors its sessions there, and
+	// only there (docs/keleustes.md#sessions).
+	if dir, err := config.GlobalDir(); err == nil {
+		if be, err := factorylink.ActiveBackend(dir, "tui"); err == nil {
+			a.startKeleustesSync(dir, be)
+			return
+		}
 	}
 	workdir := a.workdir
 	header, err := credentials.VulnetixAuthHeader(workdir)
@@ -120,7 +129,79 @@ func (a *App) startSessionSync() {
 	a.syncTouch()
 }
 
-// retrySessionSync starts sync after a login inside the TUI, when startup had
+// startKeleustesSync mirrors the live session to the joined Keleustes server
+// and takes its inbox from there, with the same gates as the website's
+// (sync.remote_prompts, sync.remote_answers): the Syncer is the same, only its
+// backend differs. The board, the shared memory and the A2A relay go to
+// Keleustes too, through the Board service, each by the website's own code
+// with only the server changed (docs/keleustes.md#board), and so does the
+// audit log: this process's hash-chained facts stream goes to Keleustes's
+// Sessions.Audit (#13).
+func (a *App) startKeleustesSync(dir string, be *factorylink.SyncBackend) {
+	hostID, err := sessionsync.HostID(dir)
+	if err != nil {
+		_ = be.Close()
+		a.syncNote = "off (" + err.Error() + ")"
+		return
+	}
+	a.syncKeleustes = be
+	a.syncer = sessionsync.New(sessionsync.Options{
+		Backend:       be,
+		HostID:        hostID,
+		Host:          sessionsync.Host{Hostname: sessionsync.Hostname(), OS: runtime.GOOS, BelaiVersion: version.Version},
+		RemotePrompts: a.settings.SyncRemotePromptsEnabled(),
+		RemoteAnswers: a.settings.SyncRemoteAnswersEnabled(),
+		Git:           a.gitSyncRaw(),
+	})
+	a.syncer.Start(context.Background())
+	a.startKeleustesStreams(dir, hostID)
+	a.syncedID = ""
+	a.syncTouch()
+}
+
+// startKeleustesStreams starts the board sync, the memory replication and the
+// A2A relay against the joined Keleustes server. closeSync ends them.
+func (a *App) startKeleustesStreams(dir, hostID string) {
+	ctx, cancel := context.WithCancel(context.Background())
+	stops := []func(){cancel}
+	if k, err := factorylink.ActiveKanban(dir); err == nil {
+		a.startKanbanSync(k, hostID)
+		stops = append(stops, func() { _ = k.Close() })
+	}
+	if m, err := factorylink.ActiveMemory(dir); err == nil {
+		a.memRepl = sessionsync.NewMemoryReplicator(m, hostID, repomemory.Root(dir))
+		a.memRepl.UseStateFile(m.StateName())
+		a.memRepl.Start(ctx)
+		stops = append(stops, func() { _ = m.Close() })
+	}
+	if r, err := factorylink.ActiveA2A(dir); err == nil {
+		if stop := a.a2aFactory(ctx, r, hostID); stop != nil {
+			stops = append(stops, stop)
+		} else {
+			_ = r.Close()
+		}
+	}
+	if s, err := keleustesAudit(dir); err == nil {
+		host := sessionsync.Host{Hostname: sessionsync.Hostname(), OS: runtime.GOOS, BelaiVersion: version.Version}
+		if a.audit = sessionsync.StartAuditOn(context.Background(), s, hostID, host, dir); a.audit != nil {
+			// The last facts are flushed before the connection goes.
+			stops = append(stops, func() {
+				a.audit.Close(3 * time.Second)
+				a.audit = nil
+				_ = s.Close()
+			})
+		} else {
+			_ = s.Close()
+		}
+	}
+	a.factoryStop = func() {
+		for _, f := range stops {
+			f()
+		}
+	}
+}
+
+// retrySessionSync) starts sync after a login inside the TUI, when startup had
 // found no credential. A run that never tried (every test) stays offline.
 func (a *App) retrySessionSync() tea.Cmd {
 	if a.syncer != nil || a.syncNote == "" || !a.settings.SyncEnabled() {
@@ -191,6 +272,15 @@ func (a *App) closeSync() {
 	}
 	a.syncer.Close(3 * time.Second)
 	a.syncer = nil
+	if a.syncKeleustes != nil {
+		_ = a.syncKeleustes.Close()
+		a.syncKeleustes = nil
+	}
+	if a.factoryStop != nil {
+		a.factoryStop()
+		a.factoryStop = nil
+		a.memRepl = nil
+	}
 	a.audit.Close(3 * time.Second)
 	a.audit = nil
 	a.syncedID = ""
@@ -360,6 +450,27 @@ func (a *App) syncStatusText() string {
 	}
 	st := a.syncer.Status()
 	var b strings.Builder
+	if be := a.syncKeleustes; be != nil {
+		fmt.Fprintf(&b, "session sync: on · Keleustes %q", be.Profile().ServerName)
+		if a.syncer.RemotePromptsEnabled() {
+			b.WriteString(" · prompts from Keleustes on")
+		} else {
+			b.WriteString(" · view-only (sync.remote_prompts is false)")
+		}
+		if st.Registered {
+			fmt.Fprintf(&b, "\n  this session: %d lines on Keleustes", st.LastSeq+1)
+		} else {
+			b.WriteString("\n  this session: appears in Keleustes once registered")
+		}
+		if len(a.remoteQueue) > 0 {
+			fmt.Fprintf(&b, "\n  %d prompt(s) queued behind the running turn", len(a.remoteQueue))
+		}
+		if st.LastError != "" {
+			b.WriteString("\n  last error: " + st.LastError)
+		}
+		b.WriteString("\n  this host mirrors to Keleustes instead of the Vulnetix website while it is joined (/connect status)")
+		return b.String()
+	}
 	b.WriteString("session sync: on")
 	if a.syncer.RemotePromptsEnabled() {
 		b.WriteString(" · web prompts on")
@@ -431,4 +542,19 @@ func (a *App) syncBackfill() tea.Cmd {
 		n, err := s.Backfill(ctx, todo)
 		return syncBackfillDoneMsg{n: n, err: err}
 	}
+}
+
+// keleustesAuditSink is the audit upload to a joined Keleustes server.
+type keleustesAuditSink interface {
+	sessionsync.AuditBackend
+	Close() error
+}
+
+// keleustesAudit opens it; a variable so a test can stand in for the server.
+var keleustesAudit = func(dir string) (keleustesAuditSink, error) {
+	s, err := factorylink.ActiveAudit(dir)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
 }

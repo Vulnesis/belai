@@ -679,6 +679,9 @@ type Dispatch struct {
 	// Trigger says what started a "start", "worker" or "crew" request. It is
 	// untrusted provenance: cleaned before use and nil when absent.
 	Trigger *Trigger `json:"trigger,omitempty"`
+	// Options are a Keleustes dispatch's crew and step settings (keys in
+	// rc.FactoryOptionKeys), applied by the session within the host's gates.
+	Options map[string]string `json:"options,omitempty"`
 	// Budget, on a "worker" or "crew" request, is the factory's per-item
 	// budget and retry settings for the workers it starts, layered over their
 	// profiles. Nil keeps the profiles' own. Cleaned before use.
@@ -713,6 +716,33 @@ type Dispatch struct {
 	Until     int64  `json:"until,omitempty"`
 	Reason    string `json:"reason,omitempty"`
 	CreatedAt int64  `json:"createdAt"`
+	// Keleustes-only start fields (belai-counterparts #46, #52, #55). They
+	// are never read from a website request (no JSON name): rc.factoryRequest
+	// fills them from the node link, and the daemon checks each before use.
+	// Resume is a session of this host whose conversation a new session
+	// continues, Fork the entry it continues from; Answers is the -answers
+	// list for the session's questions; Adhoc a worker with no stored profile.
+	Resume  string     `json:"-"`
+	Fork    string     `json:"-"`
+	Answers string     `json:"-"`
+	Adhoc   *AdhocSpec `json:"-"`
+}
+
+// AdhocSpec is a worker with no stored profile, as `belai agent start
+// -prompt` takes it. Untrusted: the daemon checks each field, classifies the
+// prompt and the worker validates the profile it builds.
+// AdhocPromptEnv carries a one-off worker's prompt from belai rc to `belai agent
+// start -prompt-from-env`: the environment is readable only by the same user,
+// argv by everyone on the host. The child unsets it once read.
+const AdhocPromptEnv = "BELAI_ADHOC_PROMPT"
+
+type AdhocSpec struct {
+	Prompt   string
+	Tools    []string
+	Claim    string // LIST[:LABEL,LABEL]
+	To       string
+	Publish  string
+	ReadOnly bool
 }
 
 // ForgeRequest is what a worker files when it cannot publish its branch itself
@@ -813,6 +843,13 @@ type SessionMeta struct {
 	// what started it ("pix"). Both are empty for an ordinary session.
 	Ephemeral bool   `json:"ephemeral,omitempty"`
 	Origin    string `json:"origin,omitempty"`
+	// Harness, HarnessVersion, HarnessSessionID and TranscriptSource name a
+	// third-party harness session (harnesses.md): its registry id, version,
+	// native session id and "native" or "screen". Empty for belai.
+	Harness          string `json:"harness,omitempty"`
+	HarnessVersion   string `json:"harnessVersion,omitempty"`
+	HarnessSessionID string `json:"harnessSessionId,omitempty"`
+	TranscriptSource string `json:"transcriptSource,omitempty"`
 }
 
 // Entry is one JSONL line as uploaded: the session.Entry fields plus seq.
@@ -903,6 +940,19 @@ type RemoteCommand struct {
 	// prompt run again on it.
 	Checkout  string `json:"checkout,omitempty"`
 	Interrupt bool   `json:"interrupt,omitempty"`
+	// Signal is a session signal: "stop" ends the session (a running turn is
+	// stopped first) and "interrupt" stops the running turn and leaves the
+	// session waiting for the next prompt. Keleustes sends them; they take the
+	// same RemoteCommands gate as a control.
+	Signal string `json:"signal,omitempty"`
+	// Action is a console session action from Keleustes (compact, relay,
+	// undo, rewind, commit, btw, rename; belai-counterparts #45) and
+	// ActionArg its words, joined by spaces. It takes the same RemoteCommands gate as a
+	// control; the host runs its own code for each, and any text it carries
+	// is admitted like a prompt where a model reads it. Not read from a
+	// website request (no JSON name).
+	Action    string `json:"-"`
+	ActionArg string `json:"-"`
 	CreatedAt int64  `json:"createdAt"`
 }
 
@@ -1136,11 +1186,27 @@ type EndInfo struct {
 	// (docs/session-measures.md). The syncer fills it in; a host that
 	// predates it sends none and the server stores null.
 	Rollup *sessionmeasure.Rollup `json:"rollup,omitempty"`
+	// Harness is a harness session's end facts (harnessrun), nil otherwise.
+	// Keleustes only: the website takes none.
+	Harness *HarnessEnd `json:"-"`
+}
+
+// HarnessEnd is how a harness session ended: the process group is gone, no
+// reply and no change in the work tree, a typed prompt got no final turn,
+// and its timing in milliseconds.
+type HarnessEnd struct {
+	TerminationVerified bool  `json:"terminationVerified,omitempty"`
+	EmptyResult         bool  `json:"emptyResult,omitempty"`
+	AdapterError        bool  `json:"adapterError,omitempty"`
+	StartupMS           int64 `json:"startupMs,omitempty"`
+	ReadyMS             int64 `json:"readyMs,omitempty"`
+	FirstReplyMS        int64 `json:"firstReplyMs,omitempty"`
+	WallMS              int64 `json:"wallMs,omitempty"`
 }
 
 // empty reports whether the end says nothing.
 func (e EndInfo) empty() bool {
-	return e.Reason == "" && e.Error == "" && e.ExitCode == nil && e.Rollup == nil
+	return e.Reason == "" && e.Error == "" && e.ExitCode == nil && e.Rollup == nil && e.Harness == nil
 }
 
 // End moves the session into History, saying nothing of why.
@@ -1346,3 +1412,9 @@ func (c *Client) AckDispatch(ctx context.Context, dispatchID, status, sessionID,
 	return c.do(ctx, http.MethodPost, "/dispatches/"+url.PathEscape(dispatchID)+"/ack",
 		map[string]string{"status": status, "sessionId": sessionID, "reason": reason}, nil, requestTimeout)
 }
+
+// Session signals (RemoteCommand.Signal).
+const (
+	SignalStop      = "stop"
+	SignalInterrupt = "interrupt"
+)

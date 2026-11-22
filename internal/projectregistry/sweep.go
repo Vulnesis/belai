@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/vulnetix/belai/internal/config"
 )
 
 // Found reports one discovered .vulnetix directory.
@@ -113,6 +115,11 @@ func Sweep(ctx context.Context, opts SweepOptions, out chan<- Found) {
 				}
 				if name == ".vulnetix" {
 					parent := filepath.Dir(path)
+					// vulnetix.sweep=false in the host's preferences keeps
+					// the repository out of the sweep.
+					if config.SweepOff(parent) {
+						return fs.SkipDir
+					}
 					if !seen[parent] {
 						seen[parent] = true
 						select {

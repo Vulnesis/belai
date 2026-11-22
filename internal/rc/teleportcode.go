@@ -68,19 +68,9 @@ func (d *Daemon) teleportCode(ctx context.Context, r sessionsync.Dispatch) (stri
 
 // buildTeleportCode reads dir's changes and decides how they travel.
 func (d *Daemon) buildTeleportCode(ctx context.Context, dir string, r sessionsync.Dispatch) sessionsync.TeleportCode {
-	none := func(why string) sessionsync.TeleportCode {
-		return sessionsync.TeleportCode{Mode: sessionsync.CodeNone, Reason: sanitize.Line(why, 240)}
-	}
-	snap, err := changes.Collect(ctx, d.o.TeleportGit, dir)
-	switch {
-	case errors.Is(err, changes.ErrNothing):
-		return none("the origin session had nothing left to move")
-	case errors.Is(err, changes.ErrNoBase):
-		return none("the origin's branch has no pushed commit to build on, so its changes cannot be sent; push the branch there")
-	case errors.Is(err, changes.ErrTooLarge), errors.Is(err, changes.ErrTooMany):
-		return none(err.Error())
-	case err != nil:
-		return none("the origin host could not read its changes: " + sanitize.Line(err.Error(), 160))
+	snap, none, ok := collectTeleportCode(ctx, d.o.TeleportGit, dir)
+	if !ok {
+		return none
 	}
 
 	policy := d.teleportPushPolicy()
@@ -105,7 +95,38 @@ func (d *Daemon) buildTeleportCode(ctx context.Context, dir string, r sessionsyn
 		why = "the origin host could not push a teleport branch: " + sanitize.Line(perr.Error(), 160)
 		d.logf("teleport_code: %s", why)
 	}
+	out, fromModel := replayCode(ctx, snap, why, d.o.Distill)
+	d.logf("teleport_code: replay of %d file%s (%s)", len(out.Files), map[bool]string{true: "", false: "s"}[len(out.Files) == 1], strings.TrimSpace(map[bool]string{true: "model summary", false: "harness summary"}[fromModel]))
+	return out
+}
 
+// Distiller writes the hand-over of a replay's changes (Options.Distill).
+type Distiller = func(ctx context.Context, files []rolemanager.TeleportFile, skipped []string, patch string) rolemanager.Distilled
+
+// collectTeleportCode reads dir's changes. When there is nothing it can send,
+// it returns the none result with the reason, and false.
+func collectTeleportCode(ctx context.Context, git changes.Runners, dir string) (changes.Snapshot, sessionsync.TeleportCode, bool) {
+	none := func(why string) sessionsync.TeleportCode {
+		return sessionsync.TeleportCode{Mode: sessionsync.CodeNone, Reason: sanitize.Line(why, 240)}
+	}
+	snap, err := changes.Collect(ctx, git, dir)
+	switch {
+	case errors.Is(err, changes.ErrNothing):
+		return snap, none("the origin session had nothing left to move"), false
+	case errors.Is(err, changes.ErrNoBase):
+		return snap, none("the origin's branch has no pushed commit to build on, so its changes cannot be sent; push the branch there"), false
+	case errors.Is(err, changes.ErrTooLarge), errors.Is(err, changes.ErrTooMany):
+		return snap, none(err.Error()), false
+	case err != nil:
+		return snap, none("the origin host could not read its changes: " + sanitize.Line(err.Error(), 160)), false
+	}
+	return snap, sessionsync.TeleportCode{}, true
+}
+
+// replayCode is snap as a replay: the patch, and the hand-over distill writes
+// (the harness's file list when distill is nil). It reports whether a model
+// wrote the hand-over.
+func replayCode(ctx context.Context, snap changes.Snapshot, why string, distill Distiller) (sessionsync.TeleportCode, bool) {
 	files := make([]rolemanager.TeleportFile, 0, len(snap.Files))
 	for _, f := range snap.Files {
 		files = append(files, rolemanager.TeleportFile{Path: f.Path, Status: f.Status, Added: f.Added, Removed: f.Removed})
@@ -115,8 +136,8 @@ func (d *Daemon) buildTeleportCode(ctx context.Context, dir string, r sessionsyn
 		skipped = append(skipped, s.Path+" ("+s.Reason+")")
 	}
 	var hand rolemanager.Distilled
-	if d.o.Distill != nil {
-		hand = d.o.Distill(ctx, files, skipped, snap.Patch)
+	if distill != nil {
+		hand = distill(ctx, files, skipped, snap.Patch)
 	} else {
 		hand = rolemanager.ComposeTeleportFallback(files)
 	}
@@ -130,7 +151,24 @@ func (d *Daemon) buildTeleportCode(ctx context.Context, dir string, r sessionsyn
 	for _, s := range snap.Skipped {
 		out.Skipped = append(out.Skipped, sessionsync.TeleportCodeSkip{Path: s.Path, Reason: s.Reason})
 	}
-	d.logf("teleport_code: replay of %d file%s (%s)", len(out.Files), map[bool]string{true: "", false: "s"}[len(out.Files) == 1], strings.TrimSpace(map[bool]string{true: "model summary", false: "harness summary"}[hand.FromModel]))
+	return out, hand.FromModel
+}
+
+// keleustesCodeReason is why a teleport through Keleustes replays the changes
+// rather than coordinating over the forge.
+const keleustesCodeReason = "the session moved through Keleustes, which carries the changes in the teleport bundle instead of a forge branch"
+
+// KeleustesCode reads dir's uncommitted and unpushed changes for a Keleustes
+// teleport bundle: always a replay (the bundle carries the patch, so nothing
+// is pushed to the forge), or none with the reason. The same rules as a
+// teleport_code request decide what may leave (internal/teleport/changes);
+// git nil is the hardened default.
+func KeleustesCode(ctx context.Context, git changes.Runners, dir string, distill Distiller) sessionsync.TeleportCode {
+	snap, none, ok := collectTeleportCode(ctx, git, dir)
+	if !ok {
+		return none
+	}
+	out, _ := replayCode(ctx, snap, keleustesCodeReason, distill)
 	return out
 }
 

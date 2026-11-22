@@ -38,6 +38,27 @@ func NewID() (string, error) {
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16]), nil
 }
 
+// ValidID reports whether s has the shape NewID gives: a lower-case RFC 4122
+// UUID. It says nothing of whether such a session exists.
+func ValidID(s string) bool {
+	if len(s) != 36 {
+		return false
+	}
+	for i, r := range s {
+		switch i {
+		case 8, 13, 18, 23:
+			if r != '-' {
+				return false
+			}
+		default:
+			if !(r >= '0' && r <= '9' || r >= 'a' && r <= 'f') {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // MustID is NewID that panics on failure. It exists for callers that have no
 // meaningful error path (e.g. tests and interactive setup).
 func MustID() string {

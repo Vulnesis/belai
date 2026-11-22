@@ -60,6 +60,8 @@ behaviour, and implementation details.
 - [Harness registry](harnesses.md): where Claude Code, Cursor, Codex and about 80
   other harnesses keep commands, skills, prompts, agents and instruction
   documents, and how the registry is generated.
+- [Harness sessions](harness-sessions.md): running another harness's own TUI
+  as a Keleustes session, its native transcript, key modes and A2A bridge.
 - [Agent Stores](agent-stores.md): read-only search across Belai and other
   agents' session, prompt, and memory stores, including attribution and
   confinement guarantees.
@@ -102,6 +104,10 @@ behaviour, and implementation details.
   (History and live Sessions) and prompting a live session from the browser.
 - [Remote control](remote-control.md): `belai rc`, which lets the website
   start and drive sessions on this machine.
+- [Keleustes nodes](keleustes.md): joining the desktop Software Factory with
+  `/connect`, the node link, and mirroring sessions, the board, repository
+  memory and A2A to it instead of the website; factory control; and serving
+  `belai rc` dispatches, `github` and `model` jobs and vault grants.
 - [Teleport](teleport.md): `belai -teleport`, which continues a session from another
   host, sandbox or the web on this host, under a new id.
 - [Pix Sandbox](pix-sandbox.md): the contract between Belai and the hosted machine Vulnetix

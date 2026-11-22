@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/vulnetix/belai/internal/docparity"
+	"github.com/vulnetix/belai/internal/factorylink/nodev1"
 	"github.com/vulnetix/belai/internal/harness"
 	"github.com/vulnetix/belai/internal/libitem"
 	"github.com/vulnetix/belai/internal/libscan"
@@ -558,5 +559,43 @@ func TestLibraryImportOfAHookRefusesAChangedScriptOrFile(t *testing.T) {
 	}
 	if s.imports() != before {
 		t.Error("something was uploaded")
+	}
+}
+
+// WP-K: on a Keleustes host a scan reports names, paths and hashes, and an
+// import uploads the canonical item naming the scan's hash; a changed file
+// is refused.
+func TestKeleustesScanAndImport(t *testing.T) {
+	s := newScanHost(t)
+	ff := &fakeFactory{}
+	s.d.o.Factory = ff
+	_, report, why, _ := s.d.factoryStart(t.Context(), &nodev1.Dispatch{Id: "scan-k", Kind: "library_scan"}, nil)
+	if why != "" || report == "" || len(ff.scans) != 1 {
+		t.Fatalf("scan: %q %q", report, why)
+	}
+	rep := ff.scans[0]
+	var idx = -1
+	for i, f := range rep.GetFound() {
+		if f.GetKind() == "command" && f.GetName() == "ship" {
+			idx = i
+		}
+	}
+	if idx < 0 || len(rep.GetPaths()) != len(rep.GetFound()) {
+		t.Fatalf("report = %v", rep)
+	}
+	sha, path := rep.GetFound()[idx].GetSha256(), rep.GetPaths()[idx]
+	_, report, why, _ = s.d.factoryStart(t.Context(), &nodev1.Dispatch{Id: "imp-1", Kind: "library_import", ItemKind: "command",
+		Path: path, Sha256: sha, ScanDispatch: "scan-k"}, nil)
+	if why != "" || !strings.Contains(report, "imported command ship") || len(ff.backups) != 1 {
+		t.Fatalf("import: %q %q", report, why)
+	}
+	if got := ff.backups[0].GetRef(); got.GetSha256() != sha || got.GetName() != "ship" {
+		t.Errorf("uploaded ref = %v", got)
+	}
+	s.put(".claude/commands/ship.md", "---\ndescription: Changed\n---\n\nSomething else.\n")
+	_, _, why, _ = s.d.factoryStart(t.Context(), &nodev1.Dispatch{Id: "imp-2", Kind: "library_import", ItemKind: "command",
+		Path: path, Sha256: sha, ScanDispatch: "scan-k"}, nil)
+	if !strings.Contains(why, "changed since the scan") {
+		t.Errorf("changed file: %q", why)
 	}
 }

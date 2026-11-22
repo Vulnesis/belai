@@ -228,6 +228,37 @@ func (d *Daemon) cloneDir(ctx context.Context, c *sessionsync.DispatchClone, hin
 	return res.Path, why, ""
 }
 
+// cloneInto answers a host repo_clone (keleustes host management §5.6): it
+// clones the target into dir under parent at depth (0 is the full history)
+// through the same repository engine, one clone at a time, trusts the
+// directory only and offers it. It returns the checkout, or the refusal
+// reason.
+func (d *Daemon) cloneInto(ctx context.Context, c *sessionsync.DispatchClone, parent, dir string, depth int) (string, string) {
+	if !d.canClone() {
+		return "", "this host does not clone repositories (agents.clone is off or belai rc runs with -no-clone)"
+	}
+	t, ok := ParseCloneTarget(c)
+	if !ok || parent == "" || !filepath.IsAbs(parent) {
+		return "", "that is not a repository to clone"
+	}
+	select {
+	case d.cloneSlot <- struct{}{}:
+	case <-ctx.Done():
+		return "", "belai rc is stopping"
+	}
+	defer func() { <-d.cloneSlot }()
+	cctx, cancel := context.WithTimeout(ctx, cloneTimeout)
+	defer cancel()
+	path, err := cloneAt(cctx, t, "", dir, depth, cloneOptions(t, parent), func(dir string) error { return trustgate.Grant(dir, nil) })
+	if err != nil {
+		return "", clip(sanitize.Line(err.Error(), 400))
+	}
+	if d.offerDir(Dir{Path: path, Name: filepath.Base(path), Source: SourceTrusted}) {
+		d.logf("cloned %s into %s and offered it", t.Label(), path)
+	}
+	return path, ""
+}
+
 // cloneLabel names a clone request for the log, cleaned.
 func cloneLabel(c *sessionsync.DispatchClone) string {
 	if t, ok := ParseCloneTarget(c); ok {
@@ -275,14 +306,23 @@ func cloneOptions(t CloneTarget, reposDir string) repos.Options {
 // cloneWith is cloneRepo with its engine options and trust grant replaceable
 // in tests.
 func cloneWith(ctx context.Context, t CloneTarget, ref string, opts repos.Options, trust func(string) error) (string, error) {
+	return cloneAt(ctx, t, ref, t.reposDir(), 0, opts, trust)
+}
+
+// cloneAt is cloneWith into dir under opts.ReposDir, fetching depth commits
+// of history (0 is all of it).
+func cloneAt(ctx context.Context, t CloneTarget, ref, dir string, depth int, opts repos.Options, trust func(string) error) (string, error) {
 	itemName := cloneItemName(t.Owner, t.Name)
 	if t.Host != "" {
 		itemName = cloneItemName(strings.ReplaceAll(t.Host, ":", "-")+"-"+strings.ReplaceAll(t.Owner, "/", "-"), t.Name)
 	}
 	r := config.GitRepo{
 		Name: itemName, URL: t.cloneURL(),
-		Visibility: "public", Auth: "none", Dir: filepath.ToSlash(t.reposDir()),
+		Visibility: "public", Auth: "none", Dir: filepath.ToSlash(dir),
 		Refs: []config.GitRef{{Kind: config.GitRefBranch, Name: "main"}},
+	}
+	if depth > 0 {
+		r.Depth = &depth
 	}
 	if ref == "" {
 		b, err := repos.DefaultBranch(ctx, r, opts)

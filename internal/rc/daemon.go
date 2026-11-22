@@ -2,6 +2,7 @@ package rc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -12,12 +13,15 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/vulnetix/belai/internal/a2a"
 	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/avatar"
+	"github.com/vulnetix/belai/internal/budget"
 	"github.com/vulnetix/belai/internal/config"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/libitem"
 	"github.com/vulnetix/belai/internal/modes"
@@ -44,10 +48,13 @@ type Options struct {
 	// Exe is the belai binary each session runs as `belai rc-session`.
 	Exe    string
 	Client *sessionsync.Client
-	HostID string
-	Host   sessionsync.Host
-	Dirs   []Dir
-	Max    int
+	// Factory, when set, is the Keleustes server the daemon serves instead of
+	// the website (factory.go); Client is then unused and may be nil.
+	Factory Factory
+	HostID  string
+	Host    sessionsync.Host
+	Dirs    []Dir
+	Max     int
 	// MaxWorkers, when set, is the fleet worker cap for workers this daemon
 	// starts and reports, in place of agents.max_workers (belai rc --max).
 	MaxWorkers int
@@ -91,6 +98,21 @@ type Options struct {
 	// host's registry unless a test replaces it). It returns a report, or an
 	// error whose text is the refusal reason.
 	CrewControl func(c *sessionsync.RCCrewControl) (string, error)
+	// Fleet opens this host's worker registry for a Keleustes budget_update
+	// (fleet.OpenRegistry unless a test replaces it).
+	Fleet func() (*fleet.Registry, error)
+	// PlanLimits reads the provider plan windows the host status reports to
+	// Keleustes (localPlanLimits unless a test replaces it).
+	PlanLimits func() []budget.PlanLimit
+	// IndexProject brings the project knowledge index of root, a directory this
+	// daemon offers, up to date: it runs `belai agent knowledge -index -json` in
+	// root (runProjectIndex unless a test replaces it), which classifies every
+	// new chunk. It returns a short clause, or the reason it could not.
+	IndexProject func(ctx context.Context, exe, root string) (string, error)
+	// InitDraft drafts an instruction file for dir, a directory this daemon
+	// offers, with one call of this host's model (Keleustes init_draft job).
+	// Nothing is written. nil refuses the job.
+	InitDraft func(ctx context.Context, dir, provider, model string, grant *factorylink.Grant) (InitDraft, string, error)
 	// ForgeSpool is the fleet registry directory whose <worker>.forge spools
 	// the daemon files with the forge coordinator (the host's registry unless a
 	// test replaces it); ForgeRelayEvery is how often it looks (5s).
@@ -142,6 +164,31 @@ type Options struct {
 	// (the teleport_distill role). nil, or a model that gives nothing usable, is the
 	// harness's file list.
 	Distill func(ctx context.Context, files []rolemanager.TeleportFile, skipped []string, patch string) rolemanager.Distilled
+	// GH runs one `gh` invocation for a Keleustes github job (runGH unless a
+	// test replaces it). The arguments are already checked (checkGHArgs).
+	GH func(ctx context.Context, args []string, stdin string) (GHResult, error)
+	// GHAuthenticated reports whether gh is signed in on this host
+	// (factorylink.GHAuthenticated unless a test replaces it).
+	GHAuthenticated func(ctx context.Context) bool
+	// ForgeSignedIn reports whether the host's cli (gh, glab, tea) is signed
+	// in to host, for a forge_push job (factorylink.ForgeSignedIn unless a test
+	// replaces it): the same logins the advert lists.
+	ForgeSignedIn func(ctx context.Context, cli, host string) bool
+	// ModelJob runs one Keleustes model job: a single non-interactive call
+	// of this host's provider plumbing for task, with grant's keys (nil for
+	// none) feeding that call's provider resolution only. It returns the
+	// output JSON, or a refusal reason (harness text), or an error. nil refuses
+	// every model job.
+	ModelJob func(ctx context.Context, task string, payload json.RawMessage, grant *factorylink.Grant) (json.RawMessage, string, error)
+	// AdmitText runs a piece of remote text a model will read (a Keleustes
+	// dispatch's answer note, a one-off worker's prompt) through this host's
+	// security classifier and posture for cwd, as a prompt is admitted. It
+	// returns the cleaned text, or an error when the text is refused or
+	// cannot be checked. nil refuses every such text.
+	AdmitText func(ctx context.Context, cwd, subject, text string) (string, error)
+	// Sessions is the session store a Keleustes teleport job reads the
+	// origin session from (session.NewStore unless a test replaces it).
+	Sessions *session.Store
 	// DrawAvatar draws a customised Pix with this host's main model for an
 	// "avatar" request. It returns the SVG, or the reason it could not (harness
 	// text). nil means this daemon has no model to draw with and refuses.
@@ -195,6 +242,16 @@ type Options struct {
 	// returns its checkout, trusted for the directory (cloneRepo unless a test
 	// replaces it). The error text is the refusal reason.
 	Clone Cloner
+
+	// HostManage, when set, runs Keleustes host management beside the factory
+	// link (hostmgmt.go). Manage and ManageShell are --keleustes-manage and
+	// --keleustes-shell, recorded in rc.json; nothing else changes them.
+	HostManage HostManager
+	// HarnessDetect runs third-party harness detection in factory mode
+	// (harnesses.md); off in tests, which must not probe real binaries.
+	HarnessDetect bool
+	Manage        string
+	ManageShell   bool
 }
 
 // WorkerStart is one validated worker or crew start.
@@ -235,6 +292,12 @@ type WorkerStart struct {
 	// MemberModels starts crew members on their own model: member profile to
 	// "provider/model", each checked (checkMemberModels).
 	MemberModels map[string]string
+	// Grant is a Keleustes vault grant for a worker start (WP-F), passed to
+	// `belai agent start` on an inherited pipe and from it to each worker.
+	Grant *factorylink.Grant
+	// Adhoc, in place of Profile, is a one-off worker with no stored profile
+	// (Keleustes Dispatch.adhoc), already checked and its prompt admitted.
+	Adhoc *sessionsync.AdhocSpec
 }
 
 // Child is one session to start.
@@ -263,6 +326,18 @@ type Child struct {
 	// Trigger is the request's cleaned trigger as compact JSON; "" when the
 	// request carried none.
 	Trigger string
+	// Options are a Keleustes dispatch's session settings (tests, commits),
+	// passed as -factory-option and applied within the session's gates.
+	Options map[string]string
+	// Resume is a session of this host (same project) the new session
+	// continues, and Fork the entry it continues from; both checked by the
+	// daemon (checkResume) and again by the child. AnswersPath is the 0600
+	// file holding the session's admitted answers (-answers), or "".
+	Resume, Fork, AnswersPath string
+	// Grant is a Keleustes vault grant for this session alone, or nil. It
+	// reaches the child on an inherited pipe (startChild), never in argv or the
+	// environment; its String shows no value.
+	Grant *factorylink.Grant
 }
 
 // Daemon is a running `belai rc`.
@@ -290,6 +365,15 @@ type Daemon struct {
 	// library imports a website selection fans out (scan.go).
 	scanSlot chan struct{}
 	importMu sync.Mutex
+	// jobSlot holds a token for each Keleustes job running (factoryjobs.go).
+	jobSlot chan struct{}
+	// control is the Keleustes factory's control state as the link last said.
+	control factorylink.Control
+	// draining is set while a host rc_restart drains (hostmgmt.go).
+	draining atomic.Bool
+	// readvert asks the Keleustes link to advertise again (a reindex changed
+	// the knowledge catalogue); see readvertCh.
+	readvert chan struct{}
 	// dirsMu guards o.Dirs, which a clone request extends while the daemon
 	// runs (offerDir); every reader takes a snapshot through dirs().
 	dirsMu sync.RWMutex
@@ -304,6 +388,8 @@ type Daemon struct {
 	// requests are the host requests made and not yet settled (attention.go),
 	// by the website's id, under mu.
 	requests map[string]*hostRequest
+	// factoryAsks are attention requests filed with Keleustes, by id.
+	factoryAsks map[string]*factoryAsk
 	// policyAsked holds the subjects of the policy requests already made
 	// (policy.go), under mu.
 	policyAsked map[string]bool
@@ -315,8 +401,8 @@ type child struct {
 
 // New validates options and builds a daemon.
 func New(o Options) (*Daemon, error) {
-	if o.Client == nil || o.HostID == "" {
-		return nil, errors.New("rc: a sync client and host id are required")
+	if (o.Client == nil && o.Factory == nil) || o.HostID == "" {
+		return nil, errors.New("rc: a sync client (or a Keleustes server) and a host id are required")
 	}
 	if o.Max <= 0 {
 		o.Max = DefaultMax
@@ -341,6 +427,15 @@ func New(o Options) (*Daemon, error) {
 	}
 	if o.Start == nil {
 		o.Start = startChild
+	}
+	if o.GH == nil {
+		o.GH = runGH
+	}
+	if o.GHAuthenticated == nil {
+		o.GHAuthenticated = factorylink.GHAuthenticated
+	}
+	if o.ForgeSignedIn == nil {
+		o.ForgeSignedIn = factorylink.ForgeSignedIn
 	}
 	if o.Inventory == nil {
 		o.Inventory = LocalInventory
@@ -397,6 +492,15 @@ func New(o Options) (*Daemon, error) {
 	if o.PauseWorker == nil {
 		o.PauseWorker = setWorkerPaused
 	}
+	if o.Fleet == nil {
+		o.Fleet = func() (*fleet.Registry, error) { return fleet.OpenRegistry(nil) }
+	}
+	if o.PlanLimits == nil {
+		o.PlanLimits = localPlanLimits
+	}
+	if o.IndexProject == nil {
+		o.IndexProject = runProjectIndex
+	}
 	if o.PolicyStops == nil {
 		o.PolicyStops = localPolicyStops
 	}
@@ -423,7 +527,7 @@ func New(o Options) (*Daemon, error) {
 	if o.ScheduleEvery <= 0 {
 		o.ScheduleEvery = DefaultScheduleEvery
 	}
-	if o.ScheduleRemote == nil {
+	if o.ScheduleRemote == nil && o.Client != nil {
 		o.ScheduleRemote = o.Client
 	}
 	if o.Busy == nil {
@@ -441,7 +545,7 @@ func New(o Options) (*Daemon, error) {
 	if o.SyncItem == nil {
 		o.SyncItem = syncItemOn
 	}
-	if o.LibraryRemote == nil {
+	if o.LibraryRemote == nil && o.Client != nil {
 		o.LibraryRemote = o.Client
 	}
 	if o.LibrarySyncEvery <= 0 {
@@ -453,7 +557,7 @@ func New(o Options) (*Daemon, error) {
 	if o.Clone == nil {
 		o.Clone = cloneRepo
 	}
-	d = &Daemon{o: o, sessions: map[string]*child{}, started: time.Now(), avatarSlot: make(chan struct{}, 1),
+	d = &Daemon{o: o, sessions: map[string]*child{}, started: time.Now(), avatarSlot: make(chan struct{}, 1), jobSlot: make(chan struct{}, maxFactoryJobs),
 		codeSlot: make(chan struct{}, 2), scanSlot: make(chan struct{}, 1), cloneSlot: make(chan struct{}, 1),
 		libsync: &libSyncState{records: map[string]syncRecord{}}}
 	d.adopt = newAdopter(o.Clone)
@@ -499,6 +603,9 @@ func (d *Daemon) Run(ctx context.Context) error {
 	}
 	d.writeRecord()
 	defer removeRecord(os.Getpid())
+	if d.o.Factory != nil {
+		return d.runFactory(ctx)
+	}
 
 	// The daemon's own audit stream: the host's remote-control sessions and
 	// the requests it served (docs/audit.md). Best effort.
@@ -908,7 +1015,11 @@ func (d *Daemon) ack(ctx context.Context, id, status, sid, reason string) {
 
 // start validates a start request and spawns its session. It returns the
 // new session id, or the reason it refused.
-func (d *Daemon) start(r sessionsync.Dispatch) (string, string) {
+func (d *Daemon) start(r sessionsync.Dispatch) (string, string) { return d.startGrant(r, nil) }
+
+// startGrant is start with a Keleustes vault grant for the session (nil for
+// none), handed to the child on its own pipe.
+func (d *Daemon) startGrant(r sessionsync.Dispatch, grant *factorylink.Grant) (string, string) {
 	cwd, ok := Allowed(d.dirs(), r.Cwd)
 	if !ok {
 		return "", "this host does not offer that directory"
@@ -927,12 +1038,31 @@ func (d *Daemon) start(r sessionsync.Dispatch) (string, string) {
 	if prompt == "" {
 		return "", "the prompt was empty after cleaning"
 	}
-	if why := checkOverride(r.Provider, r.Model, r.Effort, d.o.Models); why != "" {
+	if why := checkGrantOverride(r.Provider, r.Model, r.Effort, d.o.Models, grant); why != "" {
 		return "", why
 	}
 	if why := d.checkAgentProfile(r.Profile, r.Mode); why != "" {
 		return "", why
 	}
+	// Keleustes-only fields (factorysession.go): a resume names a session this
+	// host holds for cwd's project, and answers are admitted note by note.
+	if why := d.checkResume(r, cwd); why != "" {
+		return "", why
+	}
+	var answers []byte
+	if r.Answers != "" {
+		if pix {
+			return "", "a pix-assistant session takes no answers"
+		}
+		actx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		b, why := d.checkAnswers(actx, cwd, r.Answers)
+		cancel()
+		if why != "" {
+			return "", why
+		}
+		answers = b
+	}
+	options := gateIgnored(r.Options, cwd, r.ID)
 	d.mu.Lock()
 	if len(d.sessions) >= d.o.Max {
 		n := len(d.sessions)
@@ -968,6 +1098,17 @@ func (d *Daemon) start(r sessionsync.Dispatch) (string, string) {
 		Ask: r.Ask, Idle: d.o.Idle, LogPath: d.sessionLog(sid),
 		Controls: d.o.Controls, GuardrailsOff: d.o.Controls && d.o.GuardrailsOff,
 		Shell: d.o.Shell, Trigger: encodeTrigger(r.Trigger),
+		Options: options,
+		Grant:   grant,
+		Resume:  r.Resume, Fork: r.Fork,
+	}
+	if answers != nil {
+		c.AnswersPath = d.answersPath(sid)
+		if err := writeAnswers(c.AnswersPath, answers); err != nil {
+			return "", "could not start Belai: the answers could not be written"
+		}
+		audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorWeb, SessionID: sid, Outcome: "answers",
+			Data: map[string]string{"dispatch": "session", "status": "answers", "digest": answersDigest(answers)}})
 	}
 	if pix {
 		// An advisory session: the persona by its built-in name, git sync
@@ -978,9 +1119,13 @@ func (d *Daemon) start(r sessionsync.Dispatch) (string, string) {
 		off := false
 		c.GitSync, c.Idle = &off, PixIdle
 		c.Controls, c.GuardrailsOff, c.Shell, c.Ask = false, false, false, nil
+		c.Grant = nil
 	}
 	pid, wait, err := d.o.Start(c)
 	if err != nil {
+		if c.AnswersPath != "" {
+			_ = os.Remove(c.AnswersPath)
+		}
 		return "", "could not start Belai: " + err.Error()
 	}
 	d.mu.Lock()
@@ -988,11 +1133,17 @@ func (d *Daemon) start(r sessionsync.Dispatch) (string, string) {
 	d.mu.Unlock()
 	d.writeRecord()
 	d.logf("started session %s in %s (pid %d)", short(sid), cwd, pid)
+	if r.Resume != "" {
+		auditResume(r, sid)
+	}
 
 	d.wg.Add(1)
 	go func() {
 		defer d.wg.Done()
 		err := wait()
+		if c.AnswersPath != "" {
+			_ = os.Remove(c.AnswersPath)
+		}
 		d.mu.Lock()
 		delete(d.sessions, sid)
 		d.mu.Unlock()
@@ -1042,8 +1193,10 @@ func (d *Daemon) shutdown() {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := d.o.Client.RCOffline(ctx, d.o.HostID); err != nil {
-		d.logf("offline: %v", err)
+	if d.o.Client != nil {
+		if err := d.o.Client.RCOffline(ctx, d.o.HostID); err != nil {
+			d.logf("offline: %v", err)
+		}
 	}
 	audit.Emit(audit.Fact{Kind: audit.HostRCOffline, ActorKind: audit.ActorHarness,
 		Data: map[string]string{"reason": "stopped"}})
@@ -1071,6 +1224,7 @@ func (d *Daemon) writeRecord() {
 	r := Record{
 		PID: os.Getpid(), Started: d.started, Beat: time.Now(), HostID: d.o.HostID, URL: d.o.URL,
 		Max: d.o.Max, Dirs: d.dirs(), LogPath: d.o.LogPath, Online: d.online, Error: d.lastErr,
+		Manage: d.o.Manage, ManageShell: d.o.ManageShell,
 	}
 	for _, c := range d.sessions {
 		r.Sessions = append(r.Sessions, c.RunningSession)
@@ -1121,6 +1275,23 @@ func childArgs(c Child) []string {
 	if c.Shell {
 		args = append(args, "-shell")
 	}
+	keys := make([]string, 0, len(c.Options))
+	for k := range c.Options {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		args = append(args, "-factory-option", k+"="+c.Options[k])
+	}
+	if c.Resume != "" {
+		args = append(args, "-resume", c.Resume)
+		if c.Fork != "" {
+			args = append(args, "-fork", c.Fork)
+		}
+	}
+	if c.AnswersPath != "" {
+		args = append(args, "-answers", c.AnswersPath)
+	}
 	return args
 }
 
@@ -1130,8 +1301,22 @@ func childArgs(c Child) []string {
 func startChild(c Child) (int, func() error, error) {
 	cmd := exec.Command(c.Exe, childArgs(c)...)
 	cmd.Dir = c.Cwd
-	cmd.Env = TriggerEnv(os.Environ(), c.Trigger)
+	cmd.Env = TriggerEnv(withoutGrantFD(os.Environ()), c.Trigger)
 	cmd.Stdin = strings.NewReader(c.Prompt)
+	// A vault grant goes over its own pipe: the child reads it from the
+	// descriptor GrantFDEnv names (a number, not a secret) and the parent
+	// writes it once and closes its end. It is never in argv, the
+	// environment or a file.
+	var grantR, grantW *os.File
+	if c.Grant != nil {
+		r, w, err := os.Pipe()
+		if err != nil {
+			return 0, nil, err
+		}
+		grantR, grantW = r, w
+		cmd.ExtraFiles = []*os.File{grantR}
+		cmd.Env = append(cmd.Env, factorylink.GrantFDEnv+"=3")
+	}
 	var logFile *os.File
 	if c.LogPath != "" {
 		if err := os.MkdirAll(filepath.Dir(c.LogPath), 0o700); err == nil {
@@ -1150,7 +1335,17 @@ func startChild(c Child) (int, func() error, error) {
 		if logFile != nil {
 			logFile.Close()
 		}
+		if grantR != nil {
+			grantR.Close()
+			grantW.Close()
+		}
 		return 0, nil, err
+	}
+	if grantR != nil {
+		grantR.Close()
+		// Encoded now, before the caller drops the grant; written in the
+		// background so a child slow to read never holds the daemon.
+		go writeGrant(grantW, c.Grant.Encode())
 	}
 	return cmd.Process.Pid, func() error {
 		err := cmd.Wait()
@@ -1184,4 +1379,24 @@ func plural(n int, one, many string) string {
 		return one
 	}
 	return many
+}
+
+// writeGrant writes an encoded grant to the child's pipe and closes it. The
+// bytes are cleared once written, so the daemon keeps no copy.
+func writeGrant(w *os.File, b []byte) {
+	_, _ = w.Write(b)
+	clear(b)
+	_ = w.Close()
+}
+
+// withoutGrantFD drops any GrantFDEnv the daemon inherited, so a child is
+// only ever pointed at a descriptor this daemon opened for it.
+func withoutGrantFD(env []string) []string {
+	out := env[:0:0]
+	for _, kv := range env {
+		if !strings.HasPrefix(kv, factorylink.GrantFDEnv+"=") {
+			out = append(out, kv)
+		}
+	}
+	return out
 }

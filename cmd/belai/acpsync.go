@@ -9,6 +9,7 @@ import (
 
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/headless"
 	"github.com/vulnetix/belai/internal/httpclient"
 	"github.com/vulnetix/belai/internal/session"
@@ -40,14 +41,25 @@ func newACPMirror(settings config.Settings, workdir, provider, model string) *ac
 	if !settings.SyncEnabled() {
 		return nil
 	}
-	header, err := credentials.VulnetixAuthHeader(workdir)
-	if err != nil || sessionsync.UsableCredential(header) != nil {
-		return nil
+	var client *sessionsync.Client
+	var backend sessionsync.Backend
+	// A host joined to Keleustes mirrors there, and only there (kind acp),
+	// under the same upload-only rules.
+	if dir, err := config.GlobalDir(); err == nil {
+		if be, err := factorylink.ActiveBackend(dir, "acp"); err == nil {
+			backend = be
+		}
 	}
-	client, err := sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")),
-		func() (string, error) { return header, nil }, httpclient.Default())
-	if err != nil {
-		return nil
+	if backend == nil {
+		header, err := credentials.VulnetixAuthHeader(workdir)
+		if err != nil || sessionsync.UsableCredential(header) != nil {
+			return nil
+		}
+		client, err = sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")),
+			func() (string, error) { return header, nil }, httpclient.Default())
+		if err != nil {
+			return nil
+		}
 	}
 	store, err := session.NewStore()
 	if err != nil {
@@ -55,6 +67,7 @@ func newACPMirror(settings config.Settings, workdir, provider, model string) *ac
 	}
 	syncer := sessionsync.New(sessionsync.Options{
 		Client:        client,
+		Backend:       backend,
 		HostID:        headless.HostID(),
 		Host:          sessionsync.Host{Hostname: sessionsync.Hostname(), OS: runtime.GOOS, BelaiVersion: version.Version},
 		RemotePrompts: false,

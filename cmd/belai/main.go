@@ -93,6 +93,10 @@ func main() {
 	if len(os.Args) > 1 && os.Args[1] == "login" {
 		exitProcess(runLoginCLI(ctx, os.Args[2:], os.Stdin, os.Stdout, os.Stderr, isCharDevice(os.Stdin)))
 	}
+	// `belai connect …` joins this host to a Keleustes server (docs/keleustes.md).
+	if len(os.Args) > 1 && os.Args[1] == "connect" {
+		exitProcess(runConnectCLI(ctx, os.Args[2:], os.Stdout, os.Stderr))
+	}
 	// `belai agent …` manages fleet workers; `belai kanban …` edits the board.
 	// Both parse their own flags, so they dispatch before flag.Parse.
 	if len(os.Args) > 1 && os.Args[1] == "agent" {
@@ -132,6 +136,18 @@ func main() {
 	}
 	if len(os.Args) > 1 && os.Args[1] == "rc-session" {
 		exitProcess(runRCSessionCLI(ctx, os.Args[2:], os.Stdin, os.Stderr))
+	}
+	// `belai rc-harness` runs a third-party harness's own TUI for the daemon;
+	// `belai harness-hook` and `belai a2a-mcp` are what that harness calls back
+	// (hidden; docs/harness-sessions.md).
+	if len(os.Args) > 1 && os.Args[1] == "rc-harness" {
+		exitProcess(runRCHarnessCLI(ctx, os.Args[2:], os.Stdin, os.Stderr))
+	}
+	if len(os.Args) > 1 && os.Args[1] == "harness-hook" {
+		exitProcess(runHarnessHookCLI(ctx, os.Args[2:], os.Stdin))
+	}
+	if len(os.Args) > 1 && os.Args[1] == "a2a-mcp" {
+		exitProcess(runA2AMCPCLI(ctx, os.Args[2:], os.Stdin, os.Stdout))
 	}
 	// `belai plugin …` is a subcommand with its own flags.
 	if len(os.Args) > 1 && os.Args[1] == "plugin" {
@@ -194,9 +210,10 @@ func main() {
 	continueLast := new(string)
 	flag.Var(bareFlag{continueLast}, "continue", "continue the most recent session for this project (with -prompt, run the prompt as its next turn)")
 	flag.Var(bareFlag{continueLast}, "c", "shorthand for -continue")
-	teleportID := flag.String("teleport", "", "continue a session of your account from another host, sandbox or the web: its transcript and any agent profile it needs are fetched, and the session opens here under a new id (the original carries on)")
+	teleportID := flag.String("teleport", "", "continue a session of your account from another host, sandbox or the web: its transcript and any agent profile it needs are fetched, and the session opens here under a new id (the original carries on); on a host joined to Keleustes, the teleport id Keleustes shows")
 	teleportPush := flag.Bool("teleport-push", false, "with -teleport, agree that the origin host may push the session's uncommitted and unpushed changes to the forge as one belai/teleport/<id> branch, which this host then fetches; without it they are sent as a patch and replayed here")
 	teleportRef := flag.String("teleport-ref", "", "with -teleport, check out this ref or commit instead of the one the session was at")
+	teleportTo := flag.String("teleport-to", "", "with -teleport <session-id> on a host joined to Keleustes, send that session of this host to the Keleustes node with this id, print the teleport id, and exit; the target runs belai -teleport <teleport-id>")
 	exportID := flag.String("export", "", "export a session by id or unique id prefix as Markdown and exit")
 	flag.StringVar(&answersPath, "answers", "", "with -prompt, answer the questions the run asks (a goal's clarification round, AskUserQuestion, a stuck goal) from this JSON file of your answers, in order; without it the run asks nothing")
 	flag.StringVar(&usageJSONPath, "usage-json", "", "with -prompt, write a JSON summary of the run's token usage (per role, per model, request composition) to this path on exit")
@@ -246,6 +263,29 @@ func main() {
 	if *teleportPush && *teleportID == "" {
 		fmt.Fprintln(os.Stderr, "belai: -teleport-push needs -teleport")
 		exitProcess(2)
+	}
+	if *teleportTo != "" {
+		// The origin side of a teleport through Keleustes: bundle a session of
+		// this host, upload it for the named node, and exit. It needs no
+		// terminal and opens no session here. `-teleport-to ?` lists the nodes.
+		if *teleportTo == "?" {
+			if err := runTeleportNodes(context.Background(), os.Stdout); err != nil {
+				fmt.Fprintln(os.Stderr, "belai: teleport:", err)
+				exitProcess(1)
+			}
+			exitProcess(0)
+		}
+		if *teleportID == "" {
+			fmt.Fprintln(os.Stderr, "belai: -teleport-to needs -teleport <session-id>")
+			exitProcess(2)
+		}
+		tid, err := runTeleportSend(context.Background(), workdir, *teleportID, *teleportTo, os.Stderr)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "belai: teleport:", err)
+			exitProcess(1)
+		}
+		fmt.Printf("teleport %s is ready for node %s; on that host run: belai -teleport %s\n", tid, *teleportTo, tid)
+		exitProcess(0)
 	}
 	if *teleportID != "" {
 		switch {
@@ -715,7 +755,7 @@ func runPromptOrTUI(ctx context.Context, prompt, model, providerName string, det
 	// tool calls share one trace, and keeps a transcript like any other session
 	// (it resumes, exports and searches, and records every role-manager
 	// decision it made). -no-transcript opts out; the file is private to the
-	// user, pruned by session_retention_days, and never synced.
+	// user, pruned by session_retention_days, and synced only to a joined Keleustes server.
 	ctx = calltrace.WithSession(ctx, sessionID)
 	tlog := turnlog.New(nil)
 	switch {
@@ -732,6 +772,13 @@ func runPromptOrTUI(ctx context.Context, prompt, model, providerName string, det
 	defer tlog.AttachRoleManager()()
 	tlog.SetModel(cfg.Provider, cfg.Model, nil)
 	tlog.User(prompt, nil)
+	// A host joined to Keleustes mirrors the transcript there, upload only
+	// (headless.Mirror); the website never gets it.
+	if tlog.Writer() != nil {
+		mirror := headless.StartMirror(settings, workdir, sessionID, cfg.Provider, cfg.Model, string(forceMode))
+		defer mirror.Close()
+		mirror.Touch()
+	}
 	em.Init(sessionID, cfg.Provider, cfg.Model)
 	// A headless prompt spends tokens like any other session: record them so
 	// day and month budgets see it. Nothing is printed; the TUI shows budgets.

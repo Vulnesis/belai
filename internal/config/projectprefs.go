@@ -38,6 +38,9 @@ type ProjectPrefs struct {
 	// LintLoop holds the per-edit lint loop switch only: the numbers stay in
 	// the user's settings.
 	LintLoop *PrefsLintLoop `json:"lint_loop,omitempty"`
+	// Repo holds the per-repository built-in agent and detection switches
+	// (projectprefs_repo.go).
+	Repo *PrefsRepo `json:"repo,omitempty"`
 }
 
 // PrefsLintLoop is the part of the per-edit lint loop a project preference

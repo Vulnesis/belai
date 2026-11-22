@@ -122,6 +122,25 @@ Resume restores diffs, rebuilds the ask and answer notices, and skips
 `tool_start`, `turn_state`, `intel_state`, `vuln` and hidden decisions. None of these records reach
 a model: the conversation is still rebuilt from paired calls and results.
 
+## Keleustes instead of the website
+
+A host that has joined a Keleustes server (`/connect <token>`,
+[Keleustes nodes](keleustes.md)) mirrors to Keleustes instead, and needs no
+Vulnetix login for it. The profile wins: while an active profile is not
+revoked, the TUI and remote sessions send nothing on this page to the
+website. The syncer does not change; only its server does. The board, the
+shared repository memory and the A2A relay follow it there through the
+`Board` service ([Keleustes nodes: Board](keleustes.md#board)), and a prompt
+is refused while Keleustes has the factory stopped. The syncer
+handles the tail, the line indexes, the ordering of acks after uploads,
+queueing a prompt until the session is idle, and the `sync.remote_prompts`
+and `sync.remote_answers` gates the same way. Prompts, answers and commands
+from Keleustes are admitted exactly like the website's below.
+`sessionsync.Backend` is that server half. `*sessionsync.Client` is the
+website, and `factorylink.SyncBackend` maps the same calls onto the
+`Sessions` gRPC service (see
+[Keleustes nodes: Sessions](keleustes.md#sessions)).
+
 ## What it sends, and where
 
 - **Content:** every line of the session JSONL, including tool calls and tool

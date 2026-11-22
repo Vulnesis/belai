@@ -15,10 +15,10 @@ import (
 const coordPoll = 2 * time.Second
 
 // coordinated reports whether this worker may hand a push to the forge
-// coordinator: it mirrors to the website, keeps a registry (the spool lives
+// coordinator: it mirrors to the website or Keleustes, keeps a registry (the spool lives
 // beside it), and belai rc is there to file what it spools.
 func (w *Worker) coordinated() bool {
-	return w.Sync != nil && w.Registry != nil && w.Coordinator != nil && w.Coordinator()
+	return (w.Sync != nil || w.Factory != nil) && w.Registry != nil && w.Coordinator != nil && w.Coordinator()
 }
 
 // coordState is the coordinator's answer for the item in hand.

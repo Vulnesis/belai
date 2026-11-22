@@ -185,6 +185,12 @@ mutate *ARGS:
 e2e *ARGS:
     go test -race ./e2e {{ ARGS }}
 
+# Run the Keleustes host management end-to-end tests against a built keleustes:
+# `KELEUSTES_BIN=../keleustes/target/release/keleustes just e2e-host`. They skip
+# without KELEUSTES_BIN.
+e2e-host *ARGS:
+    go test -race ./e2e -run 'TestKeleustesHost' -count=1 {{ ARGS }}
+
 # Replay AIxploit's payloads through each classifier variant (built from source)
 # and write a Markdown report to .vulnetix/redteam/. Makes real provider calls:
 # `just redteam -provider cloudflare-ai-gateway -model @cf/deepseek-ai/deepseek-r1-distill-qwen-32b`.

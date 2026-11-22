@@ -3,6 +3,7 @@ package clijobs
 import (
 	"bytes"
 	"encoding/json"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -114,5 +115,82 @@ func metricIDs(raw []byte) []string {
 			out = append(out, m.ID)
 		}
 	}
+	return out
+}
+
+// stackFiles maps a manifest or lock file's base name to the package manager
+// and language it means. A closed table: the result names only these words.
+var stackFiles = map[string][2]string{
+	"go.mod":            {"go", "go"},
+	"package.json":      {"npm", "javascript"},
+	"package-lock.json": {"npm", "javascript"},
+	"yarn.lock":         {"yarn", "javascript"},
+	"pnpm-lock.yaml":    {"pnpm", "javascript"},
+	"bun.lockb":         {"bun", "javascript"},
+	"tsconfig.json":     {"", "typescript"},
+	"cargo.toml":        {"cargo", "rust"},
+	"pyproject.toml":    {"pip", "python"},
+	"requirements.txt":  {"pip", "python"},
+	"poetry.lock":       {"poetry", "python"},
+	"pipfile":           {"pipenv", "python"},
+	"uv.lock":           {"uv", "python"},
+	"gemfile":           {"bundler", "ruby"},
+	"pom.xml":           {"maven", "java"},
+	"build.gradle":      {"gradle", "java"},
+	"build.gradle.kts":  {"gradle", "kotlin"},
+	"composer.json":     {"composer", "php"},
+	"package.swift":     {"swiftpm", "swift"},
+	"mix.exs":           {"mix", "elixir"},
+	"pubspec.yaml":      {"pub", "dart"},
+}
+
+// PackageManagers and Languages are the words a scout result may carry.
+var (
+	PackageManagers = stackWords(0, "nuget")
+	Languages       = stackWords(1, "csharp")
+)
+
+func stackWords(i int, extra string) []string {
+	seen := map[string]bool{extra: true}
+	for _, v := range stackFiles {
+		if v[i] != "" {
+			seen[v[i]] = true
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for w := range seen {
+		out = append(out, w)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// DetectStack reads the package managers and languages a repository uses
+// from the detected-files listing, by manifest file name only. Each word
+// comes from a fixed table, so nothing of the repository's text reaches a
+// result.
+func DetectStack(detectedListing []byte) (pms, langs []string) {
+	p, l := map[string]bool{}, map[string]bool{}
+	for _, path := range listingPaths(detectedListing) {
+		base := strings.ToLower(path[strings.LastIndexAny(path, `/\`)+1:])
+		if v, ok := stackFiles[base]; ok {
+			if v[0] != "" {
+				p[v[0]] = true
+			}
+			l[v[1]] = true
+		}
+		if strings.HasSuffix(base, ".csproj") || strings.HasSuffix(base, ".sln") {
+			p["nuget"], l["csharp"] = true, true
+		}
+	}
+	return sortedKeys(p), sortedKeys(l)
+}
+
+func sortedKeys(m map[string]bool) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
 	return out
 }

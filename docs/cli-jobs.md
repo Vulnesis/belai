@@ -183,6 +183,14 @@ object `agent.cliResult`):
 - The document is at most 192 KiB. The harness alone sets it. A pulled copy
   fills an empty field only after the same validation (`clijobs.Clean`), never
   replaces or clears a local value, and the website cannot set it.
+- The `scout` job adds `packageManagers` and `languages`: words from a fixed
+  table of manifest and lock file names (`clijobs.DetectStack`), never the
+  repository's text.
+- `notEvaluable` is `true` when the job exited 3 (it could not judge the
+  repository, so "no findings" means "not checked"). It is derived from
+  `exitCode` and never read from a pulled copy. On a Keleustes node the result
+  reaches the card as `meta_json.belai.agent.cliResult`, where a workflow's scan
+  step reads it.
 
 ## What a job reports
 

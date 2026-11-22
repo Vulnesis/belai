@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -503,6 +504,9 @@ type SpawnOptions struct {
 	Prompt, Claim, To, Publish string
 	Tools                      []string
 	ReadOnly                   bool
+	// Grant is an encoded Keleustes vault grant for this worker (WP-F),
+	// written once to an inherited pipe and never kept. Nil passes none.
+	Grant []byte
 }
 
 // Spawn starts a detached `belai agent run` worker and returns its id. The
@@ -521,9 +525,33 @@ func (r *Registry) Spawn(o SpawnOptions) (string, error) {
 	cmd := exec.Command(o.Exe, args...)
 	cmd.Dir = o.Repo
 	cmd.Stdout, cmd.Stderr = logFile, logFile
+	// A vault grant goes over its own pipe (fd 3), never argv or the
+	// environment; the variable names only the descriptor number.
+	var grantW *os.File
+	if len(o.Grant) > 0 {
+		gr, gw, err := os.Pipe()
+		if err != nil {
+			return "", err
+		}
+		defer gr.Close()
+		grantW = gw
+		cmd.ExtraFiles = []*os.File{gr}
+		cmd.Env = append(os.Environ(), GrantFDEnv+"=3")
+	}
 	pid, err := proc.DetachPID(cmd)
 	if err != nil {
+		if grantW != nil {
+			grantW.Close()
+		}
 		return "", fmt.Errorf("start %s: %w", o.Profile, err)
+	}
+	if grantW != nil {
+		data := slices.Clone(o.Grant)
+		go func() {
+			_, _ = grantW.Write(data)
+			clear(data)
+			grantW.Close()
+		}()
 	}
 	// A starting record with the child's pid, so a worker that dies before
 	// it registers is swept to failed by List and still shows, with its
@@ -623,3 +651,7 @@ func spawnArgs(id string, o SpawnOptions) []string {
 	}
 	return args
 }
+
+// GrantFDEnv is factorylink.GrantFDEnv (fleet cannot import factorylink): the
+// variable that names a worker's inherited grant descriptor.
+const GrantFDEnv = "BELAI_KELEUSTES_GRANT_FD"

@@ -236,28 +236,12 @@ func (claudeAdapter) Sources(path string) ([]Source, error) {
 }
 
 func (claudeAdapter) Turns(src Source, from, to int) ([]Turn, error) {
-	return collectJSONLTurns(src, from, to, func(t *jsonlTurn) (Turn, bool) {
-		if t.Type != "user" && t.Type != "assistant" {
-			return Turn{}, false
-		}
-		if t.Message.Role == "" {
-			return Turn{}, false
-		}
-		return Turn{Role: t.Message.Role, Text: contentText(t.Message.Content), At: parseTime(t.Timestamp)}, true
-	})
+	return collectJSONLTurns(src, from, to, claudeTurn)
 }
 
 func (claudeAdapter) Scan(ctx context.Context, src Source, re *regexp.Regexp, caps Caps) ([]Hit, error) {
 	hits, trunc, err := scanTurns(ctx, src, re, caps, func(fn func(Turn) bool) error {
-		return streamJSONLTurns(src, fn, func(t *jsonlTurn) (Turn, bool) {
-			if t.Type != "user" && t.Type != "assistant" {
-				return Turn{}, false
-			}
-			if t.Message.Role == "" {
-				return Turn{}, false
-			}
-			return Turn{Role: t.Message.Role, Text: contentText(t.Message.Content), At: parseTime(t.Timestamp)}, true
-		})
+		return streamJSONLTurns(src, fn, claudeTurn)
 	})
 	_ = trunc
 	return hits, err
@@ -291,30 +275,12 @@ func (codexAdapter) Sources(path string) ([]Source, error) {
 }
 
 func (codexAdapter) Turns(src Source, from, to int) ([]Turn, error) {
-	return collectJSONLTurns(src, from, to, func(t *jsonlTurn) (Turn, bool) {
-		if t.Type != "response_item" || t.Payload.Type != "message" {
-			return Turn{}, false
-		}
-		role := t.Payload.Role
-		if role == "" {
-			role = t.Payload.Type
-		}
-		return Turn{Role: role, Text: contentText(t.Payload.Content), At: parseTime(t.Timestamp)}, true
-	})
+	return collectJSONLTurns(src, from, to, codexTurn)
 }
 
 func (codexAdapter) Scan(ctx context.Context, src Source, re *regexp.Regexp, caps Caps) ([]Hit, error) {
 	hits, _, err := scanTurns(ctx, src, re, caps, func(fn func(Turn) bool) error {
-		return streamJSONLTurns(src, fn, func(t *jsonlTurn) (Turn, bool) {
-			if t.Type != "response_item" || t.Payload.Type != "message" {
-				return Turn{}, false
-			}
-			role := t.Payload.Role
-			if role == "" {
-				role = t.Payload.Type
-			}
-			return Turn{Role: role, Text: contentText(t.Payload.Content), At: parseTime(t.Timestamp)}, true
-		})
+		return streamJSONLTurns(src, fn, codexTurn)
 	})
 	return hits, err
 }
@@ -347,44 +313,22 @@ func (piAdapter) Sources(path string) ([]Source, error) {
 }
 
 func (piAdapter) Turns(src Source, from, to int) ([]Turn, error) {
-	return collectJSONLTurns(src, from, to, func(t *jsonlTurn) (Turn, bool) {
-		if t.Type != "message" {
-			return Turn{}, false
-		}
-		role := t.Message.Role
-		if role == "" {
-			return Turn{}, false
-		}
-		return Turn{Role: role, Text: contentText(t.Message.Content), At: parseTime(t.Timestamp)}, true
-	})
+	return collectJSONLTurns(src, from, to, piTurn)
 }
 
 func (piAdapter) Scan(ctx context.Context, src Source, re *regexp.Regexp, caps Caps) ([]Hit, error) {
 	hits, _, err := scanTurns(ctx, src, re, caps, func(fn func(Turn) bool) error {
-		return streamJSONLTurns(src, fn, func(t *jsonlTurn) (Turn, bool) {
-			if t.Type != "message" {
-				return Turn{}, false
-			}
-			role := t.Message.Role
-			if role == "" {
-				return Turn{}, false
-			}
-			return Turn{Role: role, Text: contentText(t.Message.Content), At: parseTime(t.Timestamp)}, true
-		})
+		return streamJSONLTurns(src, fn, piTurn)
 	})
 	return hits, err
 }
 
 // streamJSONLTurns opens a JSONL source and feeds attributed turns to fn in
 // order, incrementing the turn index per emitted turn.
-func streamJSONLTurns(src Source, fn func(Turn) bool, pick func(*jsonlTurn) (Turn, bool)) error {
+func streamJSONLTurns(src Source, fn func(Turn) bool, pick func([]byte) (Turn, bool)) error {
 	idx := 0
 	return scanJSONL(context.Background(), src.Path, func(line []byte) error {
-		var t jsonlTurn
-		if json.Unmarshal(line, &t) != nil {
-			return nil
-		}
-		turn, ok := pick(&t)
+		turn, ok := pick(line)
 		if !ok {
 			return nil
 		}
@@ -398,15 +342,11 @@ func streamJSONLTurns(src Source, fn func(Turn) bool, pick func(*jsonlTurn) (Tur
 }
 
 // collectJSONLTurns collects a turn range from a JSONL source.
-func collectJSONLTurns(src Source, from, to int, pick func(*jsonlTurn) (Turn, bool)) ([]Turn, error) {
+func collectJSONLTurns(src Source, from, to int, pick func([]byte) (Turn, bool)) ([]Turn, error) {
 	var out []Turn
 	idx := 0
 	err := scanJSONL(context.Background(), src.Path, func(line []byte) error {
-		var t jsonlTurn
-		if json.Unmarshal(line, &t) != nil {
-			return nil
-		}
-		turn, ok := pick(&t)
+		turn, ok := pick(line)
 		if !ok {
 			return nil
 		}

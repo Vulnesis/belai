@@ -405,6 +405,14 @@ func agentRun(ctx context.Context, fs *flag.FlagSet, rest []string, stdout, stde
 	if err != nil {
 		return 1, err
 	}
+	// The vault grant the starting `agent start` passed on (WP-F): its keys
+	// answer this worker's provider and MCP lookups while it lives; the
+	// worker never puts them in a tool's environment. Names only in the log.
+	if g, gerr := readSessionGrant(); gerr != nil {
+		return 1, gerr
+	} else if g != nil {
+		fmt.Fprintf(stderr, "worker: keys from %s: %s\n", g, strings.Join(g.Apply(resolver), ", "))
+	}
 	wantProvider, wantModel := workerModel(*providerName, *model, settings, config.LoadState)
 	cfg, err := run.ResolveWithSource(wantModel, wantProvider, os.Getenv, resolver)
 	if err != nil {
@@ -459,11 +467,18 @@ func agentRun(ctx context.Context, fs *flag.FlagSet, rest []string, stdout, stde
 	defer stopTelemetry()
 	defer recordUsage(workerID, settings, nil)()
 
+	// A host joined to Keleustes mirrors the worker there, and only there
+	// (docs/keleustes.md#sessions); otherwise to the website when sync is on.
+	factory, sync := workerFactory(), headless.SyncClient(settings, repo)
+	if factory != nil {
+		sync = nil
+		defer factory.close()
+	}
 	logw := stdout
 	w := &fleet.Worker{
 		Profile: profile, Repo: repo, Settings: settings, Posture: pol,
 		Cfg: cfg, Client: httpclient.Default(), Store: store, Registry: reg, MCP: mcpMgr,
-		Sessions: sessions, Sync: headless.SyncClient(settings, repo), RemotePrompts: settings.SyncRemotePromptsEnabled(),
+		Sessions: sessions, Sync: sync, Factory: factory.sync(), RemotePrompts: settings.SyncRemotePromptsEnabled(),
 		Record: fleet.Record{ID: workerID, Profile: profile.Name, Crew: *crew, Run: *runID, Detached: *detached, Log: logPath(reg, workerID, *detached)},
 		Once:   *once, Item: *item, Stay: *stay, StayIdleMax: *stayIdle, Drain: *drain, MaxWorkers: workerCap(settings, *maxWorkers), Log: logw,
 		Notify: workerNotifier(settings, profile.Name, *detached),
@@ -704,6 +719,18 @@ func agentStart(ctx context.Context, fs *flag.FlagSet, rest []string, stdout, st
 	if err != nil {
 		return 1, err
 	}
+	// A Keleustes vault grant from the rc daemon (WP-F) goes on to each worker
+	// over its own pipe, encoded once here and never kept.
+	grant, err := readSessionGrant()
+	if err != nil {
+		return 1, err
+	}
+	var grantDoc []byte
+	if grant != nil {
+		grantDoc = grant.Encode()
+		defer clear(grantDoc)
+		grant.Drop()
+	}
 	var started []string
 	// The worker cap and the spawns are one step under the start lock, so two
 	// starts fired together cannot both take the last slot.
@@ -718,6 +745,7 @@ func agentStart(ctx context.Context, fs *flag.FlagSet, rest []string, stdout, st
 		for range *replicas {
 			so := fleet.SpawnOptions{Exe: exe, Repo: repo, Profile: name, Provider: *providerName, Model: *model, Stay: *stay, StayIdleMax: *stayIdle, Drain: *drain, MaxWorkers: spawnMax,
 				WebControls: *webControls, GuardrailsOff: *webControls && *allowOff, AskOff: *askOff}
+			so.Grant = grantDoc
 			if adhocProfile != nil {
 				so.Prompt, so.Tools, so.Claim, so.To, so.Publish, so.ReadOnly = *adhoc.prompt, splitList(*adhoc.tools), *adhoc.claim, *adhoc.to, *adhoc.publish, *adhoc.readOnly
 			}

@@ -167,89 +167,95 @@ Hand-written means the overlay adds directories beyond what the CLI sources
 record. The document column lists the file names; the directories are in
 `harnesses.json`. An entry marked "unsupported format" is reported and not read.
 
-| ID | Name | Format | Source | Commands | Agents | Prompts | Skills | Documents | Hooks |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `adal` | AdaL | `generic-md` | generated |  |  |  | `~/.adal/skills`, `.adal/skills` | AGENTS.md |  |
-| `aider` | Aider | `generic-md` | generated |  |  |  | `.aider/skills` |  |  |
-| `aider-desk` | AiderDesk | `generic-md` | generated |  |  |  | `~/.aider-desk/skills` |  |  |
-| `amazon-q` | Amazon Q Developer | `generic-md` | hand-written |  |  | `~/.aws/amazonq/prompts`, `.amazonq/prompts` | `.amazonq/skills` | AGENTS.md |  |
-| `amp` | Amp | `generic-md` | hand-written | `~/.config/amp/commands`, `.agents/commands` |  |  | `~/.config/agents/skills`, `.agents/skills`, `.amp/skills` | AGENTS.md |  |
-| `antigravity` | Google Antigravity | `generic-md` | hand-written | `~/.gemini/antigravity/global_workflows`, `.agents/workflows`, `.agent/workflows` |  |  | `~/.gemini/antigravity/skills`, `.agents/skills` | AGENTS.md, GEMINI.md |  |
-| `antigravity-cli` | Antigravity CLI | `generic-md` | generated |  |  |  | `~/.gemini/antigravity-cli/skills` |  |  |
-| `astrbot` | AstrBot | `generic-md` | generated |  |  |  | `~/.astrbot/data/skills` |  |  |
-| `augment` | Augment | `generic-md` | hand-written | `~/.augment/commands`, `.augment/commands` |  |  | `~/.augment/skills`, `.augment/skills` | .augment-guidelines, AGENTS.md |  |
-| `autohand-code` | Autohand Code | `generic-md` | generated |  |  |  | `~/.autohand/skills` |  |  |
-| `bob` | IBM Bob | `generic-md` | generated |  |  |  | `~/.bob/skills`, `.bob/skills` | AGENTS.md |  |
-| `claude-code` | Claude Code | `claude-code` | hand-written | `~/.claude/commands`, `.claude/commands` | `~/.claude/agents`, `.claude/agents` |  | `~/.claude/skills`, `.claude/skills` | CLAUDE.md, AGENTS.md, CLAUDE.local.md | `~/.claude/settings.json`, `.claude/settings.json`, `.claude/settings.local.json` |
-| `cline` | Cline | `cline` | hand-written | `~/Documents/Cline/Workflows`, `.clinerules/workflows` |  |  | `~/.agents/skills`, `~/.cline/skills`, `.cline/skills` | .clinerules, AGENTS.md | `.clinerules/hooks` (unsupported format) |
-| `codearts-agent` | CodeArts Agent | `generic-md` | generated |  |  |  | `~/.codeartsdoer/skills` |  |  |
-| `codebuddy` | CodeBuddy | `generic-md` | generated |  |  |  | `~/.codebuddy/skills`, `.codebuddy/skills` | AGENTS.md |  |
-| `codebuff` | Codebuff | `generic-md` | generated |  |  |  | `.codebuff/skills` | AGENTS.md |  |
-| `codemaker` | CodeMaker | `generic-md` | generated |  |  |  | `~/.codemaker/skills` |  |  |
-| `codestudio` | CodeStudio | `generic-md` | generated |  |  |  | `~/.codestudio/skills` |  |  |
-| `codex` | OpenAI Codex | `codex` | hand-written |  |  | `~/.codex/prompts` | `~/.agents/skills`, `~/.codex/skills`, `.agents/skills`, `.codex/skills` | AGENTS.md, AGENTS.override.md | `~/.codex/hooks.json`, `.codex/hooks.json` |
-| `command-code` | Command Code | `generic-md` | generated |  |  |  | `~/.commandcode/skills`, `.commandcode/skills` | AGENTS.md |  |
-| `continue` | Continue | `generic-md` | hand-written |  |  | `~/.continue/prompts`, `.continue/prompts` (unsupported format) | `~/.continue/skills`, `.continue/skills` | AGENTS.md |  |
-| `cortex` | Snowflake Cortex Code | `generic-md` | generated |  |  |  | `~/.snowflake/cortex/skills`, `.cortex/skills` | AGENTS.md |  |
-| `crush` | Crush | `generic-md` | generated |  |  |  | `~/.config/crush/skills`, `.crush/skills` | CRUSH.md, AGENTS.md |  |
-| `cursor` | Cursor | `cursor` | hand-written | `~/.cursor/commands`, `.cursor/commands` |  |  | `~/.agents/skills`, `~/.cursor/skills`, `.agents/skills`, `.cursor/skills` | .cursorrules, AGENTS.md | `.cursor/hooks.json` (unsupported format) |
-| `deepagents` | Deep Agents | `generic-md` | generated |  |  |  | `~/.deepagents/agent/skills` |  |  |
-| `devin` | Devin | `generic-md` | generated |  |  |  | `~/.config/devin/skills` |  |  |
-| `dexto` | Dexto | `generic-md` | generated |  |  |  | `~/.agents/skills` |  |  |
-| `droid` | Factory Droid | `generic-md` | hand-written | `~/.factory/commands`, `.factory/commands` | `~/.factory/droids`, `.factory/droids` |  | `~/.factory/skills`, `.factory/skills` | AGENTS.md |  |
-| `firebender` | Firebender | `generic-md` | generated |  |  |  | `~/.firebender/skills` |  |  |
-| `forgecode` | ForgeCode | `generic-md` | hand-written | `~/.forge/commands`, `.forge/commands` | `~/.forge/agents`, `.forge/agents` |  | `~/.forge/skills`, `.forge/skills` | AGENTS.md |  |
-| `g3` | g3 | `generic-md` | generated |  |  |  | `.g3/skills` |  |  |
-| `gemini-cli` | Gemini CLI | `gemini-cli` | hand-written | `~/.gemini/commands`, `.gemini/commands` (unsupported format) |  |  | `~/.agents/skills`, `~/.gemini/skills`, `.agents/skills`, `.gemini/skills` | GEMINI.md, AGENTS.md |  |
-| `github-copilot` | GitHub Copilot | `copilot` | hand-written |  | `~/.copilot/agents`, `.github/agents` | `.github/prompts` | `~/.copilot/skills`, `.github/skills`, `.copilot/skills` | copilot-instructions.md, AGENTS.md |  |
-| `goose` | Goose | `generic-md` | hand-written |  |  |  | `~/.config/goose/skills`, `.goose/skills` | .goosehints, AGENTS.md |  |
-| `gptme` | gptme | `generic-md` | generated |  |  |  | `.gptme/skills` | AGENTS.md |  |
-| `hermes-agent` | Hermes Agent | `generic-md` | generated |  |  |  | `~/.hermes/skills` |  |  |
-| `iflow-cli` | iFlow CLI | `generic-md` | hand-written | `~/.iflow/commands`, `.iflow/commands` (unsupported format) |  |  | `~/.iflow/skills`, `.iflow/skills` | IFLOW.md, AGENTS.md |  |
-| `inference-sh` | inference.sh | `generic-md` | generated |  |  |  | `~/.inferencesh/skills` |  |  |
-| `jazz` | Jazz | `generic-md` | generated |  |  |  | `~/.jazz/skills` |  |  |
-| `jetbrains-ai-assistant` | JetBrains AI Assistant | `generic-md` | generated |  |  |  |  | AGENTS.md |  |
-| `junie` | Junie | `generic-md` | generated |  |  |  | `~/.junie/skills`, `.junie/skills` | guidelines.md, AGENTS.md |  |
-| `kilo` | Kilo Code | `generic-md` | hand-written | `~/.kilocode/workflows`, `.kilocode/workflows` |  |  | `~/.kilocode/skills`, `.kilocode/skills` | AGENTS.md |  |
-| `kimi-code-cli` | Kimi Code CLI | `generic-md` | generated |  |  |  | `~/.agents/skills`, `.kimi/skills` | AGENTS.md |  |
-| `kiro-cli` | Kiro | `generic-md` | generated |  |  |  | `~/.kiro/skills`, `.kiro/skills` | AGENTS.md | `.kiro/hooks` (unsupported format) |
-| `kode` | Kode | `generic-md` | generated |  |  |  | `~/.kode/skills`, `.kode/skills` | AGENTS.md |  |
-| `letta-code` | Letta Code | `generic-md` | generated |  |  |  | `.letta/skills` | AGENTS.md |  |
-| `lingma` | Tongyi Lingma | `generic-md` | generated |  |  |  | `~/.lingma/skills` | AGENTS.md |  |
-| `loaf` | Loaf | `generic-md` | generated |  |  |  | `~/.agents/skills` |  |  |
-| `mcpjam` | MCPJam | `generic-md` | generated |  |  |  | `~/.mcpjam/skills`, `.mcpjam/skills` | AGENTS.md |  |
-| `mistral-vibe` | Mistral Vibe | `generic-md` | generated |  |  |  | `~/.vibe/skills`, `.vibe/skills` | AGENTS.md |  |
-| `moxby` | Moxby | `generic-md` | generated |  |  |  | `~/.moxby/skills` |  |  |
-| `mux` | Mux | `generic-md` | generated |  |  |  | `~/.mux/skills`, `.mux/skills` | AGENTS.md |  |
-| `nanocoder` | Nanocoder | `generic-md` | generated |  |  |  |  | AGENTS.md |  |
-| `neovate` | Neovate | `generic-md` | generated |  |  |  | `~/.neovate/skills`, `.neovate/skills` | AGENTS.md |  |
-| `octofriend` | Octofriend | `generic-md` | generated |  |  |  |  | OCTO.md |  |
-| `ona` | Ona | `generic-md` | generated |  |  |  | `~/.ona/skills` |  |  |
-| `openclaw` | OpenClaw | `generic-md` | generated |  |  |  | `~/.openclaw/skills`, `.openclaw/skills` | AGENTS.md |  |
-| `opencode` | opencode | `opencode` | hand-written | `~/.config/opencode/command`, `~/.config/opencode/commands`, `.opencode/command`, `.opencode/commands` | `~/.config/opencode/agent`, `~/.config/opencode/agents`, `.opencode/agent`, `.opencode/agents` |  | `~/.config/opencode/skills`, `.opencode/skills` | AGENTS.md |  |
-| `openhands` | OpenHands | `generic-md` | generated |  |  |  | `~/.openhands/skills`, `.openhands/skills` | AGENTS.md |  |
-| `pi` | Pi | `generic-md` | hand-written |  |  | `~/.pi/agent/prompts`, `.pi/prompts` | `~/.agents/skills`, `~/.pi/agent/skills`, `.agents/skills`, `.pi/skills` | AGENTS.md |  |
-| `pochi` | Pochi | `generic-md` | generated |  |  |  | `~/.pochi/skills`, `.pochi/skills` | AGENTS.md |  |
-| `promptscript` | PromptScript | `generic-md` | generated |  |  |  | `.agents/skills` |  |  |
-| `qoder` | Qoder | `generic-md` | generated |  |  |  | `~/.qoder/skills`, `.qoder/skills` | AGENTS.md |  |
-| `qoder-cn` | Qoder CN | `generic-md` | generated |  |  |  | `~/.qoder-cn/skills` |  |  |
-| `qwen-code` | Qwen Code | `generic-md` | hand-written | `~/.qwen/commands`, `.qwen/commands` (unsupported format) |  |  | `~/.qwen/skills`, `.qwen/skills` | QWEN.md, AGENTS.md |  |
-| `reasonix` | Reasonix | `generic-md` | generated |  |  |  | `~/.reasonix/skills` |  |  |
-| `replit` | Replit | `generic-md` | generated |  |  |  | `~/.config/agents/skills` |  |  |
-| `roo` | Roo Code | `generic-md` | hand-written | `~/.roo/commands`, `.roo/commands` |  |  | `~/.roo/skills`, `.roo/skills` | .roorules, AGENTS.md |  |
-| `rovodev` | Rovo Dev | `generic-md` | generated |  |  |  | `~/.rovodev/skills` |  |  |
-| `sourcegraph-cody` | Sourcegraph Cody | `generic-md` | generated |  |  |  | `.cody/skills` | AGENTS.md |  |
-| `tabnine` | Tabnine | `generic-md` | generated |  |  |  | `.tabnine/skills` |  |  |
-| `tabnine-cli` | Tabnine CLI | `generic-md` | generated |  |  |  | `~/.tabnine/agent/skills` |  |  |
-| `terramind` | TerraMind | `generic-md` | generated |  |  |  | `~/.terramind/skills` |  |  |
-| `tinycloud` | TinyCloud | `generic-md` | generated |  |  |  | `~/.tinycloud/skills` |  |  |
-| `trae` | Trae | `generic-md` | generated |  |  |  | `~/.trae/skills`, `.trae/skills` | AGENTS.md |  |
-| `trae-cn` | Trae CN | `generic-md` | generated |  |  |  | `~/.trae-cn/skills`, `.trae/skills` | AGENTS.md |  |
-| `traycer` | Traycer | `generic-md` | generated |  | `.traycer/cli-agents` |  |  |  |  |
-| `universal` | Universal agents directory | `generic-md` | generated |  |  |  | `~/.config/agents/skills` |  |  |
-| `vtcode` | VT Code | `generic-md` | generated |  | `.vtcode/agents` |  | `.vtcode/skills` | AGENTS.md |  |
-| `warp` | Warp | `generic-md` | generated |  |  |  | `~/.agents/skills` | WARP.md |  |
-| `windsurf` | Windsurf | `windsurf` | hand-written | `~/.codeium/windsurf/global_workflows`, `.windsurf/workflows` |  |  | `~/.codeium/windsurf/skills`, `.windsurf/skills` | .windsurfrules, AGENTS.md, global_rules.md | `.windsurf/hooks.json` (unsupported format) |
-| `zed` | Zed | `generic-md` | generated |  |  |  | `~/.agents/skills`, `.agents/skills`, `.zed/skills` | .rules, AGENT.md, AGENTS.md |  |
-| `zencoder` | Zencoder | `generic-md` | generated |  |  |  | `~/.zencoder/skills`, `.zencoder/skills` | AGENTS.md |  |
-| `zenflow` | Zencoder Zenflow | `generic-md` | generated |  |  |  | `~/.zencoder/skills` |  |  |
+The Launch column is the profile in `tools/gen-harnesses/launch.json` that
+`belai rc-harness` runs ([harness-sessions.md](harness-sessions.md)). "PTY (H)"
+was checked against the installed binary's own `--help`, "PTY (M)" comes from
+the vendor's documentation, "PTY, unverified" is detected and listed but never
+started, and "open only" is a desktop app that can be opened on a directory.
+
+| ID | Name | Format | Source | Commands | Agents | Prompts | Skills | Documents | Hooks | Launch |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `adal` | AdaL | `generic-md` | generated |  |  |  | `~/.adal/skills`, `.adal/skills` | AGENTS.md |  |  |
+| `aider` | Aider | `generic-md` | generated |  |  |  | `.aider/skills` |  |  | PTY (M) |
+| `aider-desk` | AiderDesk | `generic-md` | generated |  |  |  | `~/.aider-desk/skills` |  |  | open only |
+| `amazon-q` | Amazon Q Developer | `generic-md` | hand-written |  |  | `~/.aws/amazonq/prompts`, `.amazonq/prompts` | `.amazonq/skills` | AGENTS.md |  | PTY, unverified |
+| `amp` | Amp | `generic-md` | hand-written | `~/.config/amp/commands`, `.agents/commands` |  |  | `~/.config/agents/skills`, `.agents/skills`, `.amp/skills` | AGENTS.md |  | PTY, unverified |
+| `antigravity` | Google Antigravity | `generic-md` | hand-written | `~/.gemini/antigravity/global_workflows`, `.agents/workflows`, `.agent/workflows` |  |  | `~/.gemini/antigravity/skills`, `.agents/skills` | AGENTS.md, GEMINI.md |  | open only |
+| `antigravity-cli` | Antigravity CLI | `generic-md` | generated |  |  |  | `~/.gemini/antigravity-cli/skills` |  |  | PTY (H) |
+| `astrbot` | AstrBot | `generic-md` | generated |  |  |  | `~/.astrbot/data/skills` |  |  |  |
+| `augment` | Augment | `generic-md` | hand-written | `~/.augment/commands`, `.augment/commands` |  |  | `~/.augment/skills`, `.augment/skills` | .augment-guidelines, AGENTS.md |  | PTY (M) |
+| `autohand-code` | Autohand Code | `generic-md` | generated |  |  |  | `~/.autohand/skills` |  |  |  |
+| `bob` | IBM Bob | `generic-md` | generated |  |  |  | `~/.bob/skills`, `.bob/skills` | AGENTS.md |  |  |
+| `claude-code` | Claude Code | `claude-code` | hand-written | `~/.claude/commands`, `.claude/commands` | `~/.claude/agents`, `.claude/agents` |  | `~/.claude/skills`, `.claude/skills` | CLAUDE.md, AGENTS.md, CLAUDE.local.md | `~/.claude/settings.json`, `.claude/settings.json`, `.claude/settings.local.json` | PTY (H) |
+| `cline` | Cline | `cline` | hand-written | `~/Documents/Cline/Workflows`, `.clinerules/workflows` |  |  | `~/.agents/skills`, `~/.cline/skills`, `.cline/skills` | .clinerules, AGENTS.md | `.clinerules/hooks` (unsupported format) | PTY (M) |
+| `codearts-agent` | CodeArts Agent | `generic-md` | generated |  |  |  | `~/.codeartsdoer/skills` |  |  |  |
+| `codebuddy` | CodeBuddy | `generic-md` | generated |  |  |  | `~/.codebuddy/skills`, `.codebuddy/skills` | AGENTS.md |  | PTY (M) |
+| `codebuff` | Codebuff | `generic-md` | generated |  |  |  | `.codebuff/skills` | AGENTS.md |  |  |
+| `codemaker` | CodeMaker | `generic-md` | generated |  |  |  | `~/.codemaker/skills` |  |  |  |
+| `codestudio` | CodeStudio | `generic-md` | generated |  |  |  | `~/.codestudio/skills` |  |  |  |
+| `codex` | OpenAI Codex | `codex` | hand-written |  |  | `~/.codex/prompts` | `~/.agents/skills`, `~/.codex/skills`, `.agents/skills`, `.codex/skills` | AGENTS.md, AGENTS.override.md | `~/.codex/hooks.json`, `.codex/hooks.json` | PTY (H) |
+| `command-code` | Command Code | `generic-md` | generated |  |  |  | `~/.commandcode/skills`, `.commandcode/skills` | AGENTS.md |  |  |
+| `continue` | Continue | `generic-md` | hand-written |  |  | `~/.continue/prompts`, `.continue/prompts` (unsupported format) | `~/.continue/skills`, `.continue/skills` | AGENTS.md |  | PTY (M) |
+| `cortex` | Snowflake Cortex Code | `generic-md` | generated |  |  |  | `~/.snowflake/cortex/skills`, `.cortex/skills` | AGENTS.md |  |  |
+| `crush` | Crush | `generic-md` | generated |  |  |  | `~/.config/crush/skills`, `.crush/skills` | CRUSH.md, AGENTS.md |  | PTY (M) |
+| `cursor` | Cursor | `cursor` | hand-written | `~/.cursor/commands`, `.cursor/commands` |  |  | `~/.agents/skills`, `~/.cursor/skills`, `.agents/skills`, `.cursor/skills` | .cursorrules, AGENTS.md | `.cursor/hooks.json` (unsupported format) | PTY (M) |
+| `deepagents` | Deep Agents | `generic-md` | generated |  |  |  | `~/.deepagents/agent/skills` |  |  |  |
+| `devin` | Devin | `generic-md` | generated |  |  |  | `~/.config/devin/skills` |  |  |  |
+| `dexto` | Dexto | `generic-md` | generated |  |  |  | `~/.agents/skills` |  |  |  |
+| `droid` | Factory Droid | `generic-md` | hand-written | `~/.factory/commands`, `.factory/commands` | `~/.factory/droids`, `.factory/droids` |  | `~/.factory/skills`, `.factory/skills` | AGENTS.md |  | PTY (M) |
+| `firebender` | Firebender | `generic-md` | generated |  |  |  | `~/.firebender/skills` |  |  |  |
+| `forgecode` | ForgeCode | `generic-md` | hand-written | `~/.forge/commands`, `.forge/commands` | `~/.forge/agents`, `.forge/agents` |  | `~/.forge/skills`, `.forge/skills` | AGENTS.md |  | PTY, unverified |
+| `g3` | g3 | `generic-md` | generated |  |  |  | `.g3/skills` |  |  |  |
+| `gemini-cli` | Gemini CLI | `gemini-cli` | hand-written | `~/.gemini/commands`, `.gemini/commands` (unsupported format) |  |  | `~/.agents/skills`, `~/.gemini/skills`, `.agents/skills`, `.gemini/skills` | GEMINI.md, AGENTS.md |  | PTY (M) |
+| `github-copilot` | GitHub Copilot | `copilot` | hand-written |  | `~/.copilot/agents`, `.github/agents` | `.github/prompts` | `~/.copilot/skills`, `.github/skills`, `.copilot/skills` | copilot-instructions.md, AGENTS.md |  | PTY (H) |
+| `goose` | Goose | `generic-md` | hand-written |  |  |  | `~/.config/goose/skills`, `.goose/skills` | .goosehints, AGENTS.md |  | PTY (H) |
+| `gptme` | gptme | `generic-md` | generated |  |  |  | `.gptme/skills` | AGENTS.md |  | PTY, unverified |
+| `hermes-agent` | Hermes Agent | `generic-md` | generated |  |  |  | `~/.hermes/skills` |  |  | PTY (M) |
+| `iflow-cli` | iFlow CLI | `generic-md` | hand-written | `~/.iflow/commands`, `.iflow/commands` (unsupported format) |  |  | `~/.iflow/skills`, `.iflow/skills` | IFLOW.md, AGENTS.md |  | PTY, unverified |
+| `inference-sh` | inference.sh | `generic-md` | generated |  |  |  | `~/.inferencesh/skills` |  |  |  |
+| `jazz` | Jazz | `generic-md` | generated |  |  |  | `~/.jazz/skills` |  |  |  |
+| `jetbrains-ai-assistant` | JetBrains AI Assistant | `generic-md` | generated |  |  |  |  | AGENTS.md |  |  |
+| `junie` | Junie | `generic-md` | generated |  |  |  | `~/.junie/skills`, `.junie/skills` | guidelines.md, AGENTS.md |  |  |
+| `kilo` | Kilo Code | `generic-md` | hand-written | `~/.kilocode/workflows`, `.kilocode/workflows` |  |  | `~/.kilocode/skills`, `.kilocode/skills` | AGENTS.md |  | PTY (M) |
+| `kimi-code-cli` | Kimi Code CLI | `generic-md` | generated |  |  |  | `~/.agents/skills`, `.kimi/skills` | AGENTS.md |  | PTY (M) |
+| `kiro-cli` | Kiro | `generic-md` | generated |  |  |  | `~/.kiro/skills`, `.kiro/skills` | AGENTS.md | `.kiro/hooks` (unsupported format) | PTY (M) |
+| `kode` | Kode | `generic-md` | generated |  |  |  | `~/.kode/skills`, `.kode/skills` | AGENTS.md |  |  |
+| `letta-code` | Letta Code | `generic-md` | generated |  |  |  | `.letta/skills` | AGENTS.md |  | PTY (M) |
+| `lingma` | Tongyi Lingma | `generic-md` | generated |  |  |  | `~/.lingma/skills` | AGENTS.md |  |  |
+| `loaf` | Loaf | `generic-md` | generated |  |  |  | `~/.agents/skills` |  |  |  |
+| `mcpjam` | MCPJam | `generic-md` | generated |  |  |  | `~/.mcpjam/skills`, `.mcpjam/skills` | AGENTS.md |  |  |
+| `mistral-vibe` | Mistral Vibe | `generic-md` | generated |  |  |  | `~/.vibe/skills`, `.vibe/skills` | AGENTS.md |  | PTY, unverified |
+| `moxby` | Moxby | `generic-md` | generated |  |  |  | `~/.moxby/skills` |  |  |  |
+| `mux` | Mux | `generic-md` | generated |  |  |  | `~/.mux/skills`, `.mux/skills` | AGENTS.md |  |  |
+| `nanocoder` | Nanocoder | `generic-md` | generated |  |  |  |  | AGENTS.md |  |  |
+| `neovate` | Neovate | `generic-md` | generated |  |  |  | `~/.neovate/skills`, `.neovate/skills` | AGENTS.md |  |  |
+| `octofriend` | Octofriend | `generic-md` | generated |  |  |  |  | OCTO.md |  |  |
+| `ona` | Ona | `generic-md` | generated |  |  |  | `~/.ona/skills` |  |  |  |
+| `openclaw` | OpenClaw | `generic-md` | generated |  |  |  | `~/.openclaw/skills`, `.openclaw/skills` | AGENTS.md |  | PTY, unverified |
+| `opencode` | opencode | `opencode` | hand-written | `~/.config/opencode/command`, `~/.config/opencode/commands`, `.opencode/command`, `.opencode/commands` | `~/.config/opencode/agent`, `~/.config/opencode/agents`, `.opencode/agent`, `.opencode/agents` |  | `~/.config/opencode/skills`, `.opencode/skills` | AGENTS.md |  | PTY (H) |
+| `openhands` | OpenHands | `generic-md` | generated |  |  |  | `~/.openhands/skills`, `.openhands/skills` | AGENTS.md |  | PTY (M) |
+| `pi` | Pi | `generic-md` | hand-written |  |  | `~/.pi/agent/prompts`, `.pi/prompts` | `~/.agents/skills`, `~/.pi/agent/skills`, `.agents/skills`, `.pi/skills` | AGENTS.md |  | PTY (H) |
+| `pochi` | Pochi | `generic-md` | generated |  |  |  | `~/.pochi/skills`, `.pochi/skills` | AGENTS.md |  |  |
+| `promptscript` | PromptScript | `generic-md` | generated |  |  |  | `.agents/skills` |  |  |  |
+| `qoder` | Qoder | `generic-md` | generated |  |  |  | `~/.qoder/skills`, `.qoder/skills` | AGENTS.md |  | PTY (M) |
+| `qoder-cn` | Qoder CN | `generic-md` | generated |  |  |  | `~/.qoder-cn/skills` |  |  |  |
+| `qwen-code` | Qwen Code | `generic-md` | hand-written | `~/.qwen/commands`, `.qwen/commands` (unsupported format) |  |  | `~/.qwen/skills`, `.qwen/skills` | QWEN.md, AGENTS.md |  | PTY (M) |
+| `reasonix` | Reasonix | `generic-md` | generated |  |  |  | `~/.reasonix/skills` |  |  |  |
+| `replit` | Replit | `generic-md` | generated |  |  |  | `~/.config/agents/skills` |  |  |  |
+| `roo` | Roo Code | `generic-md` | hand-written | `~/.roo/commands`, `.roo/commands` |  |  | `~/.roo/skills`, `.roo/skills` | .roorules, AGENTS.md |  |  |
+| `rovodev` | Rovo Dev | `generic-md` | generated |  |  |  | `~/.rovodev/skills` |  |  | PTY (M) |
+| `sourcegraph-cody` | Sourcegraph Cody | `generic-md` | generated |  |  |  | `.cody/skills` | AGENTS.md |  |  |
+| `tabnine` | Tabnine | `generic-md` | generated |  |  |  | `.tabnine/skills` |  |  |  |
+| `tabnine-cli` | Tabnine CLI | `generic-md` | generated |  |  |  | `~/.tabnine/agent/skills` |  |  |  |
+| `terramind` | TerraMind | `generic-md` | generated |  |  |  | `~/.terramind/skills` |  |  |  |
+| `tinycloud` | TinyCloud | `generic-md` | generated |  |  |  | `~/.tinycloud/skills` |  |  |  |
+| `trae` | Trae | `generic-md` | generated |  |  |  | `~/.trae/skills`, `.trae/skills` | AGENTS.md |  | open only |
+| `trae-cn` | Trae CN | `generic-md` | generated |  |  |  | `~/.trae-cn/skills`, `.trae/skills` | AGENTS.md |  | open only |
+| `traycer` | Traycer | `generic-md` | generated |  | `.traycer/cli-agents` |  |  |  |  |  |
+| `universal` | Universal agents directory | `generic-md` | generated |  |  |  | `~/.config/agents/skills` |  |  |  |
+| `vtcode` | VT Code | `generic-md` | generated |  | `.vtcode/agents` |  | `.vtcode/skills` | AGENTS.md |  |  |
+| `warp` | Warp | `generic-md` | generated |  |  |  | `~/.agents/skills` | WARP.md |  | open only |
+| `windsurf` | Windsurf | `windsurf` | hand-written | `~/.codeium/windsurf/global_workflows`, `.windsurf/workflows` |  |  | `~/.codeium/windsurf/skills`, `.windsurf/skills` | .windsurfrules, AGENTS.md, global_rules.md | `.windsurf/hooks.json` (unsupported format) | open only |
+| `zed` | Zed | `generic-md` | generated |  |  |  | `~/.agents/skills`, `.agents/skills`, `.zed/skills` | .rules, AGENT.md, AGENTS.md |  | open only |
+| `zencoder` | Zencoder | `generic-md` | generated |  |  |  | `~/.zencoder/skills`, `.zencoder/skills` | AGENTS.md |  |  |
+| `zenflow` | Zencoder Zenflow | `generic-md` | generated |  |  |  | `~/.zencoder/skills` |  |  |  |

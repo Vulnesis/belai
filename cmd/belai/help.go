@@ -38,13 +38,14 @@ var topCommands = []topCommand{
 	{"mcp", "list, import and export MCP servers (library items)"},
 	{"library", "scan this host for items kept by other agent harnesses"},
 	{"rc", "remote control: let the Vulnetix website start sessions here"},
+	{"connect", "join this host to a Keleustes server as a managed node"},
 	{"plugin", "install and manage plugins"},
 	{"acp", "serve the Agent Client Protocol to an editor"},
 	{"login", "sign in to a provider (kiro)"},
 }
 
 // hiddenCommands are dispatched in main but not listed.
-var hiddenCommands = []string{"rc-session", "help", "__landlock-exec"}
+var hiddenCommands = []string{"rc-session", "rc-harness", "harness-hook", "a2a-mcp", "help", "__landlock-exec"}
 
 // helpExamples are real invocations, one per line.
 var helpExamples = []struct{ cmd, note string }{
@@ -70,7 +71,7 @@ type flagGroup struct {
 }
 
 var flagGroups = []flagGroup{
-	{"Session", []string{"prompt", "mode", "plan", "resume", "continue", "teleport", "teleport-ref", "teleport-push", "export", "no-transcript", "answers", "output-format", "json-schema", "usage-json", "detect-mode", "no-git-sync", "no-finish-review", "lint-loop", "no-checkpoints"}},
+	{"Session", []string{"prompt", "mode", "plan", "resume", "continue", "teleport", "teleport-ref", "teleport-push", "teleport-to", "export", "no-transcript", "answers", "output-format", "json-schema", "usage-json", "detect-mode", "no-git-sync", "no-finish-review", "lint-loop", "no-checkpoints"}},
 	{"Model", []string{"provider", "model", "effort", "firewall", "caveman", "defer-tools", "tools", "agent", "agent-create"}},
 	{"Safety", []string{
 		"guardrails", "ask-permission", "trust-dir", "dangerously-yolo-everything",

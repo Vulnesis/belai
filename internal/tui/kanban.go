@@ -104,7 +104,7 @@ func (a *App) kanbanStore() (*kanban.Store, *kanban.Source) {
 // startKanbanSync mirrors the board through the session-sync client, which
 // already enforces the Vulnetix origin allowlist and credential handling.
 // startSessionSync calls it once it has a client and a host id.
-func (a *App) startKanbanSync(client *sessionsync.Client, hostID string) {
+func (a *App) startKanbanSync(client kanban.Remote, hostID string) {
 	if a.kb == nil || a.kb.syncer != nil {
 		return
 	}

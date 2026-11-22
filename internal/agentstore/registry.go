@@ -1,6 +1,7 @@
 package agentstore
 
 import (
+	"github.com/vulnetix/belai/internal/harness"
 	"os"
 	"path/filepath"
 	"sort"
@@ -208,7 +209,7 @@ func expandGlob(pattern, home, workdir string) ([]string, error) {
 	case raw == "~":
 		raw = home
 	case strings.HasPrefix(raw, "~/"):
-		raw = filepath.Join(home, raw[2:])
+		raw = harness.ExpandHarness(home, raw, os.Getenv)
 	case !filepath.IsAbs(raw):
 		raw = filepath.Join(workdir, raw)
 	}

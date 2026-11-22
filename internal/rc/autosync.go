@@ -7,11 +7,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/vulnetix/belai/internal/agentprofile"
+	"github.com/vulnetix/belai/internal/audit"
+	"github.com/vulnetix/belai/internal/factorylink/nodev1"
 	"github.com/vulnetix/belai/internal/libitem"
 	"github.com/vulnetix/belai/internal/libstore"
 	"github.com/vulnetix/belai/internal/sanitize"
@@ -503,4 +506,102 @@ func crewDocument(c agentprofile.Crew) ([]byte, bool) {
 		return nil, false
 	}
 	return js, true
+}
+
+// Factory mode (WP-E): Keleustes answers a host's library hashes with
+// Library.Reconcile, one verdict per item: current, push (the library lacks
+// it), install (the library is ahead of an unchanged copy), diverged, or
+// listed (a catalogue entry). A document moves only for a dispatch that names
+// it, so the loop sends hashes and nothing else, and asks the Keleustes owner
+// (attention "action") when something is to push or install; the owner's
+// library_backup or library_install then does it. Each pass is audited with
+// counts only, and no pass runs while the factory is stopped.
+
+// factoryReconcileEvery is how often a factory-mode host reconciles; a
+// variable so a test can shorten it.
+var factoryReconcileEvery = 5 * time.Minute
+
+// libraryReconciler is the part of a Factory that reconciles
+// (*factorylink.RC is one); a Factory without it runs no loop.
+type libraryReconciler interface {
+	LibraryReconcile(ctx context.Context, items []*nodev1.LibraryRef) ([]*nodev1.LibraryVerdict, error)
+}
+
+// reconcileCounts are one pass's verdicts by kind.
+type reconcileCounts struct {
+	total, current, push, install, diverged, other int
+}
+
+// factoryReconcileLoop runs factoryReconcile every factoryReconcileEvery
+// until ctx ends, the first pass straight away.
+func (d *Daemon) factoryReconcileLoop(ctx context.Context, rec libraryReconciler) {
+	defer d.wg.Done()
+	t := time.NewTicker(factoryReconcileEvery)
+	defer t.Stop()
+	for {
+		d.factoryReconcile(ctx, rec)
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+	}
+}
+
+// factoryReconcile is one pass. It returns the counts (zero when it did not
+// run) and the status the audit recorded.
+func (d *Daemon) factoryReconcile(ctx context.Context, rec libraryReconciler) (reconcileCounts, string) {
+	var c reconcileCounts
+	emit := func(status string) {
+		audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorHarness,
+			Data: map[string]string{"dispatch": "library_reconcile", "status": status,
+				"total": strconv.Itoa(c.total), "count": strconv.Itoa(c.push + c.install)}})
+	}
+	if ctl := d.factoryControl(); ctl.Stopped {
+		emit("stopped")
+		return c, "stopped"
+	}
+	var items []*nodev1.LibraryRef
+	for _, r := range libraryInventory(d.o.Inventory()) {
+		// Catalogue entries are facts Keleustes lists, and an item with no hash
+		// (its kind's sync is off) is not offered.
+		if r.GetSha256() == "" || r.GetKind() == "knowledge" || r.GetKind() == "plugin" {
+			continue
+		}
+		items = append(items, r)
+	}
+	if len(items) == 0 {
+		emit("empty")
+		return c, "empty"
+	}
+	cctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	verdicts, err := rec.LibraryReconcile(cctx, items)
+	if err != nil {
+		d.logf("library reconcile: %v", err)
+		emit(jobFailed)
+		return c, jobFailed
+	}
+	for _, v := range verdicts {
+		c.total++
+		switch v.GetVerdict() {
+		case "current":
+			c.current++
+		case "push":
+			c.push++
+		case "install":
+			c.install++
+		case "diverged":
+			c.diverged++
+		default:
+			c.other++
+		}
+	}
+	emit(jobOK)
+	if c.push+c.install > 0 {
+		d.logf("library reconcile: %d to back up, %d to install, %d diverged of %d", c.push, c.install, c.diverged, c.total)
+		// One request for the library, filed at most once an hour (factoryAttention).
+		go d.factoryAttention(context.WithoutCancel(ctx), "action", "action_needed", "library")
+	}
+	return c, jobOK
 }

@@ -38,6 +38,8 @@ func Start(opts Options) error {
 	app.startA2A()
 	// Session sync likewise only starts on a real run (docs/session-sync.md).
 	app.startSessionSync()
+	// The Keleustes node link, when this host joined one (docs/keleustes.md).
+	app.startFactoryLink()
 	// Voice input likewise only starts on a real run, and only when the user
 	// turned it on (docs/voice.md).
 	app.voice.autostart = true
@@ -55,6 +57,7 @@ func Start(opts Options) error {
 		a.fireSessionHook(hooks.EventSessionEnd)
 		a.stopA2A()
 		a.stopGitSync()
+		a.stopFactoryLink()
 	}
 	// Every exit path (ctrl+d, /exit, ctrl+c, an error) flushes the usage
 	// ledger once here.

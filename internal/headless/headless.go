@@ -16,8 +16,10 @@ import (
 	"github.com/vulnetix/belai/internal/agent"
 	"github.com/vulnetix/belai/internal/agentpool"
 	"github.com/vulnetix/belai/internal/budget"
+	"github.com/vulnetix/belai/internal/checkpoint"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/gitsync"
 	"github.com/vulnetix/belai/internal/httpclient"
 	"github.com/vulnetix/belai/internal/kanban"
@@ -120,6 +122,10 @@ type Params struct {
 	// RunCaps is the session's run-cap meter (docs/run-caps.md), or nil for
 	// none. A fleet worker leaves it nil: its profile budget is its cap.
 	RunCaps *budget.Meter
+	// Checkpoints keeps the file copies behind a remote session's undo and
+	// rewind (docs/checkpoints.md), or nil for none. Used only while the
+	// settings keep checkpoints on.
+	Checkpoints *checkpoint.Tracker
 }
 
 // OpenA2A opens the A2A endpoint for a session about to be built from p
@@ -132,11 +138,23 @@ func OpenA2A(ctx context.Context, p Params, profile, ticket string, rec a2alink.
 	if p.GitSync != nil {
 		raw = p.GitSync.Raw
 	}
-	return a2alink.Open(ctx, a2alink.Options{
+	// A host joined to Keleustes relays there, and only there.
+	var factory a2alink.FactoryRelay
+	var sync *sessionsync.Client
+	if r := keleustesA2A(p.Settings); r != nil {
+		factory = r
+	} else {
+		sync = a2aSyncClient(p.Settings, p.Workdir)
+	}
+	l := a2alink.Open(ctx, a2alink.Options{
 		Workdir: p.Workdir, SessionID: p.SessionID, Profile: profile, Settings: p.Settings,
-		Cfg: p.Cfg, Client: p.Client, Posture: p.Posture, Sync: a2aSyncClient(p.Settings, p.Workdir),
+		Cfg: p.Cfg, Client: p.Client, Posture: p.Posture, Sync: sync, Factory: factory,
 		Ticket: ticket, Git: raw, Record: rec,
 	})
+	if l == nil && factory != nil {
+		_ = factory.(*factorylink.A2ARelay).Close()
+	}
+	return l
 }
 
 // NewSession builds the session.
@@ -214,6 +232,7 @@ func NewSession(ctx context.Context, p Params) (*agent.Session, error) {
 
 	sess, err := agent.NewSession(agent.Options{
 		RunCaps:       p.RunCaps,
+		Checkpoints:   p.Checkpoints,
 		AskDecider:    p.AskDecider,
 		Knowledge:     kb,
 		WebPages:      true, // top-level session: WebFetch cache and index (docs/web-fetch.md)
@@ -333,6 +352,25 @@ func a2aSyncClient(settings config.Settings, workdir string) *sessionsync.Client
 	return client
 }
 
+// KanbanRemote is the board's backend when the kanban and sync settings are
+// on: the joined Keleustes server when this host has an active, unrevoked
+// profile (docs/keleustes.md#board), else the website with a usable Vulnetix
+// CLI credential. It returns nil when there is neither; done releases it.
+func KanbanRemote(settings config.Settings, workdir string) (kanban.Remote, func()) {
+	if !settings.KanbanEnabled() || !settings.SyncEnabled() {
+		return nil, func() {}
+	}
+	if dir, err := config.GlobalDir(); err == nil {
+		if k, err := factorylink.ActiveKanban(dir); err == nil {
+			return k, func() { _ = k.Close() }
+		}
+	}
+	if c := syncClient(settings, workdir); c != nil {
+		return c, func() {}
+	}
+	return nil, func() {}
+}
+
 // FlushKanban pushes the board's unsynced changes once, best effort. A
 // headless run never pulls in the background; a fleet worker pulls with
 // PullKanban.
@@ -347,13 +385,14 @@ func FlushKanban(settings config.Settings, workdir string) {
 	if out, err := store.Outbox(); err != nil || len(out) == 0 {
 		return
 	}
-	client := syncClient(settings, workdir)
-	if client == nil {
+	remote, done := KanbanRemote(settings, workdir)
+	if remote == nil {
 		return
 	}
+	defer done()
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_ = kanban.NewSyncer(store, client, kanban.SyncOptions{}).Flush(ctx)
+	_ = kanban.NewSyncer(store, remote, kanban.SyncOptions{}).Flush(ctx)
 }
 
 // PullKanban pushes local changes and pulls the website's, once, best
@@ -362,13 +401,14 @@ func PullKanban(ctx context.Context, store *kanban.Store, settings config.Settin
 	if store == nil {
 		return
 	}
-	client := syncClient(settings, workdir)
-	if client == nil {
+	remote, done := KanbanRemote(settings, workdir)
+	if remote == nil {
 		return
 	}
+	defer done()
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	s := kanban.NewSyncer(store, client, kanban.SyncOptions{})
+	s := kanban.NewSyncer(store, remote, kanban.SyncOptions{})
 	s.Sync(ctx)
 }
 
@@ -379,4 +419,21 @@ func diagnostics(p Params, reg *tools.Registry) rolemanager.DiagnosticsGate {
 		return *p.Diagnostics
 	}
 	return rolemanager.DiagnosticsGateFromSettings(p.Settings, reg.Cwd().Roots(), false)
+}
+
+// keleustesA2A is the Keleustes relay when sync is on and this host has an
+// active, unrevoked profile, or nil.
+func keleustesA2A(settings config.Settings) *factorylink.A2ARelay {
+	if !settings.SyncEnabled() {
+		return nil
+	}
+	dir, err := config.GlobalDir()
+	if err != nil {
+		return nil
+	}
+	r, err := factorylink.ActiveA2A(dir)
+	if err != nil {
+		return nil
+	}
+	return r
 }

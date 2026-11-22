@@ -47,6 +47,7 @@ the harness read itself, and nothing else can be recorded.
 | host | `host.dispatch` | the host answers a request from the website (`start`, `stop`, `worker`, `crew`, `pause`, `resume`, `profile_backup`, `profile_install`, `crew_backup`, `crew_install`, `avatar`, `item_backup`, `item_install`, `provider_keys_install`, `provider_keys_remove`, `mcp_secrets_install`, `mcp_secrets_remove`, `library_sync`, `library_scan`, `library_import`, `project_prefs`, `teleport_backup`, `teleport_code`, `steer`, `crew_control`) |
 | host | `host.teleport` | this host opened a session teleported in from another (`belai -teleport`); the event names the new session, and `from` is the origin session |
 | host | `host.schedule` | `belai rc` fires, skips or refuses a stored schedule, updates it to `worked`/`drained`/`worker_failed`, or turns a schedule off because it cannot accept it |
+| host | `host.action.accepted`, `host.action.refused`, `host.action.needs_human`, `host.action.finished` | `belai rc` accepts, refuses, hands to a person (`reason` `needs_root` or `needs_browser`) or settles (`state` `done`, `failed` or `cancelled`) a Keleustes host action; `action` is its id, `kind` and `class` the action's, the actor `owner` when a person asked, `surface`, `run`, `workflow`, `plan`, `plan_run` and `step` the origin's identifiers, `digest` the sha256 of its params, `preview` the confirmed preview's sha256 and `control` `stopped` while the factory was stopped; never a value, an argv or output |
 | agent | `worker.started`, `worker.state`, `worker.stopped` | a worker starts, is paused or resumed, and stops |
 | agent | `worker.fault` | a worker or the item it holds fails; `class` is the fault code, never the error text |
 | agent | `worker.fallback` | a worker moves to another `target` of its crew's provider pool (such as `openai/gpt-5`), outcome `switch`, or finds the whole pool failing, outcome `pool_exhausted` |
@@ -67,11 +68,11 @@ the harness read itself, and nothing else can be recorded.
 | agent | `hazard.asked`, `hazard.denied` | the always-ask floor put a call to a person, and a call it withheld or the person refused ([hazard rails](hazard-rails.md)); `id` holds the hazard identifiers joined by `+` and `tool` the tool name, never a command or a path |
 | agent | `egress.denied` | the sandbox egress proxy refused connections ([egress proxy](sandbox.md#egress-proxy)); recorded for the first refusal of each `reason` (`not_allowed`, `port`, `invalid`, `address`, `resolve`, `limit`) and again at the 10th, 100th and every 1000th, with `count` the running total for that reason; never a host name |
 
-`data` keys: `attempt`, `candidate`, `candidates`, `change`, `class`, `commit`, `count`, `decision`, `dispatch`, `ecosystem`, `exit`,
+`data` keys: `action`, `attempt`, `candidate`, `candidates`, `change`, `class`, `commit`, `control`, `count`, `decision`, `digest`, `dispatch`, `ecosystem`, `exit`,
 `files`, `forge`, `from`, `gate`, `hops`, `id`, `justification`, `kind`, `list`, `message_id`, `met`, `os`,
-`package`, `passes`, `path`, `peer`, `pr`, `previous`, `profile`, `reason`,
-`regressed`, `retries`, `rule`, `schedule`, `severity`, `state`, `status`,
-`suite`, `target`, `to`, `tokens`, `tool`, `total`, `version`, `worker`. `schedule` is a schedule's UUID.
+`package`, `passes`, `path`, `peer`, `plan`, `plan_run`, `pr`, `preview`, `previous`, `profile`, `reason`,
+`regressed`, `retries`, `rule`, `run`, `schedule`, `severity`, `state`, `status`, `step`,
+`suite`, `surface`, `target`, `to`, `tokens`, `tool`, `total`, `version`, `worker`, `workflow`. `schedule` is a schedule's UUID.
 `class` is a fault code (`provider_auth`, `provider_rate_limit`, …; see [fleet.md](fleet.md#the-provider-pool)), `retries` a count and
 `target` a `provider/model` pair; `message_id` an A2A `a2a-<ulid>`, `kind` an envelope kind, `peer` an Agent Card id
 (`<hostId>:<sessionId>`) and `decision` an acknowledgement's enum, never a text part; all reduced by `audit.Clean`. Adding one is adding something that can leave the machine, so it

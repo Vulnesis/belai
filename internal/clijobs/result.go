@@ -56,6 +56,14 @@ type Result struct {
 	Findings  []Finding `json:"findings"`
 	Signals   []string  `json:"signals"`
 	Artifacts []string  `json:"artifacts"`
+	// NotEvaluable says the job could not judge the repository (exit
+	// ExitNotEvaluable): Keleustes reads it to tell "nothing found" from "not
+	// checked". Derived from ExitCode, never taken from a pulled document.
+	NotEvaluable bool `json:"notEvaluable,omitempty"`
+	// PackageManagers and Languages are the scout job's stack facts, words
+	// from a closed table (DetectStack).
+	PackageManagers []string `json:"packageManagers,omitempty"`
+	Languages       []string `json:"languages,omitempty"`
 }
 
 var (
@@ -112,6 +120,9 @@ func (r *Result) Normalize() {
 		r.Findings = r.Findings[:MaxFindings]
 	}
 	r.Signals = cleanSignals(r.Signals)
+	r.NotEvaluable = r.ExitCode == ExitNotEvaluable
+	r.PackageManagers = keepWords(r.PackageManagers, PackageManagers)
+	r.Languages = keepWords(r.Languages, Languages)
 	var arts []string
 	for _, a := range r.Artifacts {
 		if artifactRE.MatchString(a) && !slices.Contains(arts, a) && len(arts) < maxArtifacts {
@@ -185,4 +196,16 @@ func Clean(doc string) (string, bool) {
 		return "", false
 	}
 	return out, true
+}
+
+// keepWords keeps the words of in that the closed set allows, once each, sorted.
+func keepWords(in, allowed []string) []string {
+	var out []string
+	for _, w := range in {
+		if slices.Contains(allowed, w) && !slices.Contains(out, w) {
+			out = append(out, w)
+		}
+	}
+	sort.Strings(out)
+	return out
 }

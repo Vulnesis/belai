@@ -4,7 +4,11 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/vulnetix/belai/internal/factorylink"
+	"github.com/vulnetix/belai/internal/factorylink/nodev1"
+	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/sessionsync"
 )
 
@@ -86,5 +90,38 @@ func TestCrewStartArgvIsOneCrewRun(t *testing.T) {
 	}
 	if args := agentStartArgs(WorkerStart{Crew: "aws-infra"}); slices.Contains(args, "-dir") || slices.Contains(args, "-fill") {
 		t.Fatalf("argv %v", args)
+	}
+}
+
+// WP-F: a Keleustes worker dispatch passes its vault grant on to `belai
+// agent start`; a crew start never takes one.
+func TestKeleustesWorkerTakesTheGrantACrewDoesNot(t *testing.T) {
+	t.Setenv("BELAI_HOME", t.TempDir())
+	proj := t.TempDir()
+	real, _ := Normalize(proj)
+	var got WorkerStart
+	d, err := New(Options{
+		Factory: &fakeFactory{}, HostID: testHost, Dirs: []Dir{{Path: real, Name: "proj", Source: SourceTrusted}},
+		Inventory: func() Inventory {
+			return Inventory{Profiles: []sessionsync.RCProfile{{Name: "patcher"}},
+				Crews: []sessionsync.RCCrew{{Name: "aws-infra", Members: []sessionsync.RCMember{{Profile: "tf", Replicas: 1}}}}}
+		},
+		StartWorkers: func(w WorkerStart) (string, error) { got = w; return "ok", nil },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	grant := factorylink.GrantFrom(&nodev1.VaultGrant{GrantId: "g", Secrets: []*nodev1.VaultSecret{{Provider: "anthropic", Env: "ANTHROPIC_API_KEY", Value: "sk-x"}}}, time.Now())
+	_, _, why, _ := d.factoryStart(t.Context(), &nodev1.Dispatch{Id: "w1", Kind: "worker", Cwd: proj, Agent: "patcher"}, grant)
+	if why != "" || got.Grant == nil {
+		t.Fatalf("worker start: %q, grant %v", why, got.Grant)
+	}
+	got = WorkerStart{}
+	_, _, why, _ = d.factoryStart(t.Context(), &nodev1.Dispatch{Id: "c1", Kind: "crew", Cwd: proj, Crew: "aws-infra"}, grant)
+	if why != "" || got.Grant != nil {
+		t.Fatalf("crew start: %q, grant %v", why, got.Grant)
+	}
+	if fleet.GrantFDEnv != factorylink.GrantFDEnv {
+		t.Error("fleet and factorylink name different grant descriptors")
 	}
 }

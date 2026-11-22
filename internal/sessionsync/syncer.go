@@ -26,7 +26,12 @@ const (
 
 // Options configures a Syncer. Zero intervals take the defaults.
 type Options struct {
+	// Client is the Vulnetix website. Backend, when set, replaces it as the
+	// server the session is mirrored to and its inbox taken from (a Keleustes
+	// node, docs/keleustes.md); Client is then used only for what the website
+	// alone offers (the vault lease) and may be nil.
 	Client        *Client
+	Backend       Backend
 	HostID        string
 	Host          Host
 	RemotePrompts bool
@@ -127,6 +132,8 @@ type metaUpdate struct {
 // method called from the TUI is non-blocking.
 type Syncer struct {
 	opts Options
+	// be is the server: Options.Backend, else Options.Client.
+	be Backend
 
 	activate chan SessionInfo
 	meta     chan metaUpdate
@@ -168,6 +175,7 @@ func New(opts Options) *Syncer {
 	}
 	return &Syncer{
 		opts:     opts,
+		be:       opts.backend(),
 		activate: make(chan SessionInfo, 4),
 		meta:     make(chan metaUpdate, 8),
 		nudge:    make(chan struct{}, 1),
@@ -277,7 +285,7 @@ func (s *Syncer) AckCommand(commandID, status, reason string, state json.RawMess
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
-		if err := s.opts.Client.AckCommand(ctx, commandID, status, reason, state); err != nil {
+		if err := s.be.AckCommand(ctx, commandID, status, reason, state); err != nil {
 			s.setErr(fmt.Errorf("ack command: %w", err))
 		}
 	}()
@@ -329,7 +337,7 @@ func (s *Syncer) DraftResult(draftID, status, reason string, result any) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
-		if err := s.opts.Client.DraftResult(ctx, draftID, status, reason, result); err != nil && !IsConflict(err) {
+		if err := s.be.DraftResult(ctx, draftID, status, reason, result); err != nil && !IsConflict(err) {
 			s.setErr(fmt.Errorf("draft result: %w", err))
 		}
 	}()
@@ -337,9 +345,9 @@ func (s *Syncer) DraftResult(draftID, status, reason string, result any) {
 
 func (s *Syncer) sendAck(ctx context.Context, a ack) error {
 	if a.answer {
-		return s.opts.Client.AckAnswer(ctx, a.id, a.status, a.reason, a.entryID)
+		return s.be.AckAnswer(ctx, a.id, a.status, a.reason, a.entryID)
 	}
-	return s.opts.Client.Ack(ctx, a.id, a.status, a.reason, a.entryID)
+	return s.be.Ack(ctx, a.id, a.status, a.reason, a.entryID)
 }
 
 // Ack reports a prompt's outcome in the background. An accepted ack refers
@@ -360,7 +368,7 @@ func (s *Syncer) Ack(promptID, status, reason, entryID string) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		defer cancel()
-		if err := s.opts.Client.Ack(ctx, promptID, status, reason, entryID); err != nil {
+		if err := s.be.Ack(ctx, promptID, status, reason, entryID); err != nil {
 			s.setErr(fmt.Errorf("ack: %w", err))
 		}
 	}()
@@ -424,7 +432,7 @@ func (s *Syncer) endInfo(id, fallback string) EndInfo {
 func (s *Syncer) end(ctx context.Context, id, path string) error {
 	info := s.endInfo(id, "")
 	info.Rollup = rollupOf(path)
-	return s.opts.Client.EndWith(ctx, id, info)
+	return s.be.EndWith(ctx, id, info)
 }
 
 // endReplaced ends id because another session took its place. The reason
@@ -434,7 +442,7 @@ func (s *Syncer) end(ctx context.Context, id, path string) error {
 func (s *Syncer) endReplaced(ctx context.Context, id, path string) error {
 	info := s.endInfo(id, EndSuperseded)
 	info.Rollup = rollupOf(path)
-	return s.opts.Client.EndWith(ctx, id, info)
+	return s.be.EndWith(ctx, id, info)
 }
 
 func (s *Syncer) Close(timeout time.Duration) {
@@ -626,7 +634,7 @@ func (s *Syncer) step(ctx context.Context, t *tail, hostOK *bool, live bool) err
 		return nil
 	}
 	if !*hostOK {
-		if err := s.opts.Client.PutHost(ctx, s.opts.HostID, s.opts.Host); err != nil {
+		if err := s.be.PutHost(ctx, s.opts.HostID, s.opts.Host); err != nil {
 			return err
 		}
 		*hostOK = true
@@ -635,7 +643,7 @@ func (s *Syncer) step(ctx context.Context, t *tail, hostOK *bool, live bool) err
 		// Read the file once first so name/cwd/model are known at
 		// registration; nothing is uploaded until the server's mark is known.
 		s.scanMeta(t)
-		last, ctl, err := s.opts.Client.PutSessionControls(ctx, t.info.ID, s.metaFor(t))
+		last, ctl, err := s.be.PutSessionControls(ctx, t.info.ID, s.metaFor(t))
 		if err != nil {
 			return err
 		}
@@ -652,7 +660,7 @@ func (s *Syncer) step(ctx context.Context, t *tail, hostOK *bool, live bool) err
 		return err
 	}
 	if t.dirty {
-		_, ctl, err := s.opts.Client.PutSessionControls(ctx, t.info.ID, s.metaFor(t))
+		_, ctl, err := s.be.PutSessionControls(ctx, t.info.ID, s.metaFor(t))
 		if err != nil {
 			return err
 		}
@@ -663,7 +671,7 @@ func (s *Syncer) step(ctx context.Context, t *tail, hostOK *bool, live bool) err
 		}
 	}
 	if time.Since(t.lastBeat) >= s.opts.HeartbeatEvery {
-		ctl, err := s.opts.Client.HeartbeatControls(ctx, t.info.ID)
+		ctl, err := s.be.HeartbeatControls(ctx, t.info.ID)
 		if err != nil {
 			return err
 		}
@@ -822,7 +830,7 @@ func (s *Syncer) upload(ctx context.Context, t *tail) error {
 // If the placeholder is rejected too, the server is down, nothing is replaced,
 // and the batch is retried as before.
 func (s *Syncer) postBatch(ctx context.Context, t *tail, batch []Entry) (int64, error) {
-	last, err := s.opts.Client.PostEntries(ctx, t.info.ID, batch)
+	last, err := s.be.PostEntries(ctx, t.info.ID, batch)
 	if err == nil || !rejectedBatch(err) {
 		if err == nil {
 			t.rejects = 0
@@ -838,12 +846,12 @@ func (s *Syncer) postBatch(ctx context.Context, t *tail, batch []Entry) (int64, 
 	}
 	last = -1
 	for _, e := range batch {
-		l, err := s.opts.Client.PostEntries(ctx, t.info.ID, []Entry{e})
+		l, err := s.be.PostEntries(ctx, t.info.ID, []Entry{e})
 		if err != nil {
 			if !rejectedBatch(err) {
 				return 0, err
 			}
-			if l, err = s.opts.Client.PostEntries(ctx, t.info.ID, []Entry{unsyncedEntry(e.Seq)}); err != nil {
+			if l, err = s.be.PostEntries(ctx, t.info.ID, []Entry{unsyncedEntry(e.Seq)}); err != nil {
 				return 0, err
 			}
 			s.setErr(fmt.Errorf("line %d not synced: the server could not store it", e.Seq))
@@ -1025,7 +1033,7 @@ func (s *Syncer) Backfill(ctx context.Context, infos []SessionInfo) (int, error)
 		if !t.registered {
 			continue // no file, nothing to upload
 		}
-		if err := s.opts.Client.EndWith(ctx, info.ID, EndInfo{Rollup: rollupOf(info.Path)}); err != nil {
+		if err := s.be.EndWith(ctx, info.ID, EndInfo{Rollup: rollupOf(info.Path)}); err != nil {
 			return done, fmt.Errorf("%s: %w", info.ID, err)
 		}
 		done++
@@ -1069,7 +1077,7 @@ func (s *Syncer) inbox(ctx context.Context) {
 		if s.opts.A2A != nil && s.opts.A2A.After != nil {
 			after = s.opts.A2A.After()
 		}
-		batch, err := s.opts.Client.InboxBatchA2A(ctx, s.opts.HostID, live, s.opts.InboxWait, after)
+		batch, err := s.be.InboxBatchA2A(ctx, s.opts.HostID, live, s.opts.InboxWait, after)
 		prompts, answers, drafts := batch.Prompts, batch.Answers, batch.Drafts
 		if err != nil {
 			if ctx.Err() != nil {

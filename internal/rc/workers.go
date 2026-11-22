@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"os"
 	"os/exec"
 	"regexp"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/sanitize"
 	"github.com/vulnetix/belai/internal/sessionsync"
@@ -37,6 +39,16 @@ func (d *Daemon) startWorkers(r sessionsync.Dispatch) (string, string) {
 // the worker exits once nothing is left to claim, whatever cron schedule its
 // profile carries, because the stored schedule is what starts it.
 func (d *Daemon) startWorkersDrain(r sessionsync.Dispatch, drain bool) (string, string) {
+	return d.startWorkersGrant(r, drain, nil)
+}
+
+// startWorkersGrant is startWorkersDrain with a Keleustes vault grant for a
+// single-profile worker start (WP-F). A crew start never takes one: a crew
+// run's supervisor starts members later, when the grant is gone.
+func (d *Daemon) startWorkersGrant(r sessionsync.Dispatch, drain bool, grant *factorylink.Grant) (string, string) {
+	if grant != nil && r.Crew != "" {
+		return "", "a crew start takes no vault grant; its members run on this host's own keys"
+	}
 	cwd, ok := Allowed(d.dirs(), r.Cwd)
 	if !ok {
 		return "", "this host does not offer that directory"
@@ -47,7 +59,7 @@ func (d *Daemon) startWorkersDrain(r sessionsync.Dispatch, drain bool) (string, 
 		return "", why
 	}
 	w := WorkerStart{Exe: d.o.Exe, Cwd: cwd, MaxWorkers: d.o.MaxWorkers, ReservedWorkers: d.o.ReservedWorkers, Drain: drain, Provider: r.Provider, Model: r.Model,
-		Controls: d.o.Controls, GuardrailsOff: d.o.Controls && d.o.GuardrailsOff, Trigger: encodeTrigger(r.Trigger)}
+		Controls: d.o.Controls, GuardrailsOff: d.o.Controls && d.o.GuardrailsOff, Trigger: encodeTrigger(r.Trigger), Grant: grant}
 	// A worker cannot ask: a call that would ask blocks its item. A request's
 	// ask: false (the organization's ask_permission for factory runs) makes
 	// those calls allowed instead; deny rules, the posture, guardrails and the
@@ -68,11 +80,32 @@ func (d *Daemon) startWorkersDrain(r sessionsync.Dispatch, drain bool) (string, 
 	inv := d.o.Inventory()
 	switch r.Kind {
 	case "worker":
+		if r.Adhoc != nil {
+			// A one-off worker (factorysession.go): no stored profile; its spec is
+			// checked, its prompt admitted, and `agent start -prompt` builds and
+			// validates the profile.
+			if r.Profile != "" {
+				return "", "a one-off worker names no profile"
+			}
+			actx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+			spec, why := d.checkAdhoc(actx, cwd, r.Adhoc)
+			cancel()
+			if why != "" {
+				return "", why
+			}
+			w.Adhoc = spec
+			audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorWeb, Outcome: "adhoc",
+				Data: map[string]string{"dispatch": "worker", "status": "adhoc", "digest": adhocDigest(spec), "tool": strings.Join(spec.Tools, "+")}})
+			break
+		}
 		if !workerName.MatchString(r.Profile) {
 			return "", "that is not a profile name"
 		}
 		if !slices.ContainsFunc(inv.Profiles, func(p sessionsync.RCProfile) bool { return p.Name == r.Profile }) {
 			return "", "this host has no worker profile " + r.Profile
+		}
+		if builtinDisabledForRepo(cwd, r.Profile) {
+			return "", "disabled for repo: " + r.Profile + " is off for this directory (agents.builtin." + r.Profile + ")"
 		}
 		w.Profile = r.Profile
 	case "crew":
@@ -136,7 +169,21 @@ func runAgentStart(w WorkerStart) (string, error) {
 	cmd.Dir = w.Cwd
 	// The workers, and a crew run's supervisor and the members it starts
 	// later, inherit this environment, so the trigger reaches each of them.
-	cmd.Env = BudgetEnv(TriggerEnv(os.Environ(), w.Trigger), w.Budget)
+	cmd.Env = BudgetEnv(TriggerEnv(withoutGrantFD(os.Environ()), w.Trigger), w.Budget)
+	if w.Adhoc != nil {
+		cmd.Env = append(withoutAdhocPrompt(cmd.Env), sessionsync.AdhocPromptEnv+"="+w.Adhoc.Prompt)
+	}
+	if w.Grant != nil {
+		// Its own pipe, as for a session: never argv or the environment.
+		gr, gw, err := os.Pipe()
+		if err != nil {
+			return "", err
+		}
+		defer gr.Close()
+		cmd.ExtraFiles = []*os.File{gr}
+		cmd.Env = append(cmd.Env, factorylink.GrantFDEnv+"=3")
+		go writeGrant(gw, w.Grant.Encode())
+	}
 	var out bytes.Buffer
 	cmd.Stdout, cmd.Stderr = &out, &out
 	err := cmd.Run()
@@ -190,6 +237,8 @@ func agentStartArgs(w WorkerStart) []string {
 			args = append(args, "-fill")
 		}
 		args = append(args, memberModelArgs(w.MemberModels)...)
+	} else if w.Adhoc != nil {
+		args = append(args, adhocArgs(w.Adhoc)...)
 	} else {
 		args = append(args, w.Profile)
 	}
@@ -321,4 +370,16 @@ func memberModelArgs(mm map[string]string) []string {
 		args = append(args, "-member-model", p+"="+prov+"/"+model)
 	}
 	return args
+}
+
+// withoutAdhocPrompt drops an inherited one-off prompt, so only the one this
+// start sets reaches the child.
+func withoutAdhocPrompt(env []string) []string {
+	out := env[:0:0]
+	for _, kv := range env {
+		if !strings.HasPrefix(kv, sessionsync.AdhocPromptEnv+"=") {
+			out = append(out, kv)
+		}
+	}
+	return out
 }

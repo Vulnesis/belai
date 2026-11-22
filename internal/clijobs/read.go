@@ -90,6 +90,7 @@ func Build(ctx context.Context, j Job, repo, head string, exit int, outs Outputs
 			detected = outs[1]
 		}
 		r.Signals = Detect(caps, detected, analyze)
+		r.PackageManagers, r.Languages = DetectStack(detected)
 	}
 	r.Normalize()
 	return r

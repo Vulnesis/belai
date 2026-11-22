@@ -89,6 +89,7 @@ const (
 	CheckGuardrails = "Guardrails"
 	CheckDirs       = "Directories"
 	CheckServer     = "Vulnetix website"
+	CheckFactory    = "Keleustes"
 )
 
 // PreflightOptions are the inputs Preflight reads. Zero functions take the
@@ -100,6 +101,13 @@ type PreflightOptions struct {
 	// Server, when non-nil, is called last with a usable credential to
 	// confirm the website accepts it (a PutHost). Skipped when nil.
 	Server func(ctx context.Context, header string) error
+	// Factory names the active Keleustes server when this host has joined one
+	// (docs/keleustes.md). Remote control then serves Keleustes instead of the
+	// website: the Vulnetix CLI, login and website checks are replaced by one
+	// Keleustes check, which calls FactoryServer (when non-nil) to confirm the
+	// server accepts this node.
+	Factory       string
+	FactoryServer func(ctx context.Context) error
 
 	LookPath   func(string) (string, error)
 	AuthHeader func(workdir string) (string, error)
@@ -115,6 +123,10 @@ func Preflight(ctx context.Context, o PreflightOptions) Checks {
 		o.AuthHeader = credentials.VulnetixAuthHeader
 	}
 	var out Checks
+	if o.Factory != "" {
+		out = append(out, factoryCheck(ctx, o))
+		return append(out, localChecks(o)...)
+	}
 
 	// The CLI is how you log in; a credential from the environment or a
 	// credentials file works without it, so its absence alone is a warning.
@@ -145,15 +157,59 @@ func Preflight(ctx context.Context, o PreflightOptions) Checks {
 		out = append(out, Check{Name: CheckCredential, Level: OK, Detail: credentialKind(header)})
 	}
 
+	out = append(out, localChecks(o)...)
+
+	if o.Server != nil && credErr == nil && sessionsync.UsableCredential(header) == nil {
+		if err := o.Server(ctx, header); err != nil {
+			c := Check{Name: CheckServer, Level: Fail, Detail: err.Error(), Fix: "check your network and try again"}
+			if errors.Is(err, sessionsync.ErrUnauthorized) {
+				c.Detail = "the website refused this credential"
+				c.Fix = "run `vulnetix auth login` again"
+			}
+			if errors.Is(err, sessionsync.ErrHostLimit) {
+				c.Fix = "stop `belai rc` and Belai on your other machine, or add hosts with Pro or a Pix Sandbox"
+			}
+			out = append(out, c)
+		} else {
+			out = append(out, Check{Name: CheckServer, Level: OK, Detail: "connected"})
+		}
+	}
+	return out
+}
+
+// factoryCheck is the Keleustes mode's one check in place of the Vulnetix
+// CLI, login and website checks: the joined server, reachable with this
+// node's certificate.
+func factoryCheck(ctx context.Context, o PreflightOptions) Check {
+	c := Check{Name: CheckFactory, Level: OK, Detail: fmt.Sprintf("%q (this host's Keleustes server)", o.Factory)}
+	if o.FactoryServer == nil {
+		return c
+	}
+	if err := o.FactoryServer(ctx); err != nil {
+		c.Level, c.Detail = Fail, fmt.Sprintf("%q: %v", o.Factory, err)
+		c.Fix = "start Keleustes, or check `belai connect status`; run `belai connect leave` to serve the Vulnetix website instead"
+		return c
+	}
+	c.Detail = fmt.Sprintf("%q · connected", o.Factory)
+	return c
+}
+
+// localChecks are the host's own checks, whichever server it serves.
+func localChecks(o PreflightOptions) Checks {
+	var out Checks
+	where := "the website"
+	if o.Factory != "" {
+		where = "Keleustes"
+	}
 	switch {
 	case !o.Settings.SyncEnabled():
 		out = append(out, Check{Name: CheckSync, Level: Fail,
-			Detail: "session sync is off, so the website cannot see or start sessions",
+			Detail: "session sync is off, so " + where + " cannot see or start sessions",
 			Fix:    "run /sync on in Belai, or set \"sync\": {\"enabled\": true} in ~/.vulnetix/belai/settings.json"})
 	case !o.Settings.SyncRemotePromptsEnabled():
 		out = append(out, Check{Name: CheckSync, Level: Warn,
-			Detail: "sync.remote_prompts is off: sessions start from the website but take no follow-up prompts",
-			Fix:    "set \"sync\": {\"remote_prompts\": true} to prompt them from the website"})
+			Detail: "sync.remote_prompts is off: sessions start from " + where + " but take no follow-up prompts",
+			Fix:    "set \"sync\": {\"remote_prompts\": true} to prompt them from " + where})
 	default:
 		out = append(out, Check{Name: CheckSync, Level: OK, Detail: "on"})
 	}
@@ -172,22 +228,6 @@ func Preflight(ctx context.Context, o PreflightOptions) Checks {
 			Fix:    "run `belai rc --dir <path>`, or open `belai` in a project once and trust it"})
 	} else {
 		out = append(out, Check{Name: CheckDirs, Level: OK, Detail: fmt.Sprintf("%d offered", len(o.Dirs))})
-	}
-
-	if o.Server != nil && credErr == nil && sessionsync.UsableCredential(header) == nil {
-		if err := o.Server(ctx, header); err != nil {
-			c := Check{Name: CheckServer, Level: Fail, Detail: err.Error(), Fix: "check your network and try again"}
-			if errors.Is(err, sessionsync.ErrUnauthorized) {
-				c.Detail = "the website refused this credential"
-				c.Fix = "run `vulnetix auth login` again"
-			}
-			if errors.Is(err, sessionsync.ErrHostLimit) {
-				c.Fix = "stop `belai rc` and Belai on your other machine, or add hosts with Pro or a Pix Sandbox"
-			}
-			out = append(out, c)
-		} else {
-			out = append(out, Check{Name: CheckServer, Level: OK, Detail: "connected"})
-		}
 	}
 	return out
 }

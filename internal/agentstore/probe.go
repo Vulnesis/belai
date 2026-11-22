@@ -1,6 +1,7 @@
 package agentstore
 
 import (
+	"github.com/vulnetix/belai/internal/harness"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -98,7 +99,7 @@ func staticDir(pattern, home, workdir string) (string, bool) {
 	case raw == "~":
 		raw = home
 	case strings.HasPrefix(raw, "~/"):
-		raw = filepath.Join(home, raw[2:])
+		raw = harness.ExpandHarness(home, raw, os.Getenv)
 	case !filepath.IsAbs(raw):
 		raw = filepath.Join(workdir, raw)
 	}

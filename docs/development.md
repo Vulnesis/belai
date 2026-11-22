@@ -152,6 +152,13 @@ air-gapped and CI runs; the `update_check` setting is the durable opt-out) are
 described where they apply, and the variables that tell Belai where local model
 files already are (`BELAI_MODELS_DIR`, `HF_HUB_CACHE`, `HF_HOME`, `LLAMA_CACHE`)
 are in [Local inference](architecture.md#local-inference).
+`BELAI_E2E_RELEASES` and `VULNETIX_E2E_RELEASES` point a `belai rc` with
+Keleustes host management at a local release fixture for `belai_upgrade` and
+the CLI's direct install (`just e2e-host`); either is used only when it is an
+`http` or `https` URL on a loopback IP address, and is ignored otherwise.
+`BELAI_ADHOC_PROMPT` is how `belai rc` hands a one-off worker's prompt to
+`belai agent start -prompt-from-env`, so the prompt never appears on argv,
+which every user on the host can read; the child unsets it once read.
 
 ### Provider and model defaults
 

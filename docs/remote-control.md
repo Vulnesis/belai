@@ -32,6 +32,19 @@ each failure with the one thing to do about it:
 | Directories | At least one directory to offer. |
 | Vulnetix website | The website accepts the credential. |
 
+On a host that has joined a Keleustes server (`belai connect <token>`),
+`belai rc` serves Keleustes instead, and needs no Vulnetix login. The
+Vulnetix CLI, login and website checks become one **Keleustes** check: the
+server is reachable and accepts this node's certificate. Keleustes
+dispatches start sessions through the same checks and the same
+`belai rc-session` child as a website start request. Worker and crew
+dispatches start workers as the website's do, a dispatch's vault grant reaches
+its session on a pipe and nowhere else, and the daemon runs Keleustes's
+`github` and `model` jobs ([Keleustes nodes: Jobs](keleustes.md#jobs)). A
+stopped factory gets no new work. Each outcome is
+reported with `Jobs.Complete`. See
+[Keleustes nodes: Remote control](keleustes.md#remote-control).
+
 `/rc` walks the same list as a setup screen: it explains what remote control
 is, shows the checklist, and offers a step for each gap (install the CLI, log
 in through the browser, turn sync on, offer this directory). Once everything

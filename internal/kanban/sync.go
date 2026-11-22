@@ -242,7 +242,7 @@ func (s *Syncer) pullAll(ctx context.Context) error {
 // ToWire converts an item to its wire form.
 func ToWire(it Item) sessionsync.KanbanItem {
 	w := sessionsync.KanbanItem{
-		ID: it.ID, Title: it.Title, Body: it.Body, List: string(it.List),
+		ID: it.ID, Key: it.Key, Title: it.Title, Body: it.Body, List: string(it.List),
 		Project: it.Project, ProjectKey: it.ProjectKey, Remote: it.Remote, Cwd: it.Dir,
 		HostID: it.HostID, SessionID: it.SessionID,
 		CreatedAt: it.Created, UpdatedAt: it.Updated,
@@ -258,6 +258,9 @@ func ToWire(it Item) sessionsync.KanbanItem {
 	if it.CliResult != "" {
 		w.Agent.CliResult = json.RawMessage(it.CliResult)
 	}
+	if it.ServerMeta != "" {
+		w.Meta = json.RawMessage(it.ServerMeta)
+	}
 	for _, m := range it.History {
 		w.History = append(w.History, sessionsync.KanbanMove{
 			ID: m.ID, From: string(m.From), To: string(m.To), At: m.At, SessionID: m.SessionID, Note: m.Note,
@@ -269,7 +272,7 @@ func ToWire(it Item) sessionsync.KanbanItem {
 // FromWire converts a wire item. The result is cleaned by Merge.
 func FromWire(w sessionsync.KanbanItem) Item {
 	it := Item{
-		ID: w.ID, Title: w.Title, Body: w.Body, List: List(w.List),
+		ID: w.ID, Key: w.Key, ServerMeta: string(w.Meta), Title: w.Title, Body: w.Body, List: List(w.List),
 		Project: w.Project, ProjectKey: w.ProjectKey, Remote: w.Remote, Dir: w.Cwd,
 		HostID: w.HostID, SessionID: w.SessionID,
 		Created: w.CreatedAt, Updated: w.UpdatedAt,

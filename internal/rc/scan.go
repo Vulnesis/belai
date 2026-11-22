@@ -104,48 +104,13 @@ func (d *Daemon) startLibraryImport(ctx context.Context, r sessionsync.Dispatch,
 // libraryImport reads the item the request names and uploads it. It returns the
 // report for the acknowledgement, or the reason it refused.
 func (d *Daemon) libraryImport(ctx context.Context, r sessionsync.Dispatch) (string, string) {
-	kind, ok := agentimport.ParseKind(strings.TrimSpace(r.ItemKind))
-	if !ok {
-		return "", "that is not an item kind"
-	}
-	switch {
-	case !hexSHA.MatchString(r.SHA256):
-		return "", "the request carries no item hash"
-	case r.Path == "" || len(r.Path) > libscan.MaxPathBytes:
-		return "", "the request names no path"
+	kind, item, body, harness, why := resolveImport(r)
+	if why != "" {
+		return "", why
 	}
 	target := strings.TrimSpace(r.Target)
-	if kind == agentimport.KindDocument {
-		if target == "" {
-			return "", "name the agent that receives the document"
-		}
-		if len(target) > 128 || sanitize.Line(target, 128) != target {
-			return "", "that is not an agent name"
-		}
-	} else {
+	if kind != agentimport.KindDocument {
 		target = ""
-	}
-	home, err := libscan.DefaultHome()
-	if err != nil {
-		return "", "could not find the home directory"
-	}
-	roots := libscan.Roots(home, libscan.TrustedRepos(), nil)
-	res, err := libscan.Resolve(roots, kind, r.Path)
-	if err != nil {
-		return "", reason(err.Error())
-	}
-	item, err := agentimport.ImportItem(res.File, kind, res.Root.Format, libscan.ImportOptions(res))
-	switch {
-	case errors.Is(err, agentimport.ErrSkipped):
-		return "", "that file is a link, a credential file or too large, so it is not read"
-	case err != nil:
-		return "", "refused: " + reason(err.Error())
-	case item.SHA256 != r.SHA256:
-		return "", "that item changed since the scan; scan again"
-	}
-	body, err := sessionsync.ImportBody(kind.Markdown(), item.Doc)
-	if err != nil {
-		return "", reason(err.Error())
 	}
 	up := sessionsync.LibraryImport{Dispatch: r.ID, Kind: string(kind), Name: item.Name, Body: body, Target: target}
 	for _, sk := range item.Skills {
@@ -160,5 +125,54 @@ func (d *Daemon) libraryImport(ctx context.Context, r sessionsync.Dispatch) (str
 	if err != nil {
 		return "", "the library did not take the " + string(kind) + ": " + reason(err.Error())
 	}
-	return fmt.Sprintf("imported %s %s from %s as version %s", kind, sanitize.Line(item.Name, 64), sanitize.Ident(res.Root.Harness, 40), sanitize.Ident(saved.Version, 12)), ""
+	return fmt.Sprintf("imported %s %s from %s as version %s", kind, sanitize.Line(item.Name, 64), sanitize.Ident(harness, 40), sanitize.Ident(saved.Version, 12)), ""
+}
+
+// resolveImport re-reads the item an import request names, through the same
+// checks a scan made, and returns it with its canonical body; why says why
+// not. Website and Keleustes imports share it.
+func resolveImport(r sessionsync.Dispatch) (agentimport.Kind, agentimport.Result, any, string, string) {
+	var none agentimport.Result
+	kind, ok := agentimport.ParseKind(strings.TrimSpace(r.ItemKind))
+	if !ok {
+		return "", none, nil, "", "that is not an item kind"
+	}
+	switch {
+	case !hexSHA.MatchString(r.SHA256):
+		return "", none, nil, "", "the request carries no item hash"
+	case r.Path == "" || len(r.Path) > libscan.MaxPathBytes:
+		return "", none, nil, "", "the request names no path"
+	}
+	if kind == agentimport.KindDocument {
+		target := strings.TrimSpace(r.Target)
+		if target == "" {
+			return "", none, nil, "", "name the agent that receives the document"
+		}
+		if len(target) > 128 || sanitize.Line(target, 128) != target {
+			return "", none, nil, "", "that is not an agent name"
+		}
+	}
+	home, err := libscan.DefaultHome()
+	if err != nil {
+		return "", none, nil, "", "could not find the home directory"
+	}
+	roots := libscan.Roots(home, libscan.TrustedRepos(), nil)
+	res, err := libscan.Resolve(roots, kind, r.Path)
+	if err != nil {
+		return "", none, nil, "", reason(err.Error())
+	}
+	item, err := agentimport.ImportItem(res.File, kind, res.Root.Format, libscan.ImportOptions(res))
+	switch {
+	case errors.Is(err, agentimport.ErrSkipped):
+		return "", none, nil, "", "that file is a link, a credential file or too large, so it is not read"
+	case err != nil:
+		return "", none, nil, "", "refused: " + reason(err.Error())
+	case item.SHA256 != r.SHA256:
+		return "", none, nil, "", "that item changed since the scan; scan again"
+	}
+	body, err := sessionsync.ImportBody(kind.Markdown(), item.Doc)
+	if err != nil {
+		return "", none, nil, "", reason(err.Error())
+	}
+	return kind, item, body, res.Root.Harness, ""
 }

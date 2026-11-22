@@ -1,0 +1,7 @@
+{"type":"summary","summary":"Fix flaky test","leafUuid":"u0"}
+{"type":"user","uuid":"u1","sessionId":"s1","cwd":"/w","timestamp":"2026-11-21T10:00:00Z","message":{"role":"user","content":"list the crates"}}
+{"type":"assistant","uuid":"u2","sessionId":"s1","cwd":"/w","timestamp":"2026-11-21T10:00:01Z","message":{"role":"assistant","content":[{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"ls crates"}}],"stop_reason":"tool_use","usage":{"input_tokens":120,"output_tokens":7,"cache_read_input_tokens":3000,"cache_creation_input_tokens":40}}}
+{"type":"user","uuid":"u3","sessionId":"s1","cwd":"/w","timestamp":"2026-11-21T10:00:02Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"kls-core\nkls-ui"}]}}
+{"type":"assistant","uuid":"u4","sessionId":"s1","cwd":"/w","isSidechain":true,"timestamp":"2026-11-21T10:00:03Z","message":{"role":"assistant","content":[{"type":"text","text":"subagent note"}]}}
+{"type":"attachment","uuid":"u5","sessionId":"s1","timestamp":"2026-11-21T10:00:03Z"}
+{"type":"assistant","uuid":"u6","sessionId":"s1","cwd":"/w","timestamp":"2026-11-21T10:00:04Z","message":{"role":"assistant","id":"msg_2","model":"claude-opus-4-1","content":[{"type":"text","text":"kls-core and kls-ui"}],"stop_reason":"end_turn","usage":{"input_tokens":200,"output_tokens":9}}}

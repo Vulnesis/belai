@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -19,13 +20,16 @@ import (
 	"github.com/vulnetix/belai/internal/attribution"
 	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/calltrace"
+	"github.com/vulnetix/belai/internal/checkpoint"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/desktop"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/forge"
 	"github.com/vulnetix/belai/internal/gitsync"
 	"github.com/vulnetix/belai/internal/headless"
+	"github.com/vulnetix/belai/internal/hostmgmt"
 	"github.com/vulnetix/belai/internal/httpclient"
 	"github.com/vulnetix/belai/internal/kanban"
 	"github.com/vulnetix/belai/internal/mcp"
@@ -39,6 +43,7 @@ import (
 	"github.com/vulnetix/belai/internal/rolemanager"
 	"github.com/vulnetix/belai/internal/run"
 	"github.com/vulnetix/belai/internal/sandbox"
+	"github.com/vulnetix/belai/internal/sanitize"
 	"github.com/vulnetix/belai/internal/schedule"
 	"github.com/vulnetix/belai/internal/session"
 	"github.com/vulnetix/belai/internal/sessionctl"
@@ -48,6 +53,7 @@ import (
 	"github.com/vulnetix/belai/internal/tools"
 	"github.com/vulnetix/belai/internal/trustgate"
 	"github.com/vulnetix/belai/internal/turnlog"
+	"github.com/vulnetix/belai/internal/vaultenv"
 	"github.com/vulnetix/belai/internal/version"
 	"github.com/vulnetix/belai/internal/vulnetixcli"
 )
@@ -102,7 +108,9 @@ Software Factory dispatches, in place of agents.factory_reserved_workers: any
 other start, and a crew topping itself up with no card waiting, stops N short of
 the cap. N is clamped below the cap.
 
-Needs a Vulnetix CLI browser login (vulnetix auth login).
+Needs a Vulnetix CLI browser login (vulnetix auth login), unless this host
+joined a Keleustes server (belai connect <token>): it then serves Keleustes
+instead, needs no Vulnetix login, and reports each dispatch through Keleustes.
 `
 
 // runRCCLI implements `belai rc`. It returns the exit code.
@@ -124,6 +132,8 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 	webProjectSettings := fs.Bool("web-project-settings", false, "let the website read and edit each offered directory's project preferences on this host")
 	webShell := fs.Bool("web-shell", false, "let web sessions run a shell line on this host, under the TUI's `!cmd` permission rules and OS sandbox")
 	noClone := fs.Bool("no-clone", false, "never clone a repository a Software Factory request names and this machine does not offer, whatever agents.clone says")
+	keleustesManage := fs.String("keleustes-manage", "read", "what a Keleustes console may do on this host: off, read, config or provision (no setting changes it)")
+	keleustesShell := fs.Bool("keleustes-shell", false, "with --keleustes-manage=provision, let a Keleustes console run a confirmed argv on this host")
 	var allowCIDRs cidrList
 	fs.Var(&allowCIDRs, "allow-private-cidr", "let WebFetch reach this private-use range (repeatable); loopback and link-local are never allowed, and every other private address stays refused")
 	if err := fs.Parse(args); err != nil {
@@ -144,6 +154,11 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 	}
 	if *webGuardrailsOff && !*webControls {
 		fmt.Fprintln(stderr, "belai rc: --web-allow-guardrails-off needs --web-controls")
+		return 2
+	}
+	manageLevel, err := hostmgmt.ParseLevel(*keleustesManage)
+	if err != nil {
+		fmt.Fprintln(stderr, "belai rc:", err)
 		return 2
 	}
 	if fs.NArg() > 0 {
@@ -182,7 +197,8 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		return 0
 	}
 
-	if r, live := rc.ReadRecord(); live {
+	// rc_restart re-execs in place: the record naming this very pid is ours.
+	if r, live := rc.ReadRecord(); live && r.PID != os.Getpid() {
 		fmt.Fprintf(stderr, "belai rc is already running (pid %d). Manage hosts at %s\n", r.PID, url)
 		return 1
 	}
@@ -226,12 +242,26 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 	offered, skipped := rc.Collect(dirs, wd)
 	hostID := headless.HostID()
 	host := sessionsync.Host{Hostname: sessionsync.Hostname(), OS: runtime.GOOS, BelaiVersion: version.Version}
-	client, clientErr := rcClient(wd)
-
-	fmt.Fprintf(stderr, "belai rc · %s\n\n", host.Hostname)
-	checks := rc.Preflight(ctx, rc.PreflightOptions{
-		Workdir: wd, Settings: settings, Dirs: offered,
-		Server: func(ctx context.Context, _ string) error {
+	// A host that joined a Keleustes server serves it, and needs no Vulnetix
+	// login; otherwise remote control serves the website.
+	home, kp := rcKeleustes()
+	var client *sessionsync.Client
+	var clientErr error
+	pre := rc.PreflightOptions{Workdir: wd, Settings: settings, Dirs: offered}
+	if kp != nil {
+		url = fmt.Sprintf("Keleustes %q (Fleet)", rcFactoryName(kp))
+		pre.Factory = rcFactoryName(kp)
+		pre.FactoryServer = func(ctx context.Context) error {
+			c, err := factorylink.NewClient(kp)
+			if err != nil {
+				return err
+			}
+			defer c.Close()
+			return c.Reachable(ctx)
+		}
+	} else {
+		client, clientErr = rcClient(wd)
+		pre.Server = func(ctx context.Context, _ string) error {
 			if clientErr != nil {
 				return clientErr
 			}
@@ -239,8 +269,11 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 				return errors.New("could not create this host's id under ~/.vulnetix/belai/sync")
 			}
 			return client.PutHost(ctx, hostID, host)
-		},
-	})
+		}
+	}
+
+	fmt.Fprintf(stderr, "belai rc · %s\n\n", host.Hostname)
+	checks := rc.Preflight(ctx, pre)
 	fmt.Fprint(stderr, checks.Render())
 	fmt.Fprintln(stderr)
 	for _, s := range skipped {
@@ -303,13 +336,38 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		fmt.Fprintln(stderr, "belai rc: schedules:", err)
 		return 1
 	}
+	var factory rc.Factory
+	var scheduleRemote schedule.Remote
+	if kp != nil {
+		f, err := factorylink.NewRC(home, kp)
+		if err != nil {
+			fmt.Fprintln(stderr, "belai rc: keleustes:", err)
+			return 1
+		}
+		// The library sync is the website's; the host's own stored schedules
+		// keep firing in factory mode and sync with Keleustes
+		// (docs/keleustes.md#schedules).
+		factory = f
+		if sr, err := factorylink.ActiveSchedules(home); err == nil {
+			scheduleRemote = sr
+			defer sr.Close()
+		}
+	}
 	d, err := rc.New(rc.Options{
-		Exe: exe, Client: client, HostID: hostID, Host: host, Dirs: offered,
-		Max: *max, MaxWorkers: workerOverride(fs, *max, *maxWorkers), ReservedWorkers: reservedOverride(fs, *reservedWorkers), Idle: *idle, URL: url, Out: stderr, LogPath: logPath,
-		Schedules: schedules, DrawAvatar: rcDrawAvatar(wd), Distill: rcDistill(wd), TeleportPush: teleportPushPolicy(wd),
-		Controls: *webControls, GuardrailsOff: *webGuardrailsOff, ProjectSettings: *webProjectSettings,
+		Exe: exe, Client: client, Factory: factory, HostID: hostID, Host: host, Dirs: offered,
+		HarnessDetect: true,
+		Max:           *max, MaxWorkers: workerOverride(fs, *max, *maxWorkers), ReservedWorkers: reservedOverride(fs, *reservedWorkers), Idle: *idle, URL: url, Out: stderr, LogPath: logPath,
+		ScheduleRemote: scheduleRemote,
+		Schedules:      schedules, DrawAvatar: rcDrawAvatar(wd), Distill: rcDistill(wd), TeleportPush: teleportPushPolicy(wd),
+		ModelJob: rcModelJob(wd), InitDraft: rcInitDraft,
+		AdmitText: rcAdmitText,
+		Controls:  *webControls, GuardrailsOff: *webGuardrailsOff, ProjectSettings: *webProjectSettings,
 		Shell: *webShell, NoClone: *noClone,
 		RedeemLogin: rcRedeemLogin, CredentialExpiry: rcCredentialExpiry(wd),
+		Manage: manageLevel.String(), ManageShell: *keleustesShell,
+		HostManage: rcHostManager(rcHostOptions{home: home, profile: kp, pre: pre, exe: exe, args: args, level: manageLevel,
+			shell: *keleustesShell, log: stderr, gates: hostmgmt.Gates{WebControls: *webControls, WebShell: *webShell,
+				WebProjectSettings: *webProjectSettings, AllowGuardrailsOff: *webGuardrailsOff, NoClone: *noClone, AllowPrivateCIDR: len(allowCIDRs) > 0}}),
 	})
 	if err != nil {
 		fmt.Fprintln(stderr, "belai rc:", err)
@@ -379,6 +437,32 @@ func rcClient(wd string) (*sessionsync.Client, error) {
 		return header, nil
 	}
 	return sessionsync.NewClient(sessionsync.BaseURL(os.Getenv("VULNETIX_WEB_URL")), auth, httpclient.Default())
+}
+
+// rcKeleustes returns this host's active, unrevoked Keleustes profile, or
+// nil. When there is one, remote control serves it instead of the website
+// (docs/keleustes.md#remote-control).
+func rcKeleustes() (string, *factorylink.Profile) {
+	home, err := config.GlobalDir()
+	if err != nil {
+		return "", nil
+	}
+	p, err := factorylink.Active(home)
+	if err != nil || p.Revoked != "" {
+		return home, nil
+	}
+	return home, p
+}
+
+// rcSyncServer is where a remote session mirrors: the Keleustes backend
+// when this host has joined a server (client is then nil), else the website.
+func rcSyncServer(wd string) (*sessionsync.Client, *factorylink.SyncBackend, error) {
+	if home, p := rcKeleustes(); p != nil {
+		be, err := factorylink.ActiveBackend(home, "rc")
+		return nil, be, err
+	}
+	client, err := rcClient(wd)
+	return client, nil, err
 }
 
 // rcRedeemLogin turns the approved grant of a sign-in request into the Vulnetix
@@ -526,8 +610,17 @@ func runRCSessionCLI(ctx context.Context, args []string, stdin io.Reader, stderr
 	shell := fs.Bool("shell", false, "run shell lines from the web (belai rc --web-shell)")
 	var addDirs stringList
 	fs.Var(&addDirs, "add-dir", "an extra workspace directory for the session (repeatable; the daemon checked each is offered)")
+	var factoryOpts stringList
+	fs.Var(&factoryOpts, "factory-option", "a Keleustes crew or step setting, key=value (repeatable; rc.ApplyFactoryOptions checks each)")
 	profileFlag := fs.String("profile", "", "engage this agent profile for agent-mode turns (a web request's choice, with -mode agent), or the persona of a -mode pix-assistant session")
+	resumeFlag := fs.String("resume", "", "continue this stored session of the project in the new session (a Keleustes resume; the daemon checked it)")
+	forkFlag := fs.String("fork", "", "with -resume, continue from this entry of it (a Keleustes fork)")
+	answersFlag := fs.String("answers", "", "answer the session's questions from this file (the daemon wrote it, its notes admitted); removed once read")
 	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	if *forkFlag != "" && *resumeFlag == "" {
+		fmt.Fprintln(stderr, "belai rc-session: -fork needs -resume")
 		return 2
 	}
 	if *allowGuardrailsOff && !*controls {
@@ -569,6 +662,14 @@ func runRCSessionCLI(ctx context.Context, args []string, stdin io.Reader, stderr
 			return 2
 		}
 	}
+	// A vault grant arrives on its own inherited descriptor, never in argv or
+	// the environment, and is read before anything else runs.
+	grant, err := readSessionGrant()
+	if err != nil {
+		fmt.Fprintln(stderr, "belai rc-session:", err)
+		return 1
+	}
+	defer grant.Drop()
 	raw, err := io.ReadAll(io.LimitReader(stdin, 2*sessionsync.MaxPromptBytes))
 	if err != nil {
 		fmt.Fprintln(stderr, "belai rc-session: read prompt:", err)
@@ -580,7 +681,19 @@ func runRCSessionCLI(ctx context.Context, args []string, stdin io.Reader, stderr
 		return 1
 	}
 	pick := rcModelPick{Provider: *providerFlag, Model: *modelFlag, Effort: *effortFlag, Profile: *profileFlag,
-		Controls: *controls, AllowGuardrailsOff: *allowGuardrailsOff, Shell: *shell, Dirs: addDirs, Pix: pix}
+		Controls: *controls, AllowGuardrailsOff: *allowGuardrailsOff, Shell: *shell, Dirs: addDirs, Pix: pix, Grant: grant,
+		Resume: *resumeFlag, Fork: *forkFlag, Answers: *answersFlag}
+	if pix != nil && (pick.Resume != "" || pick.Answers != "") {
+		fmt.Fprintln(stderr, "belai rc-session: a pix-assistant session takes no -resume or -answers")
+		return 2
+	}
+	for _, kv := range factoryOpts {
+		k, v, _ := strings.Cut(kv, "=")
+		if pick.Options == nil {
+			pick.Options = map[string]string{}
+		}
+		pick.Options[k] = v
+	}
 	switch *gitSyncFlag {
 	case "":
 	case "on", "off":
@@ -653,6 +766,9 @@ type rcModelPick struct {
 	// Dirs are the extra workspace directories (/add-dir) beyond the working
 	// directory; each is trust-checked before the session starts.
 	Dirs []string
+	// Options are a Keleustes dispatch's crew and step settings (-factory-option),
+	// applied to the starting controls by rc.ApplyFactoryOptions.
+	Options map[string]string
 	// Pix, when set, makes this a pix-assistant session: agent mode with the
 	// persona's text in the system block, its tools narrowed to rc.PixTools,
 	// no kanban board, and registered as ephemeral with origin "pix".
@@ -663,6 +779,13 @@ type rcModelPick struct {
 	// Provenance is the trigger's sentence for the first turn and Trigger its
 	// cleaned JSON; both "" without a trigger.
 	Provenance, Trigger string
+	// Grant is the Keleustes vault grant the daemon passed on the inherited
+	// descriptor (GrantFDEnv), or nil. Its keys answer this session's provider
+	// resolution only, and it ends the session when it expires.
+	Grant *factorylink.Grant
+	// Resume and Fork are a Keleustes resume or fork of a stored session of
+	// this project (rcResume); Answers the file of admitted answers (-answers).
+	Resume, Fork, Answers string
 }
 
 // rcAskDisabled is the AskDisabled a remote session without web controls is
@@ -761,6 +884,12 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 			return errors.New("guardrails are off; remote sessions never run without them")
 		}
 	}
+	// A Keleustes dispatch's harness gates (rc/factorygates.go) tighten this
+	// session's settings only; the daemon already left out and audited any
+	// that would loosen them, and ApplyGateOptions checks again.
+	if ignored := rc.ApplyGateOptions(&settings, pick.Options); len(ignored) > 0 {
+		startNote = strings.TrimPrefix(startNote+"; ", "; ") + "the host kept its own " + strings.Join(ignored, ", ") + " setting"
+	}
 	if err := run.PreloadClassifier(run.ResolveSecurityClassifier(settings.Classifier)); err != nil {
 		return fmt.Errorf("load embedded classifier: %w", err)
 	}
@@ -773,6 +902,17 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 	resolver, err := newResolver(cwd)
 	if err != nil {
 		return err
+	}
+	if g := pick.Grant; g != nil {
+		// The grant's keys answer this session's provider resolution, and the
+		// session ends when the grant does. Names only in the log.
+		names := g.Apply(resolver)
+		fmt.Fprintf(stderr, "rc-session: provider keys from %s: %s\n", g, strings.Join(names, ", "))
+		if exp := g.Expires(); !exp.IsZero() {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithDeadline(ctx, exp)
+			defer cancel()
+		}
 	}
 	// The host's own choice, as every other headless entry point resolves it:
 	// settings, then the saved TUI selection. Without this an empty provider
@@ -831,7 +971,19 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 	if pick.Pix != nil {
 		metaMode, mode, activeProfile = modes.ModePixAssistant, modes.ModeAgent, pick.Pix.Name
 	}
-	w, err := session.NewWriter(store, key, sessionID, session.Meta{Cwd: cwd, Mode: string(metaMode), ActiveProfile: activeProfile})
+	startMeta := session.Meta{Cwd: cwd, Mode: string(metaMode), ActiveProfile: activeProfile}
+	var w *session.Writer
+	var history []run.Turn
+	if pick.Resume != "" {
+		// A Keleustes resume or fork: the stored conversation is copied into
+		// this new session and replayed as it was admitted.
+		if w, history, err = rcResume(store, key, sessionID, pick.Resume, pick.Fork, startMeta); err != nil {
+			return err
+		}
+	} else if w, err = session.NewWriter(store, key, sessionID, startMeta); err != nil {
+		return err
+	}
+	answers, err := rcAnswers(pick.Answers, stderr)
 	if err != nil {
 		return err
 	}
@@ -841,9 +993,14 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 	}
 	w.Name(name)
 
-	client, err := rcClient(cwd)
+	// The session mirrors to Keleustes when this host has joined one (the
+	// daemon that started it serves Keleustes then too), else to the website.
+	client, keleustes, err := rcSyncServer(cwd)
 	if err != nil {
 		return err
+	}
+	if keleustes != nil {
+		defer keleustes.Close()
 	}
 	// Git hygiene: the session's branch is brought up to date with origin's
 	// default branch before its first turn and after each commit. The request
@@ -856,8 +1013,12 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 	}
 	gs := gitsync.New(cwd, gitOn, nil)
 	go gs.Watch(ctx, gitsync.InfoEvery, nil)
+	var backend sessionsync.Backend
+	if keleustes != nil {
+		backend = keleustes
+	}
 	syncer := sessionsync.New(sessionsync.Options{
-		Client: client, HostID: headless.HostID(),
+		Client: client, Backend: backend, HostID: headless.HostID(),
 		Host:          sessionsync.Host{Hostname: sessionsync.Hostname(), OS: runtime.GOOS, BelaiVersion: version.Version},
 		RemotePrompts: settings.SyncRemotePromptsEnabled(),
 		// Without session controls the only question a remote session puts to
@@ -900,8 +1061,11 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 		// The session runs for hours: take the website's board before the first
 		// turn and keep it current, or a card filed after the sandbox started
 		// never reaches KanbanSearch. The deferred flushKanban above still runs.
-		if client := headless.SyncClient(settings, cwd); client != nil {
-			defer startKanbanSync(ctx, board, client)()
+		// The board goes where the host belongs: its Keleustes server, else
+		// the website.
+		if remote, done := headless.KanbanRemote(settings, cwd); remote != nil {
+			defer done()
+			defer startKanbanSync(ctx, board, remote)()
 		}
 	}
 	tlog := turnlog.New(w)
@@ -921,6 +1085,19 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 			"mode": string(metaMode), "provider": cfg.Provider, "model": cfg.Model, "effort": cfg.Effort,
 			"guardrails": settings.GuardrailsEnabled(), "routing": cfg.Routing.Kind,
 		},
+		History: history,
+	}
+	if answers != nil {
+		opts.Scripted = answers.answer
+	}
+	if keleustes != nil {
+		opts.PlanFile = func(name, path string) { rcPlanFile(tlog, name, path) }
+	}
+	// File checkpoints back the console's undo and rewind: kept in a session
+	// with web controls, or one whose dispatch asked for them.
+	var ckpt *checkpoint.Tracker
+	if pick.Pix == nil && (pick.Controls || pick.Options["checkpoints"] == "on") {
+		ckpt = rcCheckpoints(settings, cwd, sessionID, roots, tlog)
 	}
 	narrow, persona := rcProfileNarrow(pick.Profile), ""
 	if pick.Pix != nil {
@@ -938,8 +1115,8 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 		// AskDisabled stays with the settings unless the start request said
 		// otherwise (rcAskDisabled): it resolves every ask to allow.
 		sess, err := headless.NewSession(ctx, headless.Params{
-			RunCaps: rcRunCaps(settings, sessionID),
-			Cfg:     cfg, Client: httpclient.Default(), Posture: pol, Workdir: cwd, Settings: settings,
+			RunCaps: rcRunCaps(settings, sessionID), Checkpoints: ckpt,
+			Cfg: cfg, Client: httpclient.Default(), Posture: pol, Workdir: cwd, Settings: settings,
 			WorkspaceDirs: pick.Dirs, PlanMode: mode == modes.ModePlan, SessionID: sessionID,
 			AllowAsk: false, AskDisabled: rcAskDisabled(pick.Ask),
 			MCP: mcp.Active(), Kanban: board, KanbanSource: src, GitSync: gs,
@@ -964,8 +1141,8 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 			opts.Executor = func() (rc.Runner, error) {
 				allow := true
 				return headless.NewSession(ctx, headless.Params{
-					RunCaps: rcRunCaps(settings, sessionID),
-					Cfg:     cfg, Client: httpclient.Default(), Posture: pol, Workdir: cwd, Settings: settings,
+					RunCaps: rcRunCaps(settings, sessionID), Checkpoints: ckpt,
+					Cfg: cfg, Client: httpclient.Default(), Posture: pol, Workdir: cwd, Settings: settings,
 					WorkspaceDirs: pick.Dirs, SessionID: sessionID, AllowAsk: false, AskDisabled: &allow,
 					MCP: mcp.Active(), Kanban: board, KanbanSource: src, GitSync: gs,
 					Narrow: rcProfileNarrow(pick.Profile), A2A: link,
@@ -991,6 +1168,9 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 		modeName = "auto"
 	}
 	ctlState := sessionctl.FromSettings(settings, modeName, cfg.Provider, cfg.Model, settings.Effort)
+	if err := rc.ApplyFactoryOptions(&ctlState, pick.Options, pick.Controls); err != nil {
+		return err
+	}
 	ctlState.Ask = rcInitialAsk(ctlState.Ask, pick.Ask)
 	env := rcControlEnv(cfg, pick.AllowGuardrailsOff)
 	var prevDiag io.Closer
@@ -1025,8 +1205,8 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 		gate := rolemanager.DiagnosticsGateFromSettings(s, roots, st.LSP && s.LSPEnabled())
 		askOff := !st.Ask
 		sess, err := headless.NewSession(ctx, headless.Params{
-			RunCaps: rcRunCaps(s, sessionID),
-			Cfg:     c, Client: httpclient.Default(), Posture: p, Workdir: cwd, WorkspaceDirs: pick.Dirs, Settings: s,
+			RunCaps: rcRunCaps(s, sessionID), Checkpoints: ckpt,
+			Cfg: c, Client: httpclient.Default(), Posture: p, Workdir: cwd, WorkspaceDirs: pick.Dirs, Settings: s,
 			SessionID: sessionID, AllowAsk: st.Ask, AskDisabled: &askOff,
 			AskDecider: cliAskDecider(st.Ask, s, cwd),
 			MCP:        mcp.Active(), Kanban: board, KanbanSource: src, GitSync: gs,
@@ -1058,6 +1238,14 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 	opts.AckCommand = syncer.AckCommand
 	opts.Changed = syncer.SetSessionControls
 	opts.Answers = syncer
+	// The console session actions (rc/actions.go), each the host's own code.
+	opts.Actions = rcActionEnv{cfg: cfg, settings: settings, pol: pol, cwd: cwd, sessionID: sessionID, writer: w,
+		tlog: tlog, ckpt: ckpt, runner: ctl.Runner, branch: func() string {
+			if in := gs.Info(ctx, false); in != nil {
+				return in.Branch
+			}
+			return ""
+		}}.actions()
 	// A branch switch from the web runs through the session's git hygiene:
 	// hardened, time-bounded git that refuses a dirty tree or an operation
 	// underway, and refreshes what the website shows of the repository.
@@ -1205,4 +1393,35 @@ func activeProfileOr(profile, active string) string {
 		return profile
 	}
 	return active
+}
+
+// rcFactoryName is how the log and the preflight name a Keleustes server.
+func rcFactoryName(p *factorylink.Profile) string {
+	if p.ServerName != "" {
+		return sanitize.Line(p.ServerName, 64)
+	}
+	return p.ServerID
+}
+
+// readSessionGrant reads the vault grant the rc daemon wrote to the
+// descriptor GrantFDEnv names, or returns nil when it named none. The
+// variable is cleared at once so nothing this session starts sees it, and
+// the process is hardened (non-dumpable) before the keys are held.
+func readSessionGrant() (*factorylink.Grant, error) {
+	v := os.Getenv(factorylink.GrantFDEnv)
+	if v == "" {
+		return nil, nil
+	}
+	_ = os.Unsetenv(factorylink.GrantFDEnv)
+	fd, err := strconv.Atoi(v)
+	if err != nil || fd < 3 || fd > 64 {
+		return nil, errors.New("the vault grant descriptor is not one the daemon opens")
+	}
+	f := os.NewFile(uintptr(fd), "keleustes-grant")
+	if f == nil {
+		return nil, errors.New("the vault grant descriptor is not open")
+	}
+	defer f.Close()
+	vaultenv.Protect()
+	return factorylink.ReadGrant(f, time.Now())
 }
