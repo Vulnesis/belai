@@ -30,7 +30,8 @@ import (
 // AI firewall files, the git config and the clone land there and never in the
 // developer's own home. The real `vulnetix` (VULNETIX_BIN, else the one on
 // PATH) is linked into that HOME's ~/.local/bin. Steps that need a Vulnetix
-// organisation key (VULNETIX_E2E_ORG_KEY and VULNETIX_E2E_ORG_ID) assert the
+// organisation credential (VULNETIX_E2E_ORG_ID with VULNETIX_E2E_ORG_KEY for an
+// ApiKey, or VULNETIX_E2E_ORG_SECRET for a SigV4 secret) assert the
 // unauthenticated path without them, and the sensor step (5) runs only as
 // root in a systemd container with KELEUSTES_E2E_SENSOR=1.
 
@@ -275,22 +276,27 @@ func TestKeleustesHostManagement(t *testing.T) {
 		if p := inv.product("cli"); p.Authenticated || p.Version == "" {
 			t.Fatalf("cli = %+v, want installed and signed out", p)
 		}
-		if os.Getenv("VULNETIX_E2E_ORG_KEY") == "" || os.Getenv("VULNETIX_E2E_ORG_ID") == "" {
+		if !e2eOrgCreds() {
 			_, run := k.provision(t, node, "product_auth", "product=cli")
 			if run.State != "needs_human" || run.HandoffReason != "needs_browser" || !strings.Contains(run.HandoffCommand, "vulnetix auth login") {
 				t.Fatalf("product_auth without a key = %+v", run)
 			}
 			return
 		}
-		k.vaultKey(t, "VULNETIX_API_KEY", os.Getenv("VULNETIX_E2E_ORG_KEY"))
-		k.vaultKey(t, "VULNETIX_ORG_ID", os.Getenv("VULNETIX_E2E_ORG_ID"))
+		if key := os.Getenv("VULNETIX_E2E_ORG_KEY"); key != "" {
+			k.vaultKey(t, "VULNETIX_API_KEY", key)
+			k.vaultKey(t, "VULNETIX_ORG_ID", os.Getenv("VULNETIX_E2E_ORG_ID"))
+		} else {
+			k.vaultKey(t, "VVD_SECRET", os.Getenv("VULNETIX_E2E_ORG_SECRET"))
+			k.vaultKey(t, "VVD_ORG", os.Getenv("VULNETIX_E2E_ORG_ID"))
+		}
 		if _, run := k.provision(t, node, "product_auth", "product=cli"); run.State != "done" {
 			t.Fatalf("product_auth = %+v", run)
 		}
 		k.act(t, node, "product_probe", "--param", "product=cli")
 		k.inventoryWhen(t, node, 60*time.Second, func(i hostInventory) bool { return i.product("cli").Authenticated })
 	})
-	signedIn := os.Getenv("VULNETIX_E2E_ORG_KEY") != "" && os.Getenv("VULNETIX_E2E_ORG_ID") != ""
+	signedIn := e2eOrgCreds()
 
 	// 3. Package firewall: npm and pypi in the temp HOME. Signed in, the
 	// files change and turning one off restores it; signed out the CLI
@@ -313,7 +319,7 @@ func TestKeleustesHostManagement(t *testing.T) {
 					t.Errorf("%s written while signed out", f)
 				}
 			}
-			t.Log("signed out: the CLI refused (set VULNETIX_E2E_ORG_KEY and VULNETIX_E2E_ORG_ID for the configured path)")
+			t.Log("signed out: the CLI refused (set VULNETIX_E2E_ORG_ID with VULNETIX_E2E_ORG_KEY or VULNETIX_E2E_ORG_SECRET for the configured path)")
 			return
 		}
 		if run.State != "done" {
@@ -349,7 +355,7 @@ func TestKeleustesHostManagement(t *testing.T) {
 			if _, err := os.Stat(settingsJSON); err == nil {
 				t.Errorf("%s written while signed out", settingsJSON)
 			}
-			t.Log("signed out: the CLI refused (set VULNETIX_E2E_ORG_KEY and VULNETIX_E2E_ORG_ID for the configured path)")
+			t.Log("signed out: the CLI refused (set VULNETIX_E2E_ORG_ID with VULNETIX_E2E_ORG_KEY or VULNETIX_E2E_ORG_SECRET for the configured path)")
 			return
 		}
 		if run.State != "done" {
@@ -663,4 +669,12 @@ func releaseFixture(t *testing.T) release {
 	t.Cleanup(srv.Close)
 	r.base = srv.URL
 	return r
+}
+
+// e2eOrgCreds reports whether a Vulnetix organisation credential was given:
+// VULNETIX_E2E_ORG_ID with an ApiKey (VULNETIX_E2E_ORG_KEY) or a SigV4 secret
+// (VULNETIX_E2E_ORG_SECRET).
+func e2eOrgCreds() bool {
+	return os.Getenv("VULNETIX_E2E_ORG_ID") != "" &&
+		(os.Getenv("VULNETIX_E2E_ORG_KEY") != "" || os.Getenv("VULNETIX_E2E_ORG_SECRET") != "")
 }

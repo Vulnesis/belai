@@ -789,3 +789,42 @@ func TestRestartTakesExpectVersion(t *testing.T) {
 	}
 	e.wantRefused(e.act(&nodev1.HostAction{Kind: "rc_restart", DryRun: true, Params: map[string]string{"expect_version": "nope; rm"}}), "release version")
 }
+
+// A SigV4 pair signs the CLI in the same way, from the child's environment
+// only; half a pair (or one of each) still hands off to a person.
+func TestProductAuthSigV4Grant(t *testing.T) {
+	e := newEnv(t, LevelProvision)
+	envFile := filepath.Join(t.TempDir(), "env")
+	e.stub("vulnetix", `"auth login --noninteractive --store keyring") env > `+envFile+`; echo "logged in";;`)
+	secret := "sv4-CANARY-abcdefghijklmnopqrstuvwxyz"
+	org := "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+	grant := func(id string, s ...*nodev1.VaultSecret) *nodev1.VaultGrant {
+		return &nodev1.VaultGrant{GrantId: id, ExpiresAtMs: time.Now().Add(time.Minute).UnixMilli(), Secrets: s}
+	}
+	dry := last(e.act(&nodev1.HostAction{Kind: "product_auth", DryRun: true, Params: map[string]string{"product": "cli"}}))
+	run := func(id string, g *nodev1.VaultGrant) *nodev1.HostActionUpdate {
+		return last(e.act(&nodev1.HostAction{Id: id, Kind: "product_auth", Vault: g, PreviewSha256: dry.GetPreviewSha256(), Params: map[string]string{"product": "cli"}}))
+	}
+	half := run("auth-half", grant("g0",
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VVD_SECRET", Value: secret},
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VULNETIX_ORG_ID", Value: org}))
+	if half.GetState() != stateNeedsHuman {
+		t.Fatalf("a mixed half pair = %s, want a hand-off", half.GetState())
+	}
+	if u := run("auth-sigv4", grant("g1",
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VVD_ORG", Value: org},
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VVD_SECRET", Value: secret})); u.GetState() != stateDone {
+		t.Fatalf("product_auth = %s %s", u.GetState(), u.GetError())
+	}
+	child, _ := os.ReadFile(envFile)
+	if !strings.Contains(string(child), "VVD_SECRET="+secret) || !strings.Contains(string(child), "VVD_ORG="+org) {
+		t.Fatal("the child did not get the SigV4 grant")
+	}
+	if os.Getenv("VVD_SECRET") != "" {
+		t.Fatal("the grant reached this process's environment")
+	}
+	data, _ := os.ReadFile(e.rec.Path())
+	if strings.Contains(string(data), "CANARY") {
+		t.Fatal("the audit log carries the secret")
+	}
+}
