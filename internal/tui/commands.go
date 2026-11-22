@@ -295,6 +295,14 @@ func NewRegistry(workdir string) *Registry {
 	}, func(a *App, arg string) tea.Cmd {
 		return a.syncCommand(arg)
 	})
+	r.Register("connect", "join this host to a Keleustes server as a managed node: /connect <token>, or /connect status", func() []string {
+		return []string{"status"}
+	}, func(a *App, arg string) tea.Cmd {
+		return a.connectCommand(arg)
+	})
+	r.Register("disconnect", "leave the Keleustes server this host joined and delete its node certificate", nil, func(a *App, arg string) tea.Cmd {
+		return a.disconnectCommand()
+	})
 	r.Register("gitsync", "rebase the branch onto origin's default branch before turns: on, off, or global on|off", func() []string {
 		return []string{"status", "on", "off", "global on", "global off"}
 	}, func(a *App, arg string) tea.Cmd {
@@ -631,7 +639,7 @@ func NewRegistry(workdir string) *Registry {
 		return a.openKnowledge(tab)
 	})
 	r.Register("fleet", "kanban worker agents: start, stop and watch them", func() []string {
-		return []string{"start", "crew", "stop"}
+		return []string{"start", "crew", "stop", "nodes"}
 	}, func(a *App, arg string) tea.Cmd {
 		sub, rest, _ := strings.Cut(strings.TrimSpace(arg), " ")
 		rest = strings.TrimSpace(rest)
@@ -642,7 +650,22 @@ func NewRegistry(workdir string) *Registry {
 		switch sub {
 		case "":
 			return open()
+		case "nodes":
+			return fleetNodes()
 		case "start", "crew":
+			// --on asks Keleustes to run it on another node.
+			if strings.Contains(" "+rest+" ", " --on ") || strings.Contains(" "+rest+" ", " -on ") {
+				name, on, cwd, ok := parseOn(rest, a.workdir)
+				if !ok {
+					a.addSystem("fleet " + sub + " <name> --on <node|any> [--cwd DIR]")
+					return nil
+				}
+				kind := "worker"
+				if sub == "crew" {
+					kind = "crew"
+				}
+				return fleetRequest(kind, name, on, cwd)
+			}
 			if rest == "" {
 				a.addSystem("fleet " + sub + " <name>")
 				return nil
@@ -677,7 +700,7 @@ func NewRegistry(workdir string) *Registry {
 				return fleetTickMsg{}
 			}
 		}
-		a.addSystem("fleet: unknown subcommand " + sub + " (start, crew, stop)")
+		a.addSystem("fleet: unknown subcommand " + sub + " (start, crew, stop, nodes)")
 		return nil
 	})
 	r.Register("crew", "the crew control room: a crew run's workers, cards, providers, scope, faults and audit", nil, func(a *App, arg string) tea.Cmd {

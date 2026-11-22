@@ -2,9 +2,11 @@ package fleet
 
 import (
 	"os"
+	"time"
 
 	"github.com/vulnetix/belai/internal/agentprofile"
 	"github.com/vulnetix/belai/internal/budget"
+	"github.com/vulnetix/belai/internal/kanban"
 	"github.com/vulnetix/belai/internal/sessionsync"
 )
 
@@ -24,6 +26,8 @@ type Limits struct {
 	// Price is what PriceModel costs (any model when PriceModel is empty).
 	Price      *budget.Price
 	PriceModel string
+	// Lease replaces the profile's claim lease, within the board's bounds.
+	Lease string
 }
 
 // LimitsFrom converts a dispatched worker budget, cleaned; nil for none.
@@ -37,6 +41,9 @@ func LimitsFrom(b *sessionsync.WorkerBudget) *Limits {
 		MaxContinuations: c.MaxContinuations, MaxAttempts: c.MaxAttempts,
 		MaxWallPerItem: c.MaxWall, MaxPassesPerItem: c.MaxPasses, MaxTokensPerItem: c.MaxTokens,
 		MaxIterations: c.MaxIterations,
+	}
+	if d, err := time.ParseDuration(c.Lease); err == nil {
+		l.Lease = min(max(d, kanban.MinLease), kanban.MaxLease).String()
 	}
 	if p := c.Price; p != nil {
 		l.Price = &budget.Price{Input: p.Input, Output: p.Output, CacheRead: p.CacheRead, CacheWrite: p.CacheWrite}
@@ -79,8 +86,11 @@ func (l *Limits) Apply(p agentprofile.AgentProfile) agentprofile.AgentProfile {
 	if b != (agentprofile.BudgetSpec{}) {
 		p.Budget = &b
 	}
-	if p.Kanban != nil && (l.MaxAttempts > 0 || l.MaxContinuations > 0) {
+	if p.Kanban != nil && (l.MaxAttempts > 0 || l.MaxContinuations > 0 || l.Lease != "") {
 		k := *p.Kanban
+		if l.Lease != "" {
+			k.Lease = l.Lease
+		}
 		if l.MaxAttempts > 0 {
 			k.MaxAttempts = l.MaxAttempts
 		}

@@ -31,7 +31,7 @@ type Trigger struct {
 // Trigger sources and the ways a workflow is fired.
 var (
 	triggerSources = map[string]bool{"pix_call": true, "console": true, "finding": true, "pull_request": true,
-		"fleet": true, "workflow": true, "pix_assistant": true}
+		"fleet": true, "workflow": true, "pix_assistant": true, "keleustes": true, "node": true}
 	triggerVias = map[string]bool{"webhook": true, "cron": true, "manual": true, "kanban": true, "finding": true, "label": true, "firewall": true}
 )
 
@@ -164,6 +164,17 @@ func (t Trigger) Sentence() string {
 		return endSentence(b.String())
 	case "console":
 		b.WriteString("Started from the Vulnetix console")
+	case "keleustes":
+		b.WriteString("Started from the Keleustes console")
+		if t.Subject != "" {
+			b.WriteString(" (" + t.Subject + ")")
+		}
+	case "node":
+		// Another host asked Keleustes for this work (a cross-host dispatch).
+		b.WriteString("Started at the request of another host through Keleustes")
+		if t.Note != "" {
+			b.WriteString(" (" + t.Note + ")")
+		}
 	case "pix_assistant":
 		b.WriteString("Started from the Pix assistant")
 	case "finding":

@@ -43,6 +43,7 @@ import (
 	"github.com/vulnetix/belai/internal/deciderserver"
 	"github.com/vulnetix/belai/internal/decisionserver"
 	"github.com/vulnetix/belai/internal/explore"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/firewall"
 	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/forge"
@@ -635,6 +636,9 @@ type App struct {
 	// session sync (session_sync.go): the website mirror of the session file
 	// and the prompts it sends back. nil when sync is off or not logged in.
 	syncer *sessionsync.Syncer
+	// syncKeleustes is the syncer's backend when it mirrors to a Keleustes
+	// server instead of the website (startKeleustesSync); nil otherwise.
+	syncKeleustes *factorylink.SyncBackend
 	// turnErrNoted: the failing turn's error already went to the syncer.
 	turnErrNoted bool
 	// memRepl replicates the shared memory while sync is on.
@@ -644,6 +648,16 @@ type App struct {
 	syncNote    string                     // why sync is off, for /sync status
 	teleported  *Teleported                // set when this session was teleported in
 	remoteQueue []sessionsync.RemotePrompt // web prompts waiting for the host to be idle
+
+	// factoryNode runs (or watches) this host's link to a Keleustes server
+	// (connect.go, docs/keleustes.md). nil when not joined.
+	factoryNode *factorylink.Node
+	// factoryCtl carries the factory control states the link reports, to be
+	// shown on the next tick; factoryStop ends the board, memory and A2A
+	// streams to Keleustes (startKeleustesSync).
+	factoryCtl  chan factorylink.Control
+	factoryStop func()
+	factoryLast factorylink.Control
 
 	// context metering
 	summary       string            // compaction carrier; "" in a normal session
@@ -2512,6 +2526,9 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd, ok := a.handleRCMsg(msg); ok {
 		return a, cmd
 	}
+	if cmd, ok := a.handleConnectMsg(msg); ok {
+		return a, cmd
+	}
 	if cmd, ok := a.handleKiroLoginMsg(msg); ok {
 		return a, cmd
 	}
@@ -2536,6 +2553,7 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Safety net for a turn that ended on a path that never persisted.
 		a.flushTurnEnd()
 		a.a2aSyncSession()
+		a.showFactoryControl()
 		if a.armed.kind != armNone && time.Now().After(a.armed.until) {
 			a.disarm()
 		}
@@ -2715,6 +2733,9 @@ func (a *App) update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case locateReportMsg:
 		a.addSystem(m.text)
 		return a, nil
+	case fleetRemoteMsg:
+		a.addSystem(m.text)
+		return a, m.next
 	case localModelReportMsg:
 		switch a.view {
 		case viewProviderDetail:

@@ -19,6 +19,10 @@ host then fetches. Without it (and without `teleport.push: allow` in your own
 settings) the changes are sent as a patch and replayed here
 ([Code](#code)).
 
+A host joined to [Keleustes](keleustes.md) teleports through Keleustes instead
+of the website, and `-teleport` then takes a Keleustes teleport id
+([Keleustes](#keleustes)).
+
 ## What moves
 
 The session transcript, the JSONL that session sync already mirrors to the
@@ -150,6 +154,81 @@ symbolic link, a path that is not plain ASCII, and anything git ignores. They ar
 listed by name and reason on the target, so the session knows what to recreate
 by hand. A patch over 512 KiB or over 200 files is not sent, and the target is told why.
 
+## Keleustes
+
+While the host has an active Keleustes profile that is not revoked, a teleport
+goes through Keleustes and never touches the website. Keleustes holds no copy
+of a session's code and runs no website-style coordination, so the origin
+host sends everything the target needs as one **bundle**, which Keleustes
+stores and hands to the target node.
+
+### Starting one
+
+- **From Keleustes.** Keleustes sends the origin node a `teleport` job
+  (`{"task": "teleport_upload", "teleportId", "sessionId", "toNode"}`). The
+  origin's `belai rc` answers it ([Jobs](keleustes.md#teleport)): it refuses a
+  session its own store does not hold, or one that ran in a directory it does
+  not offer, and otherwise uploads the bundle under that teleport id. A host
+  that owns the link without taking work (a TUI, `belai connect serve`)
+  refuses the job, and the teleport fails in Keleustes.
+- **From the origin host.** `belai -teleport <session-id> -teleport-to <node-id>`
+  bundles a session of this host (a full id or a unique prefix) and uploads it
+  for that node, then prints the teleport id and exits. The session's directory
+  must be one you trusted.
+
+Either way the target host runs, from a checkout of the same repository:
+
+```
+belai -teleport <teleport-id>
+```
+
+### The bundle
+
+The bundle is gzip-compressed JSON (format `belai.teleport.v1`):
+
+| Field | What it holds |
+| --- | --- |
+| `sessionId`, `title` | the origin session's id and display name |
+| `entries` | every line of the session, from the origin host's own session store, numbered 0..n-1 |
+| `git` | the origin's repository facts: remote, host, branch, the full commit id, detached, dirty |
+| `code` | the session's uncommitted and unpushed changes as a replay (patch, base, tree, file list, the `teleport_distill` hand-over), or none with the reason |
+
+The code half is collected by the same rules as a website teleport
+([Code](#code)): credential files, binaries, oversized files, links, non-ASCII
+paths and anything git ignores never leave the origin, a patch over 512 KiB
+or 200 files is not sent, and the reason travels instead. Nothing is pushed
+to the forge: the bundle carries the patch, so a Keleustes teleport is always
+a replay, and `-teleport-push` has no effect. No agent profile, crew,
+provider, credential or setting travels. A session that ran under a profile
+this host lacks continues under the default agent, and says so.
+
+The origin uploads the bundle with `Teleport.Upload`: the first part carries
+the header (this node, the target node, the session, the title, the size and
+the SHA-256), the bytes follow in 256 KiB parts, and the final part is marked
+last. Keleustes checks the size against the header and its own 256 MiB cap,
+hashes the bytes as they arrive and refuses a bundle whose SHA-256 differs.
+It keeps the bundle until the teleport expires (seven days by default), and
+`Teleport.Download` hands it only to the node it is addressed to.
+
+### On the target
+
+`belai -teleport <teleport-id>` checks that the directory is a git checkout,
+then downloads the bundle and refuses it whole unless every part names that
+teleport, the header is addressed to this node, the declared size is within
+256 MiB, the stream ends on its last part with exactly that size, and the
+SHA-256 matches. The bundle is then read as untrusted content from another
+host, exactly like a website teleport's: its inflated size is bounded, its
+format must be `belai.teleport.v1`, its session must be the one the header
+names, the transcript is verified line by line and cleaned
+([How the transcript is treated](#how-the-transcript-is-treated)), the git facts
+are shape-checked and matched against this checkout, and the code half becomes
+a replay plan only if it passes the same checks. The replay then runs as in
+[Code](#code): a worktree at the base commit, git's own application of the
+closed-grammar patch, and this host's model in code mode with file tools only,
+reading the origin's hand-over as a classified `KindTeleport` attachment.
+Nothing is acknowledged: Keleustes records the delivery itself. A refusal
+leaves no session and no worktree behind.
+
 ## What the backend keeps
 
 A teleport row holds the origin session, origin host, target host, the new
@@ -181,7 +260,7 @@ audit log.
 - The replay needs the commit the changes build on in this repository (it is
   fetched from origin if missing). When that commit was never pushed, the
   teleport stops and says to push the branch from the origin host.
-- `-teleport-push` needs `-teleport`.
+- `-teleport-push` needs `-teleport`, and so does `-teleport-to`.
 - The command needs a terminal, and cannot be combined with `-resume`,
   `-continue` or `-prompt`.
 

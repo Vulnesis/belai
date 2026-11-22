@@ -150,6 +150,80 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   - **`AWS` output classifies.** Log events and bucket objects are text other
     parties wrote, so `AWS` is `KindRemote`. Explore and handoff subagents build
     their own registry, so their hub holds no facts and no credentials.
+- **A Keleustes vault grant stays in memory, scoped to its work.**
+  `factorylink.Grant` holds the provider keys a Keleustes `Dispatch` or `Job`
+  lends (docs/keleustes.md#vault-grants). It is never written, logged, put in an
+  error, an argv or the process environment, and formats without its values;
+  every value is concealed in `vaultenv`'s scrubber. It feeds one resolver's
+  provider secret fields only (`credentials.Resolver.UseGrant`: never a base URL
+  or any other variable, never the AI Firewall), reaches a dispatched session
+  only on an inherited pipe, and is dropped at expiry or when its session or job
+  ends. The one exception is a third-party harness session (`belai rc-harness`,
+  docs/harness-sessions.md#keys), and only by the owner's configured key mode,
+  passed as `-keys`: `own_login` (the default) drops the grant unread and hands
+  the harness nothing; `handoff` (a key the owner chose for that session) and
+  `always` (the provider's key for every session of that harness) set the
+  granted value in the harness child's environment only, never belai's own,
+  never a file, argv, log or the outbox, only under a name in the profile's
+  `grant_env` (`harness.GrantEnvName`: never a URL, endpoint, proxy, host or
+  loader variable), while the factory is not stopped (`harnessrun.HandOff`).
+  Belai forgets its copy once the child starts, the session ends when the grant
+  expires, every value stays concealed in the scrubber for the PTY stream and
+  the mirrored transcript, and each hand-off is audited with the grant id, mode
+  and names. Keleustes's board items, memory notes and A2A text classify exactly like
+  the website's (`KindKanban`, `KindRepoMemory`, `KindPeer`); a Keleustes
+  `github` job runs `gh` as a checked argv with no shell (`rc.checkGHArgs`),
+  and a `forge` job runs gh, glab or tea the same way against a closed flag
+  table with the host forced, never taken from an argument
+  (`forgejob.ParseForge`). A Keleustes dispatch's answer notes and a
+  one-off worker's prompt are admitted by the host's classifier and posture
+  before anything uses them (`rc.Options.AdmitText`), and the console
+  session actions (`rc/actions.go`) admit the summary, the handoff and an
+  edited handoff the same way; a handoff replaces a conversation only after a
+  person approves its `relay_review` ask. A resume or fork copies only a
+  session this host stored for the same project, replayed as it was admitted.
+  Do not add an exemption or a second path for any of them.
+- **Third-party harness sessions run on harness facts and stay untrusted.**
+  `belai rc-harness` (`internal/harnessrun`, docs/harness-sessions.md) runs
+  another vendor's TUI on a pseudo-terminal. These rules and the grant
+  exception above are the harness sessions' security sign-off (Keleustes
+  docs/gaps/harnesses.md, S1, written 2026-11-22); weakening any of them needs
+  a new sign-off.
+  - **Output is untrusted.** PTY bytes, native transcript text, hook payloads
+    and `--version` or `--help` output never reach a belai model except
+    through `SearchSessions`/`ReadSession` (`KindAgentStore`). They reach
+    Keleustes as data: the Screen view is a VT grid that drops OSC 52, OSC
+    0/2 and OSC 7 and shows OSC 8 links as text.
+  - **Every prompt typed is classified.** The dispatch prompt, a remote
+    prompt and an answer to a harness question pass `sync.remote_prompts`,
+    `CleanPrompt`, the kill switch and then the host's security classifier
+    and posture (`Config.Admit`, `rcHarnessAdmit`), the admission a cloud or
+    Keleustes prompt gets in a belai session, before `Neutralise` and the
+    PTY. No classifier refuses every prompt. The one line typed without it
+    is the harness-composed `NoticeLine`, which holds no peer text; peer text
+    reaches the harness only as the bridge's `inbox` tool result after
+    `KindPeer`. Keys come only from the profile's `keys.allow`.
+  - **The argv is the profile's.** Only validated placeholders reach the
+    command line (`harness.Launch.Build`); the model id is shape-checked and
+    never flags are refused twice. A profile is launchable when its facts
+    were checked on an installed binary: a host-checked (`H`) profile pins
+    the version it was checked on (`min_version`, a generator rule), and a
+    vendor-docs (`M`) profile launches only after `Launch.CheckInstall` finds
+    every flag it can pass in the installed binary's own help
+    (`harnessdetect`). A probed version below the pin, or one that cannot be
+    read, is not launched. The generator also refuses a `grant_env` name
+    that tools.json does not record for that harness or a provider service.
+  - **Config is isolated.** belai writes only its per-session MCP and hook
+    files under `~/.vulnetix/belai/harness/<sid>/` (0700, removed at the
+    end), never edits the harness's user or project config, and reads native
+    transcripts `O_RDONLY` without following a symlink out of their root.
+  - **No sandbox, disclosed.** The harness runs with the user's rights, like
+    a terminal the user opened; belai's sandbox and Landlock do not wrap it,
+    and Keleustes shows the harness's own mode.
+  - **Audit holds hashes and ids.** Each start, queued, typed, refused or
+    failed prompt, key, A2A envelope, hand-off and stop is a `host.dispatch`
+    fact; a prompt is recorded as the SHA-256 prefix of its neutralised text
+    (`hash`), never its text, with its origin and the classifier verdict.
 - **Knowledge is classified once, at ingestion, and a search calls no model.**
   `internal/knowledge` indexes an agent profile's listed documents, the
   project's `.vulnetix` output and a session's `@` files for `Grep`, `Glob` and

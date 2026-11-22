@@ -75,6 +75,7 @@ const audit = [
   ['host.dispatch', 'a request from the website (start, stop, worker, crew, pause, resume, profile_backup, profile_install, crew_backup, crew_install, avatar, item_backup, item_install, provider_keys_install, provider_keys_remove, mcp_secrets_install, mcp_secrets_remove, library_sync, library_scan, library_import, project_prefs, teleport_backup, teleport_code, steer, crew_control) and whether the host carried it out'],
   ['host.teleport', 'this host opened a session teleported in from another, naming the new session and the origin'],
   ['host.schedule', 'belai rc fired a stored schedule, skipped or was refused a run, or turned a schedule off'],
+  ['host.action.accepted · host.action.refused · host.action.needs_human · host.action.finished', 'belai rc accepted, refused, handed to a person or settled a Keleustes host action, with its origin and never a value'],
   ['worker.started · state · stopped', 'a worker started, was paused or resumed, and stopped'],
   ['worker.fault · fallback', 'a worker or item failed, named by its fault class, or a worker switched provider/model target'],
   ['crew.control', 'an operator or the harness paused, drained, re-modelled or re-scoped a running crew, or acted on its cards in bulk'],

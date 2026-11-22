@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/vulnetix/belai/internal/config"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/rc"
 	"github.com/vulnetix/belai/internal/tui/components"
 	"github.com/vulnetix/belai/internal/vulnetixcli"
@@ -113,9 +114,18 @@ func (a *App) rcCheck() tea.Cmd {
 			return rcChecksMsg{checks: rc.Checks{{Name: "Settings", Level: rc.Fail, Detail: err.Error()}}}
 		}
 		offered, _ := rc.Collect(extra, wd)
-		return rcChecksMsg{checks: rc.Preflight(context.Background(), rc.PreflightOptions{
-			Workdir: wd, Settings: settings, Dirs: offered,
-		})}
+		o := rc.PreflightOptions{Workdir: wd, Settings: settings, Dirs: offered}
+		// A host joined to Keleustes runs remote control for it, with no
+		// Vulnetix login (docs/keleustes.md#remote-control).
+		if home, err := config.GlobalDir(); err == nil {
+			if p, err := factorylink.Active(home); err == nil && p.Revoked == "" {
+				o.Factory = p.ServerName
+				if o.Factory == "" {
+					o.Factory = p.ServerID
+				}
+			}
+		}
+		return rcChecksMsg{checks: rc.Preflight(context.Background(), o)}
 	}
 }
 

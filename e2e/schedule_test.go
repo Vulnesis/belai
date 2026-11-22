@@ -101,6 +101,10 @@ func TestScheduledAgentRunsThroughTheDaemon(t *testing.T) {
 	// A clock the test moves forward, so "every minute" comes due at once.
 	var skew atomic.Int64
 	now := func() time.Time { return time.Now().Add(time.Duration(skew.Load())) }
+	// Start the clock ten seconds into a minute, so "every minute" is never due
+	// within the first look (a real clock a few ms before :00 would be).
+	intoMinute := time.Duration(time.Now().UnixNano() % int64(time.Minute))
+	skew.Store(int64((time.Minute + 10*time.Second - intoMinute) % time.Minute))
 
 	store := schedule.OpenAt(e.home + "/schedules.json")
 	rec, err := store.Add(schedule.Record{
@@ -142,7 +146,7 @@ func TestScheduledAgentRunsThroughTheDaemon(t *testing.T) {
 	if r, _ := store.Get(rec.ID); r.LastRunAt != 0 {
 		fail("fired before it was due: %+v", r)
 	}
-	skew.Store(int64(2 * time.Minute))
+	skew.Add(int64(2 * time.Minute))
 
 	waitUntil(t, 90*time.Second, func() bool { r, _ := store.Get(rec.ID); return r.LastStatus != "" }, "run recorded")
 	if r, _ := store.Get(rec.ID); r.LastStatus != schedule.StatusStarted {

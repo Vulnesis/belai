@@ -90,7 +90,11 @@ type Move struct {
 
 // Item is one card on the board.
 type Item struct {
-	ID    string // UUIDv4, unique across hosts
+	ID string // UUIDv4, unique across hosts
+	// Key is the backend's display key (a Keleustes card's "K-7f21"), "" when
+	// the backend has none. Only a pull sets it: the server's value is
+	// authoritative and the host never mints one.
+	Key   string
 	Title string
 	Body  string
 	List  List
@@ -184,6 +188,11 @@ type Item struct {
 	// The harness stores them; a pulled copy never carries or replaces them.
 	Clauses []Clause
 	Covers  []string
+
+	// ServerMeta is the backend's own JSON object for the item, kept verbatim
+	// and sent back on a push (a Keleustes card's meta_json). The harness
+	// never reads it; only a pull sets it.
+	ServerMeta string
 
 	// remoteAgent is set by FromWire when the pulled item carried the routing
 	// and claim fields. A backend that does not know them yet omits them, and
@@ -612,7 +621,7 @@ func (s *Store) Search(q Query) ([]Item, error) {
 				continue
 			}
 			if len(words) > 0 {
-				hay := strings.ToLower(it.Title + "\n" + it.Body + "\n" + it.Short() + "\n" + strings.Join(it.Labels, " "))
+				hay := strings.ToLower(it.Title + "\n" + it.Body + "\n" + it.Short() + "\n" + it.Key + "\n" + strings.Join(it.Labels, " "))
 				for _, m := range it.History {
 					hay += "\n" + strings.ToLower(m.Note)
 				}

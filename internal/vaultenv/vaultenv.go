@@ -26,6 +26,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/url"
 	"sort"
@@ -389,4 +390,32 @@ func (w *Writer) Close() error {
 	w.buf = nil
 	_, err := io.WriteString(w.w, text)
 	return err
+}
+
+// Conceal makes the scrubber hide value as [vault:NAME] in everything Belai
+// records, without granting it to any command: it is for a secret the process
+// holds for its own use (a provider key from a Keleustes vault grant), which
+// must never be injected but must never be written either. A value shorter
+// than MinLen is not concealed, as for Replace.
+func (s *Store) Conceal(name, value string) {
+	if name == "" || len(value) < MinLen {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.known == nil {
+		s.known = map[string]string{}
+	}
+	key := name
+	for i := 2; ; i++ {
+		prev, ok := s.known[key]
+		if !ok || prev == value {
+			break
+		}
+		key = fmt.Sprintf("%s#%d", name, i)
+	}
+	if s.known[key] != value {
+		s.known[key] = value
+		s.scrubber = nil
+	}
 }

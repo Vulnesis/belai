@@ -2,11 +2,13 @@ package rc
 
 import (
 	"os"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/provider"
 	"github.com/vulnetix/belai/internal/run"
 	"github.com/vulnetix/belai/internal/sessionsync"
@@ -160,4 +162,19 @@ func buildModels(s config.Settings, loadState func() (config.State, error), env 
 // means go ahead. It is checkOverride against this host's own models.
 func CheckModel(prov, model, effort string) string {
 	return checkOverride(prov, model, effort, LocalModels)
+}
+
+// checkGrantOverride is checkOverride for work that carries a Keleustes vault
+// grant: a provider the grant holds a key for needs no credentials on this
+// host, only values of the right shape.
+func checkGrantOverride(prov, model, effort string, models func() *sessionsync.RCModels, grant *factorylink.Grant) string {
+	if grant != nil && prov != "" && slices.Contains(grant.Providers(), strings.ToLower(prov)) {
+		for _, v := range []string{prov, model, effort} {
+			if !overrideOK(v) {
+				return "the model choice in that request is not valid"
+			}
+		}
+		return ""
+	}
+	return checkOverride(prov, model, effort, models)
 }

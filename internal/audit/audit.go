@@ -45,6 +45,16 @@ const (
 	HostSchedule      Kind = "host.schedule"
 	HostTeleport      Kind = "host.teleport"
 
+	// Keleustes host actions (internal/hostmgmt): an action this host accepted
+	// or refused, one handed to a person (needs root, needs a browser), and the
+	// final state (data.state done, failed or cancelled). They carry the action
+	// id, kind, class, the origin's identifiers and a digest of the params,
+	// never a value, an argv or output.
+	HostActionAccepted   Kind = "host.action.accepted"
+	HostActionRefused    Kind = "host.action.refused"
+	HostActionNeedsHuman Kind = "host.action.needs_human"
+	HostActionFinished   Kind = "host.action.finished"
+
 	WorkerStarted Kind = "worker.started"
 	WorkerState   Kind = "worker.state"
 	WorkerStopped Kind = "worker.stopped"
@@ -110,6 +120,7 @@ const (
 var kindScope = map[Kind]string{
 	HostFirstSeen: ScopeHost, HostVersionChange: ScopeHost, HostRCOnline: ScopeHost,
 	HostRCOffline: ScopeHost, HostDispatch: ScopeHost, HostSchedule: ScopeHost, HostTeleport: ScopeHost,
+	HostActionAccepted: ScopeHost, HostActionRefused: ScopeHost, HostActionNeedsHuman: ScopeHost, HostActionFinished: ScopeHost,
 	WorkerStarted: ScopeAgent, WorkerState: ScopeAgent, WorkerStopped: ScopeAgent,
 	WorkerFault: ScopeAgent, WorkerFallback: ScopeAgent, CrewControl: ScopeAgent,
 	CardClaimed: ScopeAgent, CardReleased: ScopeAgent, CardLeaseLapse: ScopeAgent,
@@ -179,6 +190,11 @@ var dataKeys = map[string]bool{
 	"id": true, "tool": true, // hazard.*: closed hazard identifiers joined by +, and the tool name
 	"candidate": true, "candidates": true, "met": true, "total": true, "tokens": true, // card.candidate and card.candidate_selected: the candidate's number, the count, the gates met of total, the tokens spent
 	"count": true, // egress.denied: how many connections the proxy has refused for the reason
+	// host.action.*: the action id, the origin's surface, run, workflow, plan and
+	// plan run ids and step, the sha256 of the params and of the preview, and
+	// the factory control state when it was stopped.
+	"action": true, "surface": true, "run": true, "workflow": true, "plan": true, "plan_run": true,
+	"step": true, "digest": true, "preview": true, "control": true,
 }
 
 // DataKeys lists the allowed Data keys, sorted.

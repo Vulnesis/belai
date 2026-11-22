@@ -35,6 +35,10 @@ type Control struct {
 	Target Target `json:"target,omitzero"`
 	Effort string `json:"effort,omitempty"`
 	Auto   bool   `json:"auto,omitempty"`
+	// Limits are budget caps a Software Factory budget push lowered (belai rc
+	// budget_update): the worker keeps the lower of each and its own, so a
+	// control can only tighten them, from the next item.
+	Limits *Limits `json:"limits,omitempty"`
 }
 
 // Ack statuses.
@@ -164,6 +168,10 @@ func (w *Worker) applyControl() {
 				w.pinned = true
 			}
 		}
+	}
+	if c.Limits != nil {
+		w.tightenLimits(c.Limits)
+		w.logf("control (%s): budget caps lowered from the next item", c.By)
 	}
 	if c.Auto {
 		w.pinned = false

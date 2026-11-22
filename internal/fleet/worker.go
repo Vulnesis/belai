@@ -117,8 +117,13 @@ type Worker struct {
 	// on the item's notes opens there; nil mirrors nothing. The mirror only
 	// uploads lines the transcript already wrote and takes no answers. It
 	// takes web prompts only when RemotePrompts is on.
-	Sync   *sessionsync.Client
-	mirror *sessionsync.Syncer
+	Sync *sessionsync.Client
+	// Factory, when set, is a Keleustes server the worker mirrors to instead
+	// of the website (docs/keleustes.md#sessions): the session backend, its
+	// memory and its audit streams. Prompts from it take the same
+	// CleanPrompt and classifier path as the website's.
+	Factory *FactorySync
+	mirror  *sessionsync.Syncer
 	// RemotePrompts lets the website type into this worker's session (a crew
 	// message arrives as one such prompt per worker). It is the user's own
 	// sync.remote_prompts switch; off, the worker takes nothing from the web.
@@ -401,7 +406,10 @@ func (w *Worker) Run(ctx context.Context) error {
 		}
 	}
 	w.logf("worker %s (%s) started in %s", w.Record.ID, p.Name, w.Repo)
-	if w.Sync != nil {
+	if w.Factory != nil {
+		defer w.startFactorySync()()
+	}
+	if w.Sync != nil && w.Factory == nil {
 		// The audit log goes where sync goes (docs/audit.md). Best effort: a
 		// worker that cannot open its stream still works.
 		if dir, err := config.GlobalDir(); err == nil {
@@ -423,11 +431,15 @@ func (w *Worker) Run(ctx context.Context) error {
 	}
 	// A no-op unless a Recorder is installed (sync on, or a test's).
 	w.auditWorker(audit.WorkerStarted, "started")
-	if w.Sync != nil && w.Sessions != nil {
-		w.mirror = sessionsync.New(sessionsync.Options{
+	if (w.Sync != nil || w.Factory != nil) && w.Sessions != nil {
+		opts := sessionsync.Options{
 			Client: w.Sync, HostID: headless.HostID(), RemotePrompts: w.RemotePrompts, RemoteCommands: w.Controls != nil,
 			Host: sessionsync.Host{Hostname: sessionsync.Hostname(), OS: runtime.GOOS, BelaiVersion: version.Version},
-		})
+		}
+		if w.Factory != nil {
+			opts.Client, opts.Backend = nil, w.Factory.Backend
+		}
+		w.mirror = sessionsync.New(opts)
 		// It outlives ctx long enough to upload the last lines and end the
 		// session on the website.
 		w.mirror.Start(context.Background())

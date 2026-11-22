@@ -50,6 +50,9 @@ type Inventory struct {
 	// Knowledge is the catalogue of this host's knowledge indexes: document
 	// facts only (knowledge.go).
 	Knowledge []sessionsync.RCKnowledge
+	// Plugins are the installed plugins: names and commits only
+	// (factorylibrary.go localPlugins), for the Keleustes advert.
+	Plugins []InvPlugin
 	// Prefs are the offered directories' project preferences, by path, read
 	// only with --web-project-settings (prefs.go).
 	Prefs map[string]DirPrefs
@@ -75,8 +78,9 @@ func (i Inventory) catalogueHash() string {
 		X []sessionsync.RCCommand
 		D *sessionsync.RCModels
 		K []sessionsync.RCKnowledge
+		G []InvPlugin
 		F map[string]DirPrefs
-	}{i.MaxWorkers, config.ReservedUnder(i.ReservedWorkers, i.MaxWorkers), i.Profiles, i.Crews, i.Agents, i.Items, i.Commands, i.Models, i.Knowledge, i.Prefs})
+	}{i.MaxWorkers, config.ReservedUnder(i.ReservedWorkers, i.MaxWorkers), i.Profiles, i.Crews, i.Agents, i.Items, i.Commands, i.Models, i.Knowledge, i.Plugins, i.Prefs})
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:8])
 }
@@ -132,6 +136,7 @@ func LocalInventory() Inventory {
 	inv.Agents = SessionAgents()
 	inv.Items = localInventoryItems()
 	inv.Commands = localInventoryCommands()
+	inv.Plugins = localPlugins()
 	inv.Models = LocalModels()
 	inv.Workers = localWorkers()
 	inv.Runs = localRuns()

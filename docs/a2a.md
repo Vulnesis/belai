@@ -219,12 +219,19 @@ de-duplicated by `messageId`, from the inbox poll's `a2a` items after
 `?a2aAfter=<seq>`. An envelope from this host, or older than an hour, is
 skipped. The cursor is host-wide (`relay.json`) and also takes the server's `a2aCursor`, which moves past envelopes the server held back from this host (its own, and direct messages to other hosts), so a poll that returns none still advances.
 
+A host joined to a Keleustes server relays there instead, through its
+`Board` service: `A2ASend` out, an `A2AReceive` stream per session in, and the
+blackout from the factory's control state ([Keleustes nodes:
+A2A](keleustes.md#a2a)). The relay, its filter and its audit are the same.
+
 ## A2A blackout
 
 The organisation's switch, next to the Software Factory kill switch. The
 server sends it as `controls.a2aBlackout` on session registration and
 heartbeat, on the rc heartbeat's answer, and as `blackout:true` on a relay
-post. The host records it in `a2a/blackout.json` for every process. While on:
+post. The host records it in `a2a/blackout.json` for every process. A
+Keleustes host takes it from the factory's control state instead
+([Factory control](keleustes.md#factory-control)). While on:
 
 - nothing is relayed in either direction, and the inbox asks for no `a2a`;
 - the local bus goes on, so agents on the host still coordinate;

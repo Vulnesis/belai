@@ -339,3 +339,18 @@ func (b *Bus) Cards() []CardRecord {
 	}
 	return out
 }
+
+// Inbound appends an envelope the relay received from another host. Unlike
+// Append (this process's own sends, which its node must not read back), the
+// envelope is also queued for this process's next Poll: the relay runs in
+// the same process as the session it delivers to.
+func (b *Bus) Inbound(env Envelope) (bool, error) {
+	wrote, err := b.Append(env)
+	if err != nil || !wrote {
+		return wrote, err
+	}
+	b.mu.Lock()
+	b.pending = append(b.pending, env)
+	b.mu.Unlock()
+	return true, nil
+}

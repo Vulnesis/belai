@@ -2,8 +2,12 @@ package main
 
 import (
 	"flag"
+	"os"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/vulnetix/belai/internal/sessionsync"
 )
 
 func TestParseClaim(t *testing.T) {
@@ -64,5 +68,37 @@ func TestAdhocFlagsBuildAWorkerOnlyWithAPrompt(t *testing.T) {
 	if !p.Ephemeral || p.SystemPrompt != "Fix it." || !reflect.DeepEqual(p.Tools, []string{"Read", "Edit"}) ||
 		!reflect.DeepEqual(p.Kanban.Labels, []string{"build"}) || p.Kanban.OnSuccess.List != "review" || p.PublishMode() != "none" {
 		t.Fatalf("profile %+v kanban %+v", p, p.Kanban)
+	}
+}
+
+// A prompt from belai rc arrives in the environment, never on argv, and is
+// unset once read so the workers the start launches do not inherit it.
+func TestPromptFromEnv(t *testing.T) {
+	t.Setenv(sessionsync.AdhocPromptEnv, "fix the build")
+	a, err := adhocFor(t, "-prompt-from-env", "-claim=todo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := a.profile()
+	if err != nil || p == nil {
+		t.Fatalf("profile = %v, %v", p, err)
+	}
+	if v, ok := os.LookupEnv(sessionsync.AdhocPromptEnv); ok {
+		t.Fatalf("prompt still in the environment: %q", v)
+	}
+	if !strings.Contains(p.SystemPrompt, "fix the build") {
+		t.Fatalf("prompt not taken from the environment: %q", p.SystemPrompt)
+	}
+	t.Setenv(sessionsync.AdhocPromptEnv, "")
+	if a, _ := adhocFor(t, "-prompt-from-env"); a.prompt != nil {
+		if _, err := a.profile(); err == nil {
+			t.Fatal("an empty environment prompt was accepted")
+		}
+	}
+	t.Setenv(sessionsync.AdhocPromptEnv, "x")
+	if a, _ := adhocFor(t, "-prompt-from-env", "-prompt=y"); a.prompt != nil {
+		if _, err := a.profile(); err == nil {
+			t.Fatal("-prompt with -prompt-from-env was accepted")
+		}
 	}
 }

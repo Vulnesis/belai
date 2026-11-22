@@ -86,7 +86,7 @@ func lookupPrefKey(key string) (prefKey, bool) {
 			return prefKey{kind: prefNumber, origin: "jev"}, true
 		}
 	}
-	return prefKey{}, false
+	return lookupRepoPrefKey(key)
 }
 
 // Flat returns the keys set in p.
@@ -142,6 +142,7 @@ func (p ProjectPrefs) Flat() map[string]any {
 			}
 		}
 	}
+	p.flatRepo(out)
 	return out
 }
 
@@ -221,6 +222,8 @@ func (p *ProjectPrefs) SetFlat(key string, v any) error {
 		p.LintLoop = &PrefsLintLoop{Enabled: &b}
 	default:
 		switch {
+		case isRepoPrefKey(key):
+			p.setRepoFlat(key, b)
 		case strings.HasPrefix(key, "lsp.languages."):
 			if p.LSP == nil {
 				p.LSP = &PrefsLSP{}
@@ -301,6 +304,8 @@ func (p *ProjectPrefs) UnsetFlat(key string) error {
 		p.LintLoop = nil
 	default:
 		switch {
+		case isRepoPrefKey(key):
+			p.unsetRepoFlat(key)
 		case strings.HasPrefix(key, "lsp.languages."):
 			if p.LSP != nil {
 				delete(p.LSP.Languages, strings.TrimPrefix(key, "lsp.languages."))

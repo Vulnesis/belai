@@ -30,6 +30,9 @@ func (r *Resolver) MCPSecret(server, key string) (string, error) {
 	if err := validMCPSecret(server, key); err != nil {
 		return "", err
 	}
+	if v, ok := grantedMCP(server, key); ok {
+		return v, nil
+	}
 	name := config.MCPCredentialName(server)
 	if v, ok, _ := r.userFile.read(name, key, mcpSpec(key)); ok {
 		return v.Reveal(), nil

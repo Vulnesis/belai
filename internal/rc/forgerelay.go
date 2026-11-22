@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/vulnetix/belai/internal/config"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/sessionsync"
 )
@@ -89,6 +90,24 @@ func (d *Daemon) relayForge(ctx context.Context) int {
 			if err != nil {
 				d.logf("forge request %s of %s dropped: %v", short(id), worker, err)
 				_ = os.Remove(path)
+				continue
+			}
+			if d.o.Factory != nil {
+				// Keleustes: the request alone; the bundle stays here.
+				dup, err := d.o.Factory.FileForge(ctx, req)
+				switch {
+				case errors.Is(err, factorylink.ErrForgeRefused):
+					d.logf("forge request %s refused by Keleustes; dropped", req.RequestID)
+					_ = os.Remove(path)
+				case err != nil:
+					if ctx.Err() == nil {
+						d.logf("forge request %s: %v (retrying)", req.RequestID, err)
+					}
+				default:
+					d.logf("forge request %s filed with Keleustes for %s%s", req.RequestID, worker, map[bool]string{true: " (already there)"}[dup])
+					_ = os.Remove(path)
+					filed++
+				}
 				continue
 			}
 			status, got, err := d.o.Client.FileForgeRequest(ctx, d.o.HostID, req)

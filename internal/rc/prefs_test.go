@@ -65,6 +65,43 @@ func TestProjectPrefsRequestWritesHostPrefsOnly(t *testing.T) {
 	}
 }
 
+// The host inventory reports an offered directory home-relative ("~/…"), and
+// Keleustes sends that path back: it names the same offered directory.
+func TestProjectPrefsRequestTakesHomeRelativeDir(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("BELAI_HOME", t.TempDir())
+	t.Setenv("VULNETIX_WEB_URL", "http://127.0.0.1:1")
+	if err := os.MkdirAll(filepath.Join(home, "src", "api"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	dir, err := Normalize(filepath.Join(home, "src", "api"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := sessionsync.NewClient("http://127.0.0.1:1", func() (string, error) { return "ApiKey o:k", nil }, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	d, err := New(Options{Client: client, HostID: "h", Dirs: []Dir{{Path: dir, Name: "api", Source: SourceArg}}, ProjectSettings: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, why := d.setProjectPrefs(sessionsync.Dispatch{Cwd: "~/src/api", PrefsSet: map[string]any{"caveman": true}}); why != "" {
+		t.Fatalf("refused: %s", why)
+	}
+	if p, _ := config.LoadProjectPrefs(dir); p.Caveman == nil || !*p.Caveman {
+		t.Fatalf("prefs = %+v", p)
+	}
+	// A home-relative path outside the offered directories is still refused.
+	if err := os.MkdirAll(filepath.Join(home, "other"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, why := d.setProjectPrefs(sessionsync.Dispatch{Cwd: "~/other", PrefsSet: map[string]any{"caveman": true}}); why == "" {
+		t.Fatal("an unoffered home-relative directory was taken")
+	}
+}
+
 func TestProjectPrefsRequestRefusals(t *testing.T) {
 	d, dir := prefsDaemon(t, true)
 	cases := []sessionsync.Dispatch{

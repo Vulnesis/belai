@@ -105,6 +105,19 @@ type SessionOptions struct {
 	// (config.Settings.ContextWindows), for the share each model would use.
 	Models         func() *sessionsync.RCModels
 	ContextWindows map[string]int
+	// History is the conversation a resumed or forked session continues
+	// (belai-counterparts #46): turns already admitted when they were first
+	// run, replayed as they were. nil starts fresh.
+	History []run.Turn
+	// Actions, with Controls, runs the console session actions (actions.go).
+	Actions *Actions
+	// Scripted, when set, answers the questions nobody on the web takes (a
+	// Keleustes dispatch's answers_json, admitted by the daemon): an
+	// unattended session asks nothing of a person.
+	Scripted func(clarify.Questionnaire) clarify.Answers
+	// PlanFile, when set, returns a plan file the session wrote (Keleustes
+	// plan_upload): called with its name and path when a plan turn ends.
+	PlanFile func(name, path string)
 }
 
 // CheckoutRunner switches a session's checkout to branch (gitsync
@@ -137,7 +150,7 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 	if o.Out == nil {
 		o.Out = io.Discard
 	}
-	var history []run.Turn
+	history := slices.Clone(o.History)
 	var prompts <-chan sessionsync.RemotePrompt
 	if o.Mirror.RemotePromptsEnabled() {
 		prompts = o.Mirror.Prompts()
@@ -196,6 +209,18 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 	// open is the plan review the web has not answered yet. It outlives the
 	// turn that wrote it and is answered while the session is idle.
 	var open *planReview
+	// relay is the relay_review ask open now (actions.go), and changed the
+	// paths the session changed since its last console commit.
+	var relay *relayReview
+	var changed []string
+	action := func(c sessionsync.RemoteCommand) {
+		st := runAction(ctx, o, c, actionState{history: history, relay: relay, changed: changed}, bridge)
+		history, relay, changed = st.history, st.relay, st.changed
+	}
+	closeOpen := func(why string) {
+		bridge.closePlanReview(open, why)
+		closeRelay(bridge, relay, why)
+	}
 	// retry is the turn a branch switch interrupted, run again before anything
 	// else waiting.
 	var retry *lastTurn
@@ -204,13 +229,13 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 	provenance := o.Provenance
 	for {
 		if ctx.Err() != nil {
-			bridge.closePlanReview(open, "the session stopped")
+			closeOpen("the session stopped")
 			return nil
 		}
 		var p sessionsync.RemotePrompt
 		var tp turnPlan
 		var planAnswers <-chan sessionsync.RemoteAnswer
-		if bridge != nil && open != nil {
+		if bridge != nil && (open != nil || relay != nil) {
 			planAnswers = o.Answers.Answers()
 		}
 		switch {
@@ -220,16 +245,24 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 		default:
 			select {
 			case <-ctx.Done():
-				bridge.closePlanReview(open, "the session stopped")
+				closeOpen("the session stopped")
 				return nil
 			case <-idle.C:
-				bridge.closePlanReview(open, "the session ended without an answer")
+				closeOpen("the session ended without an answer")
 				o.Log.System(fmt.Sprintf("remote session ended after %s without a prompt", o.Idle))
 				o.Mirror.Nudge()
 				return nil
 			case ans, ok := <-planAnswers:
 				if !ok {
 					planAnswers = nil
+					continue
+				}
+				if relay != nil && ans.AskID == relay.askID {
+					var settled bool
+					if history, settled = answerRelay(ctx, o, bridge, relay, ans, history); settled {
+						relay = nil
+					}
+					resetIdle()
 					continue
 				}
 				pa, accepted := bridge.answerPlanReview(open, ans)
@@ -274,6 +307,18 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 				if !ok {
 					commands = nil
 					continue
+				}
+				if c.Action != "" {
+					action(c)
+					resetIdle()
+					continue
+				}
+				if c.Signal != "" {
+					if !applySignal(o, c, false) {
+						continue
+					}
+					closeOpen("the session was stopped from the web")
+					return nil
 				}
 				if c.Checkout != "" {
 					runCheckout(ctx, o, c, "")
@@ -325,6 +370,15 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 				meta["command"] = p.Command
 			}
 			id := o.Log.User(text, meta)
+			if o.Actions != nil && o.Actions.Checkpoints != nil {
+				o.Actions.Checkpoints.BeginTurn(id, text)
+			}
+			// A handoff drafted before this prompt no longer describes the
+			// conversation.
+			if relay != nil {
+				closeRelay(bridge, relay, "the session moved on")
+				relay = nil
+			}
 			if p.ID != "" {
 				o.Mirror.Ack(p.ID, sessionsync.AckAccepted, "", id)
 			}
@@ -350,8 +404,14 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 		var reply run.Turn
 		var pending *sessionsync.RemoteCommand
 		interrupted := false
+		stopping := false
 		finished := func(res turnResult) {
 			reply = res.turn
+			for _, p := range res.paths {
+				if !slices.Contains(changed, p) && len(changed) < maxTurnPaths {
+					changed = append(changed, p)
+				}
+			}
 			if res.plan != nil {
 				// The turn wrote a plan and offered it for review. An
 				// older review that is still open is superseded by it.
@@ -385,6 +445,22 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 			case c, ok := <-commands:
 				if !ok {
 					commands = nil
+					continue
+				}
+				if c.Signal != "" {
+					if signalRefusal(o, c) != "" {
+						applySignal(o, c, true)
+						continue
+					}
+					cancelTurn()
+					finished(<-done)
+					interrupted = true
+					supersede()
+					stopping = applySignal(o, c, true)
+					break wait
+				}
+				if c.Action != "" {
+					actionWhileRunning(o, c)
 					continue
 				}
 				if c.Checkout == "" {
@@ -432,6 +508,10 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 			}
 		}
 		cancelTurn()
+		if o.Actions != nil && o.Actions.Checkpoints != nil {
+			o.Actions.Checkpoints.Seal()
+			publishCheckpoints(o)
+		}
 		if o.Controls != nil {
 			if err := o.Controls.Settle(); err != nil {
 				o.Log.System("web: the change could not be applied, the session keeps its previous setup: " + err.Error())
@@ -449,6 +529,10 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 		if pending != nil {
 			runCheckout(ctx, o, *pending, "")
 		}
+		if stopping {
+			closeOpen("the session was stopped from the web")
+			return nil
+		}
 		if !idle.Stop() {
 			select {
 			case <-idle.C:
@@ -464,7 +548,7 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 // repository must be ready for it now (CheckoutCheck).
 func checkoutRefusal(ctx context.Context, o SessionOptions, c sessionsync.RemoteCommand, check bool) string {
 	switch {
-	case c.Line != "" || c.Key != "" || c.Command != "" || c.Shell != "":
+	case c.Line != "" || c.Key != "" || c.Command != "" || c.Shell != "" || c.Action != "":
 		return "a branch switch is one branch name"
 	case o.Checkout == nil:
 		return "this session does not switch branches from the web"
@@ -667,6 +751,8 @@ type turnResult struct {
 	plan *planReview
 	// turnID is the id of the turn's turn_state lines.
 	turnID string
+	// paths are the files the turn's tools changed.
+	paths []string
 }
 
 // runTurn runs one turn between its turn_state lines.
@@ -704,6 +790,9 @@ func runTurn(ctx context.Context, o SessionOptions, history []run.Turn, text str
 			reviewMu.Unlock()
 			if !recorded {
 				o.Log.System("plan written: " + e.PlanPath)
+			}
+			if o.PlanFile != nil {
+				o.PlanFile(e.PlanName, e.PlanPath)
 			}
 		case agent.EventToolDiffKind:
 			// The changed paths, for auto-commit. Render-only facts: the diff
@@ -755,6 +844,8 @@ func runTurn(ctx context.Context, o SessionOptions, history []run.Turn, text str
 				var answers clarify.Answers
 				if asks && bridge != nil && (o.Controls == nil || o.Controls.Asks()) {
 					answers = bridge.clarify(ctx, e.Clarify, e.ModeChoice)
+				} else if o.Scripted != nil && e.Clarify != nil {
+					answers = o.Scripted(*e.Clarify)
 				}
 				select {
 				case e.Reply <- answers:
@@ -809,10 +900,46 @@ func runTurn(ctx context.Context, o SessionOptions, history []run.Turn, text str
 	opened := review
 	reviewMu.Unlock()
 	if err != nil {
-		return turnResult{plan: opened, turnID: turnID}
+		return turnResult{plan: opened, turnID: turnID, paths: paths}
 	}
 	if o.AfterTurn != nil && ctx.Err() == nil {
 		o.AfterTurn(ctx, text, res, paths)
 	}
-	return turnResult{turn: run.Turn{Role: "assistant", Content: res.Reply}, plan: opened, turnID: turnID}
+	return turnResult{turn: run.Turn{Role: "assistant", Content: res.Reply}, plan: opened, turnID: turnID, paths: paths}
+}
+
+// signalRefusal is why the session signal c cannot be taken, or "": the
+// session must take controls from the web (belai rc --web-controls), like
+// any other control, and the signal must be one the session knows.
+func signalRefusal(o SessionOptions, c sessionsync.RemoteCommand) string {
+	switch {
+	case c.Line != "" || c.Key != "" || c.Command != "" || c.Shell != "" || c.Checkout != "" || c.Action != "":
+		return "a session signal carries nothing else"
+	case o.Controls == nil:
+		return "this session takes no controls from the web"
+	case c.Signal != sessionsync.SignalStop && c.Signal != sessionsync.SignalInterrupt:
+		return "this session does not take that signal"
+	}
+	return ""
+}
+
+// applySignal acknowledges the session signal c, with a harness line in the
+// transcript. running says a turn was running and has been stopped. It
+// reports whether the session must now end (an accepted stop).
+func applySignal(o SessionOptions, c sessionsync.RemoteCommand, running bool) bool {
+	if why := signalRefusal(o, c); why != "" {
+		ackCheckout(o, c.ID, sessionsync.AckRefused, why)
+		return false
+	}
+	switch {
+	case c.Signal == sessionsync.SignalStop:
+		o.Log.System("web: the session was stopped")
+	case running:
+		o.Log.System("web: the running turn was interrupted")
+	default:
+		o.Log.System("web: interrupt: no turn was running")
+	}
+	o.Mirror.Nudge()
+	ackCheckout(o, c.ID, sessionsync.AckAccepted, "")
+	return c.Signal == sessionsync.SignalStop
 }

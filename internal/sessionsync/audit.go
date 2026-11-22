@@ -67,8 +67,20 @@ const (
 )
 
 // AuditOptions configures an AuditSyncer. Zero intervals take the defaults.
+// AuditBackend is where host audit streams go: the website (*Client) or a
+// Keleustes server (factorylink.AuditSink).
+type AuditBackend interface {
+	PutHost(ctx context.Context, hostID string, h Host) error
+	PutAuditStream(ctx context.Context, hostID, streamID string) (AuditCursor, error)
+	PostAudit(ctx context.Context, hostID, streamID string, events []audit.Event) (AuditCursor, error)
+}
+
+var _ AuditBackend = (*Client)(nil)
+
 type AuditOptions struct {
-	Client   *Client
+	Client *Client
+	// Backend, when set, is used instead of Client.
+	Backend  AuditBackend
 	HostID   string
 	Host     Host
 	Recorder *audit.Recorder
@@ -135,6 +147,14 @@ func NewAudit(opts AuditOptions) *AuditSyncer {
 // the stream file cannot be created: the audit is best effort and never stops the
 // work it would record. Close the result at exit.
 func StartAudit(ctx context.Context, c *Client, hostID string, h Host, stateDir string) *AuditSyncer {
+	if c == nil {
+		return nil
+	}
+	return StartAuditOn(ctx, c, hostID, h, stateDir)
+}
+
+// StartAuditOn is StartAudit to any backend (a Keleustes server, say).
+func StartAuditOn(ctx context.Context, c AuditBackend, hostID string, h Host, stateDir string) *AuditSyncer {
 	if c == nil || hostID == "" || stateDir == "" || audit.Enabled() {
 		return nil
 	}
@@ -144,7 +164,7 @@ func StartAudit(ctx context.Context, c *Client, hostID string, h Host, stateDir 
 	}
 	audit.SetDefault(rec)
 	audit.NoteHost(stateDir, h.BelaiVersion, h.OS, h.Hostname)
-	s := NewAudit(AuditOptions{Client: c, HostID: hostID, Host: h, Recorder: rec, StateDir: stateDir})
+	s := NewAudit(AuditOptions{Backend: c, HostID: hostID, Host: h, Recorder: rec, StateDir: stateDir})
 	s.Start(ctx)
 	return s
 }
@@ -284,13 +304,13 @@ func (s *AuditSyncer) step(ctx context.Context, t *auditTail, hostOK *bool, live
 		return nil
 	}
 	if !*hostOK {
-		if err := s.opts.Client.PutHost(ctx, s.opts.HostID, s.opts.Host); err != nil {
+		if err := s.backend().PutHost(ctx, s.opts.HostID, s.opts.Host); err != nil {
 			return err
 		}
 		*hostOK = true
 	}
 	if !t.registered {
-		cur, err := s.opts.Client.PutAuditStream(ctx, s.opts.HostID, t.id)
+		cur, err := s.backend().PutAuditStream(ctx, s.opts.HostID, t.id)
 		if err != nil {
 			return err
 		}
@@ -343,7 +363,7 @@ func (s *AuditSyncer) upload(ctx context.Context, t *auditTail) (*AuditCursor, e
 		if len(batch) == 0 {
 			return nil
 		}
-		cur, err := s.opts.Client.PostAudit(ctx, s.opts.HostID, t.id, batch)
+		cur, err := s.backend().PostAudit(ctx, s.opts.HostID, t.id, batch)
 		if err != nil {
 			return err
 		}
@@ -446,4 +466,12 @@ func (s *AuditSyncer) sweep(ctx context.Context, own string, hostOK *bool) error
 		}
 	}
 	return nil
+}
+
+// backend is the server the streams go to.
+func (s *AuditSyncer) backend() AuditBackend {
+	if s.opts.Backend != nil {
+		return s.opts.Backend
+	}
+	return s.opts.Client
 }

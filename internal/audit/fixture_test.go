@@ -96,6 +96,17 @@ func serverFixture(t *testing.T) *Recorder {
 		Data: map[string]string{"reason": "not_allowed", "count": "10"}})
 	emit(Fact{Kind: RunCap, ActorKind: ActorHarness, SessionID: session, Outcome: "extended",
 		Data: map[string]string{"reason": "cost", "passes": "4"}})
+	const action = "01900000-0000-7000-8000-000000000001"
+	emit(Fact{Kind: HostActionRefused, ActorKind: ActorHuman, Actor: "owner", Outcome: "refused",
+		Data: map[string]string{"action": action, "kind": "config_set", "class": "config", "surface": "fleet.host/config",
+			"reason": "factory-stopped", "control": "stopped"}})
+	emit(Fact{Kind: HostActionAccepted, ActorKind: ActorHuman, Actor: "owner", Outcome: "accepted",
+		Data: map[string]string{"action": action, "kind": "product_install", "class": "provision", "surface": "plan:p1",
+			"plan": "p1", "plan_run": "r1", "step": "1", "digest": strings.Repeat("a", 64), "preview": strings.Repeat("b", 64)}})
+	emit(Fact{Kind: HostActionNeedsHuman, ActorKind: ActorHarness, Outcome: "needs_human",
+		Data: map[string]string{"action": action, "kind": "product_install", "class": "provision", "reason": "needs_root"}})
+	emit(Fact{Kind: HostActionFinished, ActorKind: ActorHarness, Outcome: "done",
+		Data: map[string]string{"action": action, "kind": "product_install", "class": "provision", "state": "done"}})
 	return r
 }
 

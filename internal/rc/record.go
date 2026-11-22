@@ -27,6 +27,9 @@ type Record struct {
 	// Online: the website accepted the last heartbeat.
 	Online bool   `json:"online"`
 	Error  string `json:"error,omitempty"`
+	// Manage and ManageShell are --keleustes-manage and --keleustes-shell.
+	Manage      string `json:"keleustes_manage,omitempty"`
+	ManageShell bool   `json:"keleustes_shell,omitempty"`
 }
 
 // RunningSession is one session the daemon started.

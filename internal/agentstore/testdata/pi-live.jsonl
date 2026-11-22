@@ -1,0 +1,7 @@
+{"type":"session","version":3,"id":"p1","timestamp":"2026-11-21T10:00:00Z","cwd":"/w"}
+{"type":"model_change","id":"m0","timestamp":"2026-11-21T10:00:00Z","provider":"anthropic","modelId":"x"}
+{"type":"message","id":"m1","timestamp":"2026-11-21T10:00:01Z","message":{"role":"user","content":[{"type":"text","text":"list the crates"}]}}
+{"type":"message","id":"m2","timestamp":"2026-11-21T10:00:02Z","message":{"role":"assistant","content":[{"type":"toolCall","id":"tc","name":"bash","arguments":{"command":"ls"}}],"stopReason":"toolUse"}}
+{"type":"message","id":"m3","timestamp":"2026-11-21T10:00:03Z","message":{"role":"toolResult","toolName":"bash","content":[{"type":"text","text":"kls-core"}]}}
+{"type":"custom","id":"m4","timestamp":"2026-11-21T10:00:03Z","customType":"note","data":{}}
+{"type":"message","id":"m5","timestamp":"2026-11-21T10:00:04Z","message":{"role":"assistant","content":[{"type":"text","text":"kls-core"}],"stopReason":"stop","provider":"anthropic","model":"claude-x","usage":{"input":40,"output":3,"cacheRead":7}}}

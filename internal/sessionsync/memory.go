@@ -101,6 +101,8 @@ type MemoryReplicator struct {
 	root   string
 	every  time.Duration
 	wake   chan struct{}
+	// stateFile names the marks file; "" is memoryStateFile (the website).
+	stateFile string
 
 	mu      sync.Mutex
 	lastErr error
@@ -241,7 +243,7 @@ func (r *MemoryReplicator) Pull(ctx context.Context) error {
 
 func (r *MemoryReplicator) state() memoryState {
 	var st memoryState
-	data, err := os.ReadFile(filepath.Join(r.root, memoryStateFile))
+	data, err := os.ReadFile(filepath.Join(r.root, r.stateName()))
 	if err == nil {
 		_ = json.Unmarshal(data, &st)
 	}
@@ -263,5 +265,18 @@ func (r *MemoryReplicator) saveState(st memoryState) {
 		_ = os.Remove(tmp.Name())
 		return
 	}
-	_ = os.Rename(tmp.Name(), filepath.Join(r.root, memoryStateFile))
+	_ = os.Rename(tmp.Name(), filepath.Join(r.root, r.stateName()))
+}
+
+// UseStateFile keeps this replicator's marks in name under the memory root
+// instead of the website's. A host replicating to a Keleustes server keeps
+// its marks apart, so neither server's cursor is read as the other's. Call it
+// before Start.
+func (r *MemoryReplicator) UseStateFile(name string) { r.stateFile = name }
+
+func (r *MemoryReplicator) stateName() string {
+	if r.stateFile != "" {
+		return r.stateFile
+	}
+	return memoryStateFile
 }

@@ -74,6 +74,7 @@ type toolInfo struct {
 	ID    string              `json:"id"`
 	Name  string              `json:"name"`
 	Type  string              `json:"type"`
+	Env   []string            `json:"env"`
 	Paths map[string][]string `json:"paths"`
 }
 
@@ -112,16 +113,24 @@ func main() {
 	out := flag.String("out", "internal/harness/harnesses.json", "file to write")
 	overlayPath := flag.String("overlay", "tools/gen-harnesses/overlay.json", "hand-written overlay")
 	table := flag.String("table", "", "also write the markdown table for docs/harnesses.md here (- for stdout)")
+	launchPath := flag.String("launch", "tools/gen-harnesses/launch.json", "hand-written launch profiles")
 	flag.Parse()
-	if err := run(*cli, *overlayPath, *out, *table); err != nil {
+	if err := run(*cli, *overlayPath, *launchPath, *out, *table); err != nil {
 		fmt.Fprintln(os.Stderr, "gen-harnesses:", err)
 		os.Exit(1)
 	}
 }
 
-func run(cli, overlayPath, out, table string) error {
+func run(cli, overlayPath, launchPath, out, table string) error {
 	hs, ov, err := Build(cli, overlayPath)
 	if err != nil {
+		return err
+	}
+	env, err := ToolEnv(cli, ov)
+	if err != nil {
+		return err
+	}
+	if err := ApplyLaunch(hs, launchPath, env); err != nil {
 		return err
 	}
 	data, err := Marshal(hs)
@@ -553,16 +562,16 @@ func parseAgentDirs(file string) (map[string][]string, error) {
 // Table renders the supported harnesses for docs/harnesses.md.
 func Table(hs []harness.Harness, ov Overlay) string {
 	var b strings.Builder
-	b.WriteString("| ID | Name | Format | Source | Commands | Agents | Prompts | Skills | Documents | Hooks |\n")
-	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
+	b.WriteString("| ID | Name | Format | Source | Commands | Agents | Prompts | Skills | Documents | Hooks | Launch |\n")
+	b.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n")
 	for _, h := range hs {
 		src := "generated"
 		if o, ok := ov.Harnesses[h.ID]; ok && len(o.Dirs) > 0 {
 			src = "hand-written"
 		}
-		fmt.Fprintf(&b, "| `%s` | %s | `%s` | %s | %s | %s | %s | %s | %s | %s |\n", h.ID, h.Name, h.Format, src,
+		fmt.Fprintf(&b, "| `%s` | %s | `%s` | %s | %s | %s | %s | %s | %s | %s | %s |\n", h.ID, h.Name, h.Format, src,
 			cell(h.Dirs[harness.Command]), cell(h.Dirs[harness.Agent]), cell(h.Dirs[harness.Prompt]),
-			cell(h.Dirs[harness.Skill]), cell(h.Dirs[harness.Document]), cell(h.Dirs[harness.Hook]))
+			cell(h.Dirs[harness.Skill]), cell(h.Dirs[harness.Document]), cell(h.Dirs[harness.Hook]), launchCell(h.Launch))
 	}
 	return b.String()
 }

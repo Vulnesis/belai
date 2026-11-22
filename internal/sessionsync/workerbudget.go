@@ -15,15 +15,18 @@ import (
 // by. Everything in it is untrusted: Clean bounds every number and drops what
 // it cannot read.
 type WorkerBudget struct {
-	MaxCostUSD       float64      `json:"maxCostUsd,omitempty"`
-	FinalizeAt       float64      `json:"finalizeAt,omitempty"`
-	MaxContinuations int          `json:"maxContinuations,omitempty"`
-	MaxAttempts      int          `json:"maxAttempts,omitempty"`
-	MaxWall          string       `json:"maxWall,omitempty"`
-	MaxPasses        int          `json:"maxPasses,omitempty"`
-	MaxTokens        int          `json:"maxTokens,omitempty"`
-	MaxIterations    int          `json:"maxIterations,omitempty"`
-	Price            *WorkerPrice `json:"price,omitempty"`
+	MaxCostUSD       float64 `json:"maxCostUsd,omitempty"`
+	FinalizeAt       float64 `json:"finalizeAt,omitempty"`
+	MaxContinuations int     `json:"maxContinuations,omitempty"`
+	MaxAttempts      int     `json:"maxAttempts,omitempty"`
+	MaxWall          string  `json:"maxWall,omitempty"`
+	MaxPasses        int     `json:"maxPasses,omitempty"`
+	MaxTokens        int     `json:"maxTokens,omitempty"`
+	MaxIterations    int     `json:"maxIterations,omitempty"`
+	// Lease is how long a worker's claim holds without renewal (a Go
+	// duration); the worker clamps it to the board's bounds.
+	Lease string       `json:"lease,omitempty"`
+	Price *WorkerPrice `json:"price,omitempty"`
 }
 
 // WorkerPrice is one model's price in US dollars per million tokens.
@@ -86,6 +89,9 @@ func (b *WorkerBudget) Clean() *WorkerBudget {
 	}
 	if d, err := time.ParseDuration(b.MaxWall); err == nil && d > 0 {
 		c.MaxWall = min(d, MaxWorkerWall).String()
+	}
+	if d, err := time.ParseDuration(b.Lease); err == nil && d > 0 {
+		c.Lease = min(d, MaxWorkerWall).String()
 	}
 	if p := b.Price; p != nil && (p.Model == "" || priceModel.MatchString(p.Model)) {
 		ok := true

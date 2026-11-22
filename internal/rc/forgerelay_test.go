@@ -206,3 +206,31 @@ func TestRelayFilesSpooledForgeRequests(t *testing.T) {
 	}
 	mu.Unlock()
 }
+
+// WP-H: on a Keleustes host the relay files the request alone with
+// Keleustes and keeps the bundle here.
+func TestRelayFilesWithKeleustes(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("BELAI_HOME", home)
+	spoolRoot := t.TempDir()
+	ff := &fakeFactory{}
+	var logBuf strings.Builder
+	d, err := New(Options{Factory: ff, HostID: testHost, ForgeSpool: spoolRoot, Out: &logBuf})
+	if err != nil {
+		t.Fatal(err)
+	}
+	worker := "builder-1a2b"
+	spool := fleet.SpoolDir(spoolRoot, worker)
+	os.MkdirAll(spool, 0o700)
+	r := sessionsync.ForgeRequest{RequestID: "aaaaaaaaaaaaaaaa", ItemID: "7a1b2c00-0000-4000-8000-000000000000", WorkerID: worker,
+		Kind: "pull_request", RepoOwner: "acme", RepoName: "app", Branch: "belai/K-7a1b2c/a1", BaseSHA: strings.Repeat("a", 40),
+		HeadSHA: strings.Repeat("b", 40), BundleSHA256: strings.Repeat("c", 64), BundleBytes: 10, Title: "t", Failure: "auth"}
+	data, _ := json.Marshal(r)
+	os.WriteFile(filepath.Join(spool, r.RequestID+".json"), data, 0o600)
+	if n := d.relayForge(context.Background()); n != 1 || len(ff.forge) != 1 || ff.forge[0].RequestID != r.RequestID {
+		t.Fatalf("filed %d (%v); log:\n%s", n, ff.forge, logBuf.String())
+	}
+	if left, _ := os.ReadDir(spool); len(left) != 0 {
+		t.Errorf("spool left %d files", len(left))
+	}
+}

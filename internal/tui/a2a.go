@@ -14,6 +14,7 @@ import (
 	"github.com/vulnetix/belai/internal/agent"
 	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/config"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/filediff"
 	"github.com/vulnetix/belai/internal/posture"
 	"github.com/vulnetix/belai/internal/repomemory"
@@ -482,4 +483,31 @@ func (a *App) a2aNoteDiff(ch *filediff.Change) {
 		paths = append(paths, f.Path)
 	}
 	a.a2a.node.Broadcaster().AddFiles(paths...)
+}
+
+// a2aFactory attaches a relay through the joined Keleustes server to the A2A
+// node: outbound envelopes go by Board.A2ASend and inbound ones arrive on
+// Board.A2AReceive for this session (docs/keleustes.md#a2a). The blackout
+// comes from the factory's control state. It returns the stop func, or nil
+// when A2A is off.
+func (a *App) a2aFactory(ctx context.Context, r *factorylink.A2ARelay, hostID string) func() {
+	if a.a2a == nil {
+		return nil
+	}
+	node := a.a2a.node
+	relay := a2a.NewRelay(r, hostID, node.Bus(), node.Audit(), func() string { return node.Self().SessionID })
+	relay.OnBlackout = func(bool) { node.NotifyState() }
+	ctx, cancel := context.WithCancel(ctx)
+	go relay.Run(ctx)
+	go r.Receive(ctx, relay, func() string { return node.Self().SessionID })
+	a.a2a.relay = relay
+	node.SetRelay(relay)
+	return func() {
+		cancel()
+		node.SetRelay(nil)
+		if a.a2a != nil && a.a2a.relay == relay {
+			a.a2a.relay = nil
+		}
+		_ = r.Close()
+	}
 }

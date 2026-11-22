@@ -77,7 +77,7 @@ kanban.Board{Cursor: 7, Items: []kanban.Item{{
 
 When the format was version 1, `kanban.Encode` turned it into 519 bytes, and
 that capture is what the dumps below show. Today `Encode` writes version 5 and
-the same board is 1063 bytes, because `Item` has gained fields and the schema is
+the same board is 1086 bytes, because `Item` has gained fields and the schema is
 sent with every file (see [Size](#size)). The version 1 file is still valid: it
 is read, and its missing fields decode as zero. Here are the 519 bytes, with the
 sections marked.
@@ -173,8 +173,8 @@ The full specification is the Go package documentation for `encoding/gob`.
 
 | Board | Bytes |
 |---|---|
-| empty | 949: 6 header, 911 payload (the schema alone), 32 checksum |
-| the one-item example above | 1063 (519 when the format was version 1) |
+| empty | 972: 6 header, 934 payload (the schema alone), 32 checksum |
+| the one-item example above | 1086 (519 when the format was version 1) |
 | a typical item after that | roughly 150–600 more, mostly its text |
 
 The schema is written once per file, not once per item. Each `Encode`
@@ -206,6 +206,7 @@ type Board struct {
 // Item is one card on the board.
 type Item struct {
 	ID    string // UUIDv4, unique across hosts
+	Key   string // the backend's display key (Keleustes), set only by a pull
 	Title string
 	Body  string
 	List  List
@@ -260,6 +261,8 @@ type Item struct {
 	Clauses []Clause
 	Covers  []string
 
+	ServerMeta string // the backend's own JSON object, carried back on a push
+
 	remoteAgent bool // in memory only; gob never stores it
 
 	// Sync state. ServerVersion is the backend's version of the item (0 when
@@ -296,6 +299,7 @@ type List string // backlog | review | in_progress | blocked | done
 | Field | Meaning | Set by |
 |---|---|---|
 | `ID` | UUIDv4. It is unique across every host that syncs to the same account. The short form `K-3f9a2c` is its first six hex digits, derived and never stored. | the harness on `Add` |
+| `Key` | The backend's display key for the card (a Keleustes card's `K-7f21`), or empty for a backend that has none (the website). The server assigns it and it is authoritative: only a pull sets it, a newer local edit still takes it, and the host never makes one up. `KanbanSearch` matches it. It is not the short form above, which stays the harness's own reference. A file written before the field existed decodes it as empty; no version bump. | sync |
 | `Title` | One line, at most 200 runes. | model, user or web |
 | `Body` | Multi-line details, at most 4 KiB. | model, user or web |
 | `List` | The current list. | model, user or web |
@@ -332,6 +336,7 @@ type List string // backlog | review | in_progress | blocked | done
 | `Gates` | The card's acceptance gates, at most 8: each has an id (`G1`, `G2`, by position), a title, a kind (`runnable` or `manual`), for a runnable gate the detected suite it references (plus, for a Go suite, a package directory and a test name), a state (`unmet`, `met` or `abandoned`), the commit the state was decided at, and a one-line note. See [acceptance gates](fleet.md#acceptance-gates). A pulled copy never carries or replaces them. | the harness (`Add`, `SetGate`) |
 | `Clauses` | The independently omittable parts of a request card, at most 12, each with an id (`C1`, `C2`, by position) and a one-line text of at most 160 characters. See [request coverage](fleet.md#request-coverage). A pulled copy never carries or replaces them. | the harness (`SetClauses`) |
 | `Covers` | On a handed-off card, the clause ids of its parent it covers. Each must be one of the parent's clauses. | the harness (`Add`) |
+| `ServerMeta` | The backend's own metadata for the card as a JSON object of at most 16 KiB (a Keleustes card's `meta_json` without the host's `belai` part), kept verbatim and sent back on every push so the host never drops what the server keeps there. The harness never reads it; only a pull sets it, and anything that is not a JSON object is dropped. Empty for the website. | sync |
 | `remoteAgent` | Not stored (unexported). Set on a pulled item that carried the `agent` block, so a backend that predates it cannot clear the local routing and claim. | sync |
 | `ServerVersion` | The backend's version of the item, or 0 if it has never been pushed. | sync |
 | `Dirty` | A local change not yet pushed. | local writes; cleared by sync |
@@ -554,6 +559,7 @@ Sync sends items as JSON (`sessionsync.KanbanItem`), converted by
 | Go field (`Item`) | JSON field | Notes |
 |---|---|---|
 | `ID` | `id` | |
+| `Key` | `key` | Omitted when empty. Only a pull sets it; the server's value wins (a newer local edit keeps its fields but takes the key). The website sends none. |
 | `Title` | `title` | |
 | `Body` | `body` | |
 | `List` | `list` | |
@@ -568,6 +574,7 @@ Sync sends items as JSON (`sessionsync.KanbanItem`), converted by
 | `History` | `history` | Each `Move` becomes `{id, from, to, at, sessionId, note}`. |
 | `ServerVersion` | `version` | |
 | `Deleted` | `deleted` | |
+| `ServerMeta` | `meta` | The backend's own JSON object, omitted when empty, sent back as pulled. The website sends none. See [Keleustes](keleustes.md#board) for how the Keleustes backend maps the item onto a card. |
 | `Labels`, `Priority`, `Assignee`, `Parent`, `DependsOn`, `Hops` | `agent.labels`, `agent.priority`, `agent.assignee`, `agent.parent`, `agent.dependsOn`, `agent.hops` | Always sent. |
 | `PinHost` | `agent.pinHost` | A sync host id; the website may set or clear it. Only a worker on that host claims the item. |
 | `ClaimedBy`, `ClaimHost`, `ClaimFrom`, `LeaseUntil`, `Attempts`, `Bounces`, `Continuations`, `Branch`, `PR` | `agent.claimedBy`, `agent.claimHost`, `agent.claimFrom`, `agent.leaseUntil`, `agent.attempts`, `agent.bounces`, `agent.continuations`, `agent.branch`, `agent.pr` | The website may clear a claim, never set one. |

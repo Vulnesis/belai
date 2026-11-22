@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/sessionsync"
@@ -20,6 +21,22 @@ import (
 
 // maxPrefChanges caps the keys one request may touch.
 const maxPrefChanges = 128
+
+// homeAbs expands a home-relative directory ("~/src/api"), the form the host
+// inventory reports offered directories in (products.HomeRel) and so the one
+// Keleustes sends back. Anything else is returned as is; Allowed still decides
+// whether the result is an offered directory.
+func homeAbs(dir string) string {
+	rest, ok := strings.CutPrefix(dir, "~/")
+	if !ok && dir != "~" {
+		return dir
+	}
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return dir
+	}
+	return filepath.Join(home, rest)
+}
 
 // DirPrefs is one directory's preferences as advertised.
 type DirPrefs struct {
@@ -59,7 +76,7 @@ func (d *Daemon) setProjectPrefs(r sessionsync.Dispatch) (string, string) {
 	if !d.o.ProjectSettings {
 		return "", "this host does not let the website change project settings; start belai rc with --web-project-settings"
 	}
-	dir, ok := Allowed(d.dirs(), r.Cwd)
+	dir, ok := Allowed(d.dirs(), homeAbs(r.Cwd))
 	if !ok {
 		return "", "that directory is not offered by belai rc on this host"
 	}

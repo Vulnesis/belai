@@ -76,6 +76,9 @@ type Harness struct {
 	Aliases []string `json:"aliases,omitempty"`
 	// Dirs is keyed by kind (Command, Skill, Prompt, Agent, Document, Hook).
 	Dirs map[string]KindDirs `json:"dirs"`
+	// Launch is how belai runs the harness itself (belai rc-harness); nil
+	// when no profile is known.
+	Launch *Launch `json:"launch,omitempty"`
 }
 
 // All returns every known harness in a stable order.
@@ -115,4 +118,29 @@ func Expand(home, p string) string {
 		return filepath.Join(home, p[2:])
 	}
 	return p
+}
+
+// configDirEnv are harness config directories a variable may move: Claude
+// Code reads CLAUDE_CONFIG_DIR, Codex reads CODEX_HOME.
+var configDirEnv = []struct{ dir, env string }{{"~/.claude", "CLAUDE_CONFIG_DIR"}, {"~/.codex", "CODEX_HOME"}}
+
+// ExpandHarness is Expand, except that a path under a harness's default
+// config directory follows the variable that moves it (CLAUDE_CONFIG_DIR,
+// CODEX_HOME) when that names an absolute directory.
+func ExpandHarness(home, p string, getenv func(string) string) string {
+	if getenv != nil {
+		for _, c := range configDirEnv {
+			v := getenv(c.env)
+			if v == "" || !filepath.IsAbs(v) {
+				continue
+			}
+			if p == c.dir {
+				return filepath.Clean(v)
+			}
+			if rest, ok := strings.CutPrefix(p, c.dir+"/"); ok {
+				return filepath.Join(v, rest)
+			}
+		}
+	}
+	return Expand(home, p)
 }

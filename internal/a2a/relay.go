@@ -208,7 +208,7 @@ func (r *Relay) Deliver(items []sessionsync.A2AItem) {
 		if clean.TS > 0 && now.Sub(time.UnixMilli(clean.TS)) > maxRelayAge {
 			continue
 		}
-		_, _ = r.bus.Append(clean)
+		_, _ = r.bus.Inbound(clean)
 	}
 	r.mu.Lock()
 	if maxSeq > r.cursor {
