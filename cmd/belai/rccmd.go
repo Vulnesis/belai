@@ -616,6 +616,7 @@ func runRCSessionCLI(ctx context.Context, args []string, stdin io.Reader, stderr
 	resumeFlag := fs.String("resume", "", "continue this stored session of the project in the new session (a Keleustes resume; the daemon checked it)")
 	forkFlag := fs.String("fork", "", "with -resume, continue from this entry of it (a Keleustes fork)")
 	answersFlag := fs.String("answers", "", "answer the session's questions from this file (the daemon wrote it, its notes admitted); removed once read")
+	attachmentsFlag := fs.String("attachments", "", "the dispatched prompt's attachments, admitted by the daemon (a Keleustes dispatch); removed once read")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -682,7 +683,7 @@ func runRCSessionCLI(ctx context.Context, args []string, stdin io.Reader, stderr
 	}
 	pick := rcModelPick{Provider: *providerFlag, Model: *modelFlag, Effort: *effortFlag, Profile: *profileFlag,
 		Controls: *controls, AllowGuardrailsOff: *allowGuardrailsOff, Shell: *shell, Dirs: addDirs, Pix: pix, Grant: grant,
-		Resume: *resumeFlag, Fork: *forkFlag, Answers: *answersFlag}
+		Resume: *resumeFlag, Fork: *forkFlag, Answers: *answersFlag, Attachments: *attachmentsFlag}
 	if pix != nil && (pick.Resume != "" || pick.Answers != "") {
 		fmt.Fprintln(stderr, "belai rc-session: a pix-assistant session takes no -resume or -answers")
 		return 2
@@ -786,6 +787,9 @@ type rcModelPick struct {
 	// Resume and Fork are a Keleustes resume or fork of a stored session of
 	// this project (rcResume); Answers the file of admitted answers (-answers).
 	Resume, Fork, Answers string
+	// Attachments is the file of the dispatched prompt's admitted attachments
+	// (-attachments, row 53).
+	Attachments string
 }
 
 // rcAskDisabled is the AskDisabled a remote session without web controls is
@@ -1087,11 +1091,22 @@ func runRCSession(ctx context.Context, dispatch, sessionID string, mode modes.Mo
 		},
 		History: history,
 	}
+	if opts.Attachments, err = rc.ReadAttachmentsFile(pick.Attachments); err != nil {
+		return fmt.Errorf("read attachments: %w", err)
+	}
 	if answers != nil {
 		opts.Scripted = answers.answer
 	}
 	if keleustes != nil {
 		opts.PlanFile = func(name, path string) { rcPlanFile(tlog, name, path) }
+		// Row 53: a Keleustes prompt's attachments are admitted here with the
+		// host's classifier for this directory; the dispatched prompt's were
+		// admitted by the daemon.
+		opts.AdmitAttachments = func(ctx context.Context, raw []sessionsync.RemoteAttachment) ([]run.Attachment, error) {
+			return rc.AdmitAttachments(ctx, raw, func(ctx context.Context, subject, text string) (string, error) {
+				return rcAdmitText(ctx, cwd, subject, text)
+			})
+		}
 	}
 	// File checkpoints back the console's undo and rewind: kept in a session
 	// with web controls, or one whose dispatch asked for them.

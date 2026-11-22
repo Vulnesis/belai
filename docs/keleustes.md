@@ -322,7 +322,7 @@ key=value`, once per key.
 
 A host lists the optional fields it applies in
 `Capabilities.dispatch_features` (`resume`, `fork`, `answers`, `gates`,
-`adhoc`, `plan_upload`, `session_actions`); Keleustes sends none to a host
+`adhoc`, `plan_upload`, `session_actions`, `attachments`); Keleustes sends none to a host
 that does not list them. None of them is read from a website request.
 
 - **Resume and fork** (`resume_session`, `fork_entry`, a `session` dispatch
@@ -363,6 +363,38 @@ that does not list them. None of them is read from a website request.
   the profile as `agentprofile.Ephemeral` does for the command line. The
   audit holds the prompt's hash and the tool names, never the prompt.
 
+### Attachments
+
+A Keleustes prompt (`Prompt.attachments`) and a `session` dispatch's first
+prompt (`Dispatch.attachments`) may carry files and images (feature
+`attachments`). They carry references only: a name, a media type, a SHA-256
+and a size. The bytes are read with `Sessions.FetchAttachment`, naming the
+inbox item or the dispatch that lists them; Keleustes serves only a hash that
+item or dispatch of this node lists, and nothing while the factory is paused
+or stopped. Every byte stream must match its listed size and hash.
+
+- **Caps** (both sides; `factorylink.CheckAttachments`): at most 8 per prompt
+  or dispatch; `image/png` or `image/jpeg` at most 8 MiB; `text/plain` (UTF-8,
+  no NUL byte) at most 64 KiB; 16 MiB in all. Anything else is refused.
+- **Admission** is the one a local `@` attachment gets
+  ([image-attachments.md](image-attachments.md)): an image through
+  `internal/imageguard` alone (decoded, bounded, re-encoded as a fresh PNG;
+  never the classifier), a text file through the host's classifier and
+  posture, as a prompt is admitted (`rc.AdmitAttachments`). One refusal refuses
+  the whole prompt (acked `refused`, with the cleaned reason) or the start;
+  refused bytes are never echoed.
+- **A dispatch's** attachments are read and admitted by the daemon, and the
+  admitted ones go to the session in a 0600 file (`-attachments`) that it reads
+  and removes; they ride the first turn only. **A later prompt's** are read by
+  the session's link and admitted by the session before its turn.
+- `belai rc` sessions take them. A terminal session and a fleet worker refuse a
+  prompt that carries any, saying so, rather than drop them; a harness session
+  and a pix-assistant session refuse a dispatch that carries any.
+- The transcript records a marker per attachment (name, kind, size), never the
+  bytes. Each prompt or start is audited `host.dispatch` (`attachments`,
+  `prompt_attachments`, or `..._refused`) with each attachment's media type,
+  size and hash prefix.
+
 ### Console session actions
 
 A session started with `--web-controls` also lists `compact`, `relay`,
@@ -371,7 +403,8 @@ A session started with `--web-controls` also lists `compact`, `relay`,
 never a typed line, and each is audited `host.dispatch` `session_action`
 with its outcome. While a turn runs only `rename` applies; the rest are
 refused with "stop the running turn first". While the factory is stopped
-only `undo` and `rewind` are taken, as they only put files back.
+only `undo` and `rewind` are taken, as they only put files and the
+conversation back and run no model.
 
 - `compact [focus]` summarises the conversation with the classifier model,
   admits the summary, and continues from it (a `summary` entry, so a resume
@@ -381,9 +414,20 @@ only `undo` and `rewind` are taken, as they only put files back.
   `PendingAsk.relay_json`). It needs ask on, so a person can answer. Only an
   `approve`, or an `edit` whose text is admitted again, replaces the
   conversation with the note; a new prompt closes the review.
-- `undo` and `rewind <id>` restore the files of the last checkpoint or of a
-  named one (file checkpoints, docs/checkpoints.md, are kept in such a
-  session). The session publishes its checkpoint list as a `checkpoints`
+- `undo` restores the files of the last checkpoint, as the TUI's `/undo`
+  does. `rewind <id>` is the TUI's `/rewind` with `both`: it restores the
+  files of the named checkpoint and returns the conversation to just before
+  that checkpoint's prompt (`session.RewindPoint`, the same choice the TUI
+  makes). The transcript stays append-only: a `branch` line parented to the
+  entry before the prompt, then a `system` line with `meta.kind` `rewind`
+  (the command id, checkpoint, entry ids, entries and prompts rewound, file
+  counts and safety checkpoint), and the next turn sees only the chain up to
+  that point. Keleustes reads each line's `parentId` and shows the lines off
+  the chain as rewound. A safety copy names no prompt, so a rewind to it
+  restores files only. The audit event carries `itemId` (the Keleustes inbox
+  item), `checkpoint`, `conversation`, the file counts and, for a rewound
+  conversation, `from`, `to`, `rewound` and `prompts`. File checkpoints
+  (docs/checkpoints.md) are kept in such a session. The session publishes its checkpoint list as a `checkpoints`
   transcript entry (ids, times, counts, the prompt's cleaned first line),
   which Keleustes shows as `SessionUpsert.checkpoints`.
 - `commit [message]` commits the files the session changed since its last
@@ -428,6 +472,16 @@ its kind's adapter behind `sync.<kind>`. A hook or an MCP server reaches a host
 only through such an explicit install, and Keleustes asks the owner to confirm
 it; `Library.Reconcile` never answers `install` for either. The advert's
 `inventory` lists the host's profiles and items by kind, name and hash.
+
+A profile may carry the files the agent was written around (Keleustes
+agent files): its document lists their paths and hashes and `LibraryDoc.files`
+carries the bytes. The daemon checks every one before the profile is saved
+(its hash, bounded UTF-8 text within 256 KiB a file, 32 files and 2 MiB, a path
+that keeps inside the profile's own directory, no private key or known
+token), then writes them into `~/.vulnetix/belai/profiles/files/<profile id>/`
+with `agentfiles.Install`, never into a repository. A Keleustes agent's file
+paths become its knowledge paths. The install is audited `host.dispatch`
+(`profile_files`) with the count and hash prefixes.
 
 The automatic sync runs in factory mode as a reconcile: every five minutes,
 while the factory is not stopped, the daemon sends the hashes of the profiles,

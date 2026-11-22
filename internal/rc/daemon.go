@@ -28,6 +28,7 @@ import (
 	"github.com/vulnetix/belai/internal/proc"
 	"github.com/vulnetix/belai/internal/repomemory"
 	"github.com/vulnetix/belai/internal/rolemanager"
+	"github.com/vulnetix/belai/internal/run"
 	"github.com/vulnetix/belai/internal/sanitize"
 	"github.com/vulnetix/belai/internal/schedule"
 	"github.com/vulnetix/belai/internal/session"
@@ -334,6 +335,9 @@ type Child struct {
 	// daemon (checkResume) and again by the child. AnswersPath is the 0600
 	// file holding the session's admitted answers (-answers), or "".
 	Resume, Fork, AnswersPath string
+	// AttachmentsPath is the 0600 file holding the first prompt's admitted
+	// attachments (-attachments, row 53), or "".
+	AttachmentsPath string
 	// Grant is a Keleustes vault grant for this session alone, or nil. It
 	// reaches the child on an inherited pipe (startChild), never in argv or the
 	// environment; its String shows no value.
@@ -1066,6 +1070,21 @@ func (d *Daemon) startGrant(r sessionsync.Dispatch, grant *factorylink.Grant) (s
 		}
 		answers = b
 	}
+	// Row 53: the first prompt's attachments, admitted as a local `@` one is.
+	var atts []run.Attachment
+	if len(r.Attachments) > 0 {
+		if pix {
+			return "", "a pix-assistant session takes no attachments"
+		}
+		actx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		a, err := AdmitAttachments(actx, r.Attachments, d.admitIn(cwd))
+		cancel()
+		if err != nil {
+			auditAttachments("", "attachments_refused", r.Attachments, err.Error())
+			return "", "an attachment was refused: " + clip(err.Error())
+		}
+		atts = a
+	}
 	options := gateIgnored(r.Options, cwd, r.ID)
 	d.mu.Lock()
 	if len(d.sessions) >= d.o.Max {
@@ -1114,6 +1133,16 @@ func (d *Daemon) startGrant(r sessionsync.Dispatch, grant *factorylink.Grant) (s
 		audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorWeb, SessionID: sid, Outcome: "answers",
 			Data: map[string]string{"dispatch": "session", "status": "answers", "digest": answersDigest(answers)}})
 	}
+	if atts != nil {
+		c.AttachmentsPath = d.attachmentsPath(sid)
+		if err := WriteAttachmentsFile(c.AttachmentsPath, atts); err != nil {
+			if c.AnswersPath != "" {
+				_ = os.Remove(c.AnswersPath)
+			}
+			return "", "could not start Belai: the attachments could not be written"
+		}
+		auditAttachments(sid, "attachments", r.Attachments, "")
+	}
 	if pix {
 		// An advisory session: the persona by its built-in name, git sync
 		// off, a short idle, and none of the host's web opt-ins (controls,
@@ -1129,6 +1158,9 @@ func (d *Daemon) startGrant(r sessionsync.Dispatch, grant *factorylink.Grant) (s
 	if err != nil {
 		if c.AnswersPath != "" {
 			_ = os.Remove(c.AnswersPath)
+		}
+		if c.AttachmentsPath != "" {
+			_ = os.Remove(c.AttachmentsPath)
 		}
 		return "", "could not start Belai: " + err.Error()
 	}
@@ -1147,6 +1179,9 @@ func (d *Daemon) startGrant(r sessionsync.Dispatch, grant *factorylink.Grant) (s
 		err := wait()
 		if c.AnswersPath != "" {
 			_ = os.Remove(c.AnswersPath)
+		}
+		if c.AttachmentsPath != "" {
+			_ = os.Remove(c.AttachmentsPath)
 		}
 		d.mu.Lock()
 		delete(d.sessions, sid)
@@ -1295,6 +1330,9 @@ func childArgs(c Child) []string {
 	}
 	if c.AnswersPath != "" {
 		args = append(args, "-answers", c.AnswersPath)
+	}
+	if c.AttachmentsPath != "" {
+		args = append(args, "-attachments", c.AttachmentsPath)
 	}
 	return args
 }

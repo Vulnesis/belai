@@ -116,6 +116,10 @@ way an image can be attached.
   directory or a non-image file, goes to the composer as text.
 - **From an editor.** An ACP `image` block is admitted by the same gate; see
   [ACP](acp.md#images) for its edge cases.
+- **From Keleustes.** An image on a Keleustes prompt or session dispatch
+  (PNG or JPEG, at most 8 MiB as sent) is admitted by the same gate, in the
+  `belai rc` session or its daemon; see
+  [keleustes.md](keleustes.md#attachments).
 - **At most eight images per prompt.** Further ones are rejected with that
   reason. Each image costs tokens on every round of the turn.
 - **A card, not pixels.** The composer chip and the transcript row show the

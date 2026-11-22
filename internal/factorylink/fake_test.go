@@ -55,6 +55,10 @@ type fakeKeleustes struct {
 	tele  teleState
 	// welcome is the control state the Welcome frame carries, if any.
 	welcome *nodev1.FactoryControl
+	// blobs are the attachments FetchAttachment serves, by hash (row 53),
+	// and fetches the requests it saw.
+	blobs   map[string][]byte
+	fetches []*nodev1.AttachmentRequest
 }
 
 func newFakeKeleustes(t *testing.T) *fakeKeleustes {

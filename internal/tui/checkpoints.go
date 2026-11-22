@@ -209,12 +209,8 @@ func (a *App) rewindEntry(info checkpoint.Info) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	for _, e := range entries {
-		if e.ID == info.Entry && e.Type == "user" && e.ParentID != "" {
-			return e.ID, true
-		}
-	}
-	return "", false
+	e, _, ok := session.RewindPoint(entries, info.Entry)
+	return e.ID, ok
 }
 
 // rewindRel renders a path the way the user knows it: relative to the working
@@ -240,20 +236,15 @@ func (a *App) rewindApply() tea.Cmd {
 	}
 	var entry session.Entry
 	if st.mode != rewindCode {
-		id, ok := a.rewindEntry(st.target)
-		if !ok {
-			a.rewind.err = "the conversation cannot return to this point"
-			return nil
-		}
 		entries, err := a.treeEntries()
 		if err != nil {
 			a.rewind.err = err.Error()
 			return nil
 		}
-		for _, e := range entries {
-			if e.ID == id {
-				entry = e
-			}
+		var ok bool
+		if entry, _, ok = session.RewindPoint(entries, st.target.Entry); !ok {
+			a.rewind.err = "the conversation cannot return to this point"
+			return nil
 		}
 	}
 	if st.mode != rewindConversation {

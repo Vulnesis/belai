@@ -203,3 +203,24 @@ func TestForkPathCopiesOnlyTheChain(t *testing.T) {
 		t.Fatal("unknown leaf accepted")
 	}
 }
+
+// RewindPoint returns to just before a user prompt that has an entry before
+// it; anything else (an unknown id, a reply, the first line) has no point.
+func TestRewindPoint(t *testing.T) {
+	es := []Entry{
+		{ID: "m", Type: "session_meta"},
+		{ID: "u1", Type: "user", ParentID: "m", Content: "first"},
+		{ID: "a1", Type: "assistant", ParentID: "u1", Content: "ok"},
+		{ID: "u2", Type: "user", ParentID: "a1", Content: "second"},
+		{ID: "u0", Type: "user", Content: "orphan"},
+	}
+	p, leaf, ok := RewindPoint(es, "u2")
+	if !ok || p.ID != "u2" || leaf != "a1" || p.Content != "second" {
+		t.Fatalf("RewindPoint(u2) = %+v %q %v", p, leaf, ok)
+	}
+	for _, id := range []string{"", "nope", "a1", "u0"} {
+		if _, _, ok := RewindPoint(es, id); ok {
+			t.Errorf("RewindPoint(%q) found a point", id)
+		}
+	}
+}

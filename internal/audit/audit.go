@@ -190,6 +190,11 @@ var dataKeys = map[string]bool{
 	"id": true, "tool": true, // hazard.*: closed hazard identifiers joined by +, and the tool name
 	"candidate": true, "candidates": true, "met": true, "total": true, "tokens": true, // card.candidate and card.candidate_selected: the candidate's number, the count, the gates met of total, the tokens spent
 	"count": true, // egress.denied: how many connections the proxy has refused for the reason
+	// host.dispatch session_action undo/rewind: the checkpoint id, whether the
+	// conversation was rewound, file counts restored/removed/left, the safety
+	// checkpoint id, and how many entries and prompts left the conversation.
+	"checkpoint": true, "conversation": true, "restored": true, "removed": true, "left": true,
+	"safety": true, "rewound": true, "prompts": true,
 	// host.action.*: the action id, the origin's surface, run, workflow, plan and
 	// plan run ids and step, the sha256 of the params and of the preview, and
 	// the factory control state when it was stopped.

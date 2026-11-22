@@ -185,13 +185,14 @@ var Node_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Sessions_Upsert_FullMethodName    = "/keleustes.node.v1.Sessions/Upsert"
-	Sessions_Append_FullMethodName    = "/keleustes.node.v1.Sessions/Append"
-	Sessions_End_FullMethodName       = "/keleustes.node.v1.Sessions/End"
-	Sessions_Inbox_FullMethodName     = "/keleustes.node.v1.Sessions/Inbox"
-	Sessions_Ack_FullMethodName       = "/keleustes.node.v1.Sessions/Ack"
-	Sessions_Audit_FullMethodName     = "/keleustes.node.v1.Sessions/Audit"
-	Sessions_AuditHead_FullMethodName = "/keleustes.node.v1.Sessions/AuditHead"
+	Sessions_Upsert_FullMethodName          = "/keleustes.node.v1.Sessions/Upsert"
+	Sessions_Append_FullMethodName          = "/keleustes.node.v1.Sessions/Append"
+	Sessions_End_FullMethodName             = "/keleustes.node.v1.Sessions/End"
+	Sessions_Inbox_FullMethodName           = "/keleustes.node.v1.Sessions/Inbox"
+	Sessions_Ack_FullMethodName             = "/keleustes.node.v1.Sessions/Ack"
+	Sessions_Audit_FullMethodName           = "/keleustes.node.v1.Sessions/Audit"
+	Sessions_AuditHead_FullMethodName       = "/keleustes.node.v1.Sessions/AuditHead"
+	Sessions_FetchAttachment_FullMethodName = "/keleustes.node.v1.Sessions/FetchAttachment"
 )
 
 // SessionsClient is the client API for Sessions service.
@@ -214,6 +215,11 @@ type SessionsClient interface {
 	// The highest line index the server holds for a host audit stream, so a
 	// host resumes after it (WP-C).
 	AuditHead(ctx context.Context, in *AuditStreamRequest, opts ...grpc.CallOption) (*AuditStreamHead, error)
+	// Row 53: the bytes of an attachment a prompt or a session dispatch of
+	// this node lists, in parts of at most 64 KiB. Only a hash that an inbox
+	// item of the node's session, or a dispatch to the node, lists is served;
+	// refused (failed_precondition) while the factory is paused or stopped.
+	FetchAttachment(ctx context.Context, in *AttachmentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AttachmentPart], error)
 }
 
 type sessionsClient struct {
@@ -303,6 +309,25 @@ func (c *sessionsClient) AuditHead(ctx context.Context, in *AuditStreamRequest, 
 	return out, nil
 }
 
+func (c *sessionsClient) FetchAttachment(ctx context.Context, in *AttachmentRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AttachmentPart], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Sessions_ServiceDesc.Streams[1], Sessions_FetchAttachment_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[AttachmentRequest, AttachmentPart]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Sessions_FetchAttachmentClient = grpc.ServerStreamingClient[AttachmentPart]
+
 // SessionsServer is the server API for Sessions service.
 // All implementations must embed UnimplementedSessionsServer
 // for forward compatibility.
@@ -323,6 +348,11 @@ type SessionsServer interface {
 	// The highest line index the server holds for a host audit stream, so a
 	// host resumes after it (WP-C).
 	AuditHead(context.Context, *AuditStreamRequest) (*AuditStreamHead, error)
+	// Row 53: the bytes of an attachment a prompt or a session dispatch of
+	// this node lists, in parts of at most 64 KiB. Only a hash that an inbox
+	// item of the node's session, or a dispatch to the node, lists is served;
+	// refused (failed_precondition) while the factory is paused or stopped.
+	FetchAttachment(*AttachmentRequest, grpc.ServerStreamingServer[AttachmentPart]) error
 	mustEmbedUnimplementedSessionsServer()
 }
 
@@ -353,6 +383,9 @@ func (UnimplementedSessionsServer) Audit(context.Context, *AuditBatch) (*Ok, err
 }
 func (UnimplementedSessionsServer) AuditHead(context.Context, *AuditStreamRequest) (*AuditStreamHead, error) {
 	return nil, status.Error(codes.Unimplemented, "method AuditHead not implemented")
+}
+func (UnimplementedSessionsServer) FetchAttachment(*AttachmentRequest, grpc.ServerStreamingServer[AttachmentPart]) error {
+	return status.Error(codes.Unimplemented, "method FetchAttachment not implemented")
 }
 func (UnimplementedSessionsServer) mustEmbedUnimplementedSessionsServer() {}
 func (UnimplementedSessionsServer) testEmbeddedByValue()                  {}
@@ -494,6 +527,17 @@ func _Sessions_AuditHead_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Sessions_FetchAttachment_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(AttachmentRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(SessionsServer).FetchAttachment(m, &grpc.GenericServerStream[AttachmentRequest, AttachmentPart]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Sessions_FetchAttachmentServer = grpc.ServerStreamingServer[AttachmentPart]
+
 // Sessions_ServiceDesc is the grpc.ServiceDesc for Sessions service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -530,6 +574,11 @@ var Sessions_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Inbox",
 			Handler:       _Sessions_Inbox_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "FetchAttachment",
+			Handler:       _Sessions_FetchAttachment_Handler,
 			ServerStreams: true,
 		},
 	},
