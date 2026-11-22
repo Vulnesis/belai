@@ -28,10 +28,11 @@ func sessionFile(t *testing.T, home, sid string) string {
 
 // transcriptEntry is one line of a belai session file.
 type transcriptEntry struct {
-	ID      string         `json:"id"`
-	Type    string         `json:"type"`
-	Content string         `json:"content"`
-	Meta    map[string]any `json:"meta"`
+	ID       string         `json:"id"`
+	ParentID string         `json:"parentId"`
+	Type     string         `json:"type"`
+	Content  string         `json:"content"`
+	Meta     map[string]any `json:"meta"`
 }
 
 func readTranscript(t *testing.T, path string) []transcriptEntry {
@@ -115,6 +116,73 @@ func TestKeleustesResumeForkAndActions(t *testing.T) {
 		t.Errorf("rewind without a checkpoint id was queued: %s", out)
 	}
 
+	// Rewind from the console (#45): a prompt writes the marker (a
+	// checkpoint), a later prompt follows it, and a rewind to the checkpoint
+	// puts the file back and returns the conversation to before that prompt,
+	// as the TUI's /rewind does.
+	k.kel("sessions", "command", sid, "ask", "on")
+	k.waitShow(sid, 60*time.Second, "answers on", func(v sessionView) bool { return v.Accepts != nil && v.Accepts.Answers })
+	k.kel("sessions", "prompt", sid, "please write the marker")
+	ask := k.waitShow(sid, 90*time.Second, "the marker's permission ask", func(v sessionView) bool {
+		return v.PendingAsk != nil && v.PendingAsk.Kind == "permission"
+	})
+	k.kel("sessions", "answer", sid, ask.PendingAsk.ID, "allow_once")
+	marker := filepath.Join(h.project, "marker.txt")
+	eventually(t, 60*time.Second, "the marker written", func() bool {
+		_, err := os.Stat(marker)
+		return err == nil
+	})
+	k.waitShow(sid, 60*time.Second, "the ask cleared", func(v sessionView) bool { return v.PendingAsk == nil })
+	k.kel("sessions", "prompt", sid, "one more thing")
+	// The reply to it ends its turn: actions run while the session is idle.
+	waitTranscript(t, k.kel, sid, 90*time.Second, func(tr string) bool {
+		i := strings.Index(tr, "one more thing")
+		return i >= 0 && strings.Contains(tr[i:], "mock reply")
+	})
+	var cp string
+	eventually(t, 60*time.Second, "the checkpoint listed on the upsert", func() bool {
+		var v struct {
+			Checkpoints []struct {
+				ID    string `json:"id"`
+				Label string `json:"label"`
+			} `json:"checkpoints"`
+		}
+		_ = json.Unmarshal([]byte(k.kel("sessions", "show", sid)), &v)
+		for _, c := range v.Checkpoints {
+			if strings.Contains(c.Label, "write the marker") {
+				cp = c.ID
+			}
+		}
+		return cp != ""
+	})
+	time.Sleep(time.Second)
+	k.kel("sessions", "command", sid, "rewind", cp)
+	eventually(t, 60*time.Second, "the marker removed by the rewind", func() bool {
+		_, err := os.Stat(marker)
+		return os.IsNotExist(err)
+	})
+	waitTranscript(t, k.kel, sid, 60*time.Second, func(tr string) bool {
+		return strings.Contains(tr, "console: rewind "+cp) && strings.Contains(tr, "the conversation returns to before")
+	})
+	var branch, prompt, rewound transcriptEntry
+	for _, e := range readTranscript(t, sessionFile(t, h.home, sid)) {
+		switch {
+		case e.Type == "branch":
+			branch = e
+		case e.Type == "user" && e.Content == "please write the marker":
+			prompt = e
+		case e.Type == "system" && e.Meta["kind"] == "rewind":
+			rewound = e
+		}
+	}
+	if branch.ID == "" || prompt.ID == "" || branch.ParentID != prompt.ParentID {
+		t.Errorf("branch = %+v, prompt = %+v: the conversation did not return to before the prompt", branch, prompt)
+	}
+	if rewound.ParentID != branch.ID || rewound.Meta["checkpoint"] != cp || rewound.Meta["prompt_entry"] != prompt.ID ||
+		rewound.Meta["source"] != "console" || rewound.Meta["prompts_rewound"] != float64(2) {
+		t.Errorf("the rewind's provenance line = %+v", rewound)
+	}
+
 	k.kel("sessions", "command", sid, "stop")
 	k.waitShow(sid, 60*time.Second, "session ended after stop", func(v sessionView) bool { return v.State == "ended" })
 
@@ -122,7 +190,7 @@ func TestKeleustesResumeForkAndActions(t *testing.T) {
 	old := readTranscript(t, sessionFile(t, h.home, sid))
 	var reply string
 	for _, e := range old {
-		if e.Type == "assistant" && strings.Contains(e.Content, "mock reply") {
+		if e.Type == "assistant" && strings.Contains(e.Content, "mock reply") && reply == "" {
 			reply = e.ID
 		}
 	}

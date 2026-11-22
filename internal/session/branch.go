@@ -236,6 +236,32 @@ func Target(e Entry) (leaf, prefill string, err error) {
 	return "", "", fmt.Errorf("pick a user message or a final assistant reply")
 }
 
+// RewindPoint is where a rewind to a file checkpoint returns the conversation:
+// the checkpoint's prompt (entryID, a user entry with an entry before it), the
+// entry the conversation continues from (the one before the prompt), and the
+// prompt's text, which goes back for editing. ok is false when the checkpoint
+// names no such prompt, so only the files can be put back. The TUI's /rewind
+// and the console's rewind (rc/actions.go) both decide with this.
+func RewindPoint(entries []Entry, entryID string) (prompt Entry, leaf string, ok bool) {
+	if entryID == "" {
+		return Entry{}, "", false
+	}
+	for _, e := range entries {
+		if e.ID != entryID {
+			continue
+		}
+		if e.Type != "user" || e.ParentID == "" {
+			return Entry{}, "", false
+		}
+		leaf, _, err := Target(e)
+		if err != nil || leaf == "" {
+			return Entry{}, "", false
+		}
+		return e, leaf, true
+	}
+	return Entry{}, "", false
+}
+
 // ForkPath copies the chain ending at leaf from one session into a new session
 // id, then records where it came from. The destination must not exist. The
 // source file is only read.

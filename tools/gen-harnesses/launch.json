@@ -164,6 +164,7 @@
     "keys": {"interrupt": "esc", "exit": ["ctrl-c", "ctrl-c"], "allow": ["enter", "esc", "up", "down", "tab"]},
     "quiet_ms": 1500,
     "never_flags": ["exec", "--skip-permissions-unsafe", "high", "medium"],
+    "grant_env": ["FACTORY_API_KEY"],
     "source": "docs.factory.com/reference/cli-reference"
   },
   "crush": {
@@ -195,6 +196,7 @@
     "keys": {"interrupt": "ctrl-c", "exit": ["/quit", "enter"], "allow": ["enter", "esc", "up", "down", "y", "n", "tab"]},
     "quiet_ms": 1500,
     "never_flags": ["--trust-all-tools", "--trust-tools", "--no-interactive"],
+    "grant_env": ["KIRO_API_KEY"],
     "source": "kiro.dev/docs/reference/cli-commands/"
   },
   "amazon-q": {
@@ -210,6 +212,7 @@
     "keys": {"interrupt": "esc", "exit": ["ctrl-c", "ctrl-c"], "allow": ["enter", "esc", "up", "down", "tab"]},
     "quiet_ms": 1500,
     "never_flags": ["-p", "--print", "--permission"],
+    "grant_env": ["AUGMENT_SESSION_AUTH"],
     "source": "docs.augmentcode.com/cli/reference"
   },
   "aider": {

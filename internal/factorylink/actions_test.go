@@ -48,6 +48,12 @@ func TestToCommandActions(t *testing.T) {
 	if a := acceptsFor(sessionsync.SessionMeta{}); len(a.GetControlsAllowed()) != 0 {
 		t.Errorf("a session without controls lists %v", a.GetControlsAllowed())
 	}
+	// A third-party harness session takes no console action: its conversation
+	// is the harness's own, so neither undo nor rewind is offered.
+	if a := acceptsFor(sessionsync.SessionMeta{Controls: true, Harness: "claude"}); slices.Contains(a.GetControlsAllowed(), "rewind") ||
+		slices.Contains(a.GetControlsAllowed(), "undo") {
+		t.Errorf("a harness session lists %v", a.GetControlsAllowed())
+	}
 }
 
 // A relay review ask carries its draft; a checkpoints line becomes the

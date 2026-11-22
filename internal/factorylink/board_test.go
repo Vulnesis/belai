@@ -309,17 +309,19 @@ func TestLinkRecordsFactoryControl(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the stopped prompt was not refused")
 	}
-	// A console action that starts work is refused while stopped; undo, which
-	// only puts files back, still arrives.
+	// A console action that starts work is refused while stopped; undo and
+	// rewind, which only put files and the conversation back and run no
+	// model, still arrive.
 	f.box("s1") <- &nodev1.InboxItem{Seq: 3, Id: "a1", SessionId: "s1", Body: &nodev1.InboxItem_Command{Command: &nodev1.Command{Name: "compact"}}}
 	f.box("s1") <- &nodev1.InboxItem{Seq: 4, Id: "a2", SessionId: "s1", Body: &nodev1.InboxItem_Command{Command: &nodev1.Command{Name: "undo"}}}
+	f.box("s1") <- &nodev1.InboxItem{Seq: 5, Id: "a3", SessionId: "s1", Body: &nodev1.InboxItem_Command{Command: &nodev1.Command{Name: "rewind", Args: []string{"c1"}}}}
 	in = sessionsync.Inbox{}
 	waitFor(t, "the action inbox", func() bool {
 		got, _ := be.InboxBatchA2A(context.Background(), "", "s1", 200*time.Millisecond, -1)
 		in.Commands = append(in.Commands, got.Commands...)
-		return len(in.Commands) > 0
+		return len(in.Commands) > 1
 	})
-	if len(in.Commands) != 1 || in.Commands[0].Action != "undo" {
+	if len(in.Commands) != 2 || in.Commands[0].Action != "undo" || in.Commands[1].Action != "rewind" || in.Commands[1].ActionArg != "c1" {
 		t.Fatalf("actions while stopped = %+v", in.Commands)
 	}
 	select {

@@ -531,6 +531,13 @@ func (d *Daemon) factoryStart(ctx context.Context, fd *nodev1.Dispatch, grant *f
 	default:
 		return "", "", fmt.Sprintf("unknown mode %q", sanitize.Ident(r.Mode, 32)), false
 	}
+	// Row 53: the first prompt's attachments, read and hash-checked here and
+	// admitted by startGrant before the child starts.
+	raw, why := d.factoryAttachments(ctx, fd)
+	if why != "" {
+		return "", "", why, false
+	}
+	r.Attachments = raw
 	sid, why = d.startGrant(r, grant)
 	failed = strings.HasPrefix(why, "could not start Belai") || strings.HasPrefix(why, "could not mint")
 	return sid, "", why, failed

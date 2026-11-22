@@ -118,6 +118,13 @@ type SessionOptions struct {
 	// PlanFile, when set, returns a plan file the session wrote (Keleustes
 	// plan_upload): called with its name and path when a plan turn ends.
 	PlanFile func(name, path string)
+	// Attachments are the dispatched prompt's files and images (a Keleustes
+	// dispatch, row 53), admitted by the daemon; they ride its first turn only.
+	Attachments []run.Attachment
+	// AdmitAttachments admits the attachments a later remote prompt carries
+	// (AdmitAttachments with the session's classifier). nil refuses every
+	// prompt that carries any.
+	AdmitAttachments func(ctx context.Context, raw []sessionsync.RemoteAttachment) ([]run.Attachment, error)
 }
 
 // CheckoutRunner switches a session's checkout to branch (gitsync
@@ -227,6 +234,8 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 	// provenance rides on the first turn that runs, which is the dispatched
 	// prompt's; a retry of that turn keeps it through its turnPlan.
 	provenance := o.Provenance
+	// firstAtts ride the dispatched prompt's turn, like its provenance.
+	firstAtts := o.Attachments
 	for {
 		if ctx.Err() != nil {
 			closeOpen("the session stopped")
@@ -355,6 +364,24 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 				}
 				continue
 			}
+			// A Keleustes prompt's attachments (row 53) are admitted before the
+			// prompt is recorded; one refusal refuses the prompt.
+			var admitted []run.Attachment
+			if len(p.Attachments) > 0 {
+				var err error
+				if o.AdmitAttachments == nil {
+					err = fmt.Errorf("this session takes no attachments")
+				} else {
+					admitted, err = o.AdmitAttachments(ctx, p.Attachments)
+				}
+				auditPromptAttachments(o.Dispatch, p, err)
+				if err != nil {
+					if p.ID != "" {
+						o.Mirror.Ack(p.ID, sessionsync.AckRefused, "an attachment was refused: "+clip(err.Error()), "")
+					}
+					continue
+				}
+			}
 			// A leading "/" or "!" is plain prompt text: a prompt is never a slash
 			// command or a shell command. Session controls and shell lines arrive on
 			// their own channel (Commands): controls typed and parsed by
@@ -368,6 +395,12 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 			}
 			if p.Command != "" {
 				meta["command"] = p.Command
+			}
+			if p.ID == "" && p.Origin == "" && firstAtts != nil {
+				admitted, firstAtts = append(firstAtts, admitted...), nil
+			}
+			if len(admitted) > 0 {
+				meta["attachments"] = attachmentMarkers(admitted)
 			}
 			id := o.Log.User(text, meta)
 			if o.Actions != nil && o.Actions.Checkpoints != nil {
@@ -385,7 +418,7 @@ func RunSession(ctx context.Context, o SessionOptions) error {
 			o.Mirror.Nudge()
 			// Output of the composer's shell lines since the last turn rides on this
 			// one, exactly once. The console's lines never get here.
-			attachments = shells.drain()
+			attachments = append(admitted, shells.drain()...)
 			tp.provenance, provenance = provenance, ""
 		}
 		last := lastTurn{text: text, meta: maps.Clone(meta), tp: tp, attachments: attachments}
