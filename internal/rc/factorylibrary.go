@@ -11,10 +11,14 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
+	"github.com/vulnetix/belai/internal/agentfiles"
 	"github.com/vulnetix/belai/internal/agentimport"
 	"github.com/vulnetix/belai/internal/agentprofile"
+	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/factorylink/nodev1"
+	"github.com/vulnetix/belai/internal/knowledge"
 	"github.com/vulnetix/belai/internal/libinstall"
 	"github.com/vulnetix/belai/internal/libitem"
 	"github.com/vulnetix/belai/internal/libscan"
@@ -47,6 +51,12 @@ type keleustesAgent struct {
 	Meta        struct {
 		BelaiMarkdown string `json:"belaiMarkdown"`
 	} `json:"meta"`
+	// Files are the files the agent carries (Keleustes agent files): their
+	// listed paths, hashes and sizes; the bytes arrive as LibraryDoc.files.
+	Files []struct {
+		Path   string `json:"path"`
+		SHA256 string `json:"sha256"`
+	} `json:"files,omitempty"`
 }
 
 // profileFromDoc reads a fetched profile document: belai markdown, or
@@ -66,6 +76,14 @@ func profileFromDoc(doc []byte) (agentprofile.AgentProfile, error) {
 	}
 	p := agentprofile.AgentProfile{Name: a.Name, DisplayName: a.DisplayName, Description: a.Description,
 		SystemPrompt: a.Prompt, Provider: a.Provider, Model: a.Model, Tools: a.Tools, Mode: agentprofile.ModeSingle}
+	// A Keleustes agent's files are documents it may search: their paths are
+	// its knowledge paths, resolved to the owned copies (agentfiles.Install).
+	for _, f := range a.Files {
+		if p.Knowledge == nil {
+			p.Knowledge = &agentprofile.KnowledgeSpec{}
+		}
+		p.Knowledge.Paths = append(p.Knowledge.Paths, f.Path)
+	}
 	return p, p.Validate()
 }
 
@@ -125,13 +143,30 @@ func (d *Daemon) libraryInstall(ctx context.Context, fd *nodev1.Dispatch, ref *n
 		if err != nil {
 			return "", "the profile is not valid here: " + reason(err.Error())
 		}
+		// The files the agent carries are checked whole before anything is
+		// saved, and written into the profile's own directory after.
+		files, why := profileFiles(doc.GetFiles())
+		if why != "" {
+			return "", why
+		}
 		if why := libinstall.Conflict(p, fd.GetOverwrite()); why != "" {
 			return "", why
 		}
 		if _, err := agentprofile.SaveReplacing(p); err != nil {
 			return "", "could not save the profile: " + reason(err.Error())
 		}
-		return "installed profile " + sanitize.Line(p.Name, 64), ""
+		if len(files) == 0 {
+			return "installed profile " + sanitize.Line(p.Name, 64), ""
+		}
+		saved, err := agentprofile.Load(p.Name)
+		if err != nil {
+			return "", "could not read the saved profile: " + reason(err.Error())
+		}
+		if err := agentfiles.Install(saved.ID, files); err != nil {
+			return "", "the profile's files are not ones this host will write: " + reason(err.Error())
+		}
+		auditProfileFiles(fd.GetId(), p.Name, files)
+		return fmt.Sprintf("installed profile %s, with %d file%s", sanitize.Line(p.Name, 64), len(files), plural(len(files), "", "s")), ""
 	}
 	if ref.GetKind() == "crew" {
 		c, err := crewFromDoc(body)
@@ -469,4 +504,50 @@ func (d *Daemon) factoryImport(ctx context.Context, fd *nodev1.Dispatch) (string
 		return "", "Keleustes did not take the " + string(kind) + ": " + reason(err.Error())
 	}
 	return fmt.Sprintf("imported %s %s from %s as version %d", kind, sanitize.Line(item.Name, 64), sanitize.Ident(harness, 40), stored.GetVersion()), ""
+}
+
+// profileFiles checks the files a profile document carries (Keleustes agent
+// files): each must come with its hash and match it, keep inside the
+// profile's own directory, be bounded text and hold no private key or known
+// token, within agentfiles' limits. One bad file refuses them all.
+func profileFiles(in []*nodev1.LibraryFile) ([]agentfiles.File, string) {
+	if len(in) == 0 {
+		return nil, ""
+	}
+	if len(in) > agentfiles.MaxFiles {
+		return nil, fmt.Sprintf("the profile carries more than %d files", agentfiles.MaxFiles)
+	}
+	total := 0
+	out := make([]agentfiles.File, 0, len(in))
+	for _, f := range in {
+		data := f.GetData()
+		switch {
+		case f.GetSha256() == "" || agentfiles.Sum(data) != f.GetSha256():
+			return nil, "a profile file does not match its hash"
+		case len(data) == 0 || len(data) > agentfiles.MaxFileBytes || !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0:
+			return nil, "a profile file is not bounded text"
+		case agentfiles.HoldsSecret(data):
+			return nil, "a profile file holds a private key or a token"
+		}
+		if _, ok := knowledge.OwnedRelPath(f.GetPath()); !ok {
+			return nil, "a profile file's path is not one this host keeps"
+		}
+		if total += len(data); total > agentfiles.MaxTotalBytes {
+			return nil, fmt.Sprintf("the profile's files are over %d bytes", agentfiles.MaxTotalBytes)
+		}
+		out = append(out, agentfiles.File{Path: f.GetPath(), Content: data, SHA256: f.GetSha256()})
+	}
+	return out, ""
+}
+
+// auditProfileFiles records the files an install wrote: paths' count and
+// each hash prefix, never a byte of them.
+func auditProfileFiles(dispatch, profile string, files []agentfiles.File) {
+	hashes := make([]string, 0, len(files))
+	for _, f := range files {
+		hashes = append(hashes, f.SHA256[:16])
+	}
+	audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorWeb, Outcome: "profile_files",
+		Data: map[string]string{"dispatch": "library_install", "status": "profile_files", "profile": sanitize.Line(profile, 64),
+			"files": fmt.Sprint(len(files)), "hashes": strings.Join(hashes, ","), "via": sanitize.Ident(dispatch, 64)}})
 }

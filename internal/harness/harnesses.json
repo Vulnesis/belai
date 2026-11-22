@@ -455,6 +455,9 @@
         ]
       },
       "quiet_ms": 1500,
+      "grant_env": [
+        "AUGMENT_SESSION_AUTH"
+      ],
       "never_flags": [
         "-p",
         "--print",
@@ -1720,6 +1723,9 @@
         ]
       },
       "quiet_ms": 1500,
+      "grant_env": [
+        "FACTORY_API_KEY"
+      ],
       "never_flags": [
         "exec",
         "--skip-permissions-unsafe",
@@ -2679,6 +2685,9 @@
         ]
       },
       "quiet_ms": 1500,
+      "grant_env": [
+        "KIRO_API_KEY"
+      ],
       "never_flags": [
         "--trust-all-tools",
         "--trust-tools",

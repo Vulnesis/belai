@@ -17,6 +17,7 @@ import (
 
 	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/config"
+	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/factorylink/nodev1"
 	"github.com/vulnetix/belai/internal/sanitize"
 	"github.com/vulnetix/belai/internal/session"
@@ -32,7 +33,7 @@ import (
 
 // factoryDispatchFeatures are the optional Dispatch fields this daemon applies,
 // advertised in Capabilities.dispatch_features so Keleustes sends no other.
-var factoryDispatchFeatures = []string{"resume", "fork", "answers", "gates", "adhoc", "plan_upload", "session_actions"}
+var factoryDispatchFeatures = []string{"resume", "fork", "answers", "gates", "adhoc", "plan_upload", "session_actions", "attachments"}
 
 // Bounds on the Keleustes-only fields.
 const (
@@ -82,6 +83,14 @@ func checkFactoryExtras(fd *nodev1.Dispatch, kind string) string {
 		return "a one-off worker names no profile"
 	case fd.GetAdhoc() != nil && len(fd.GetAdhoc().GetClaimLists()) > 1:
 		return "a one-off worker claims from one list"
+	case len(fd.GetAttachments()) > 0 && !session:
+		return "attachments apply to a session dispatch"
+	case len(fd.GetAttachments()) > 0 && fd.GetHarness() != "":
+		return "a harness session takes no attachments"
+	case len(fd.GetAttachments()) > 0:
+		if why := factorylink.CheckAttachments(fd.GetAttachments()); why != "" {
+			return why
+		}
 	}
 	return ""
 }
