@@ -64,6 +64,14 @@ skill-links:
 build:
     go build -ldflags '{{ ldflags }}' -o {{ binary }} {{ pkg }}
 
+# Build the vLLM broker (docs/broker.md) into bin/.
+broker-build:
+    go build -ldflags '{{ ldflags }}' -o {{ bin }}/belai-broker ./cmd/belai-broker
+
+# Run the vLLM broker from source: `just broker broker.yaml`.
+broker CONFIG="broker.yaml":
+    go run ./cmd/belai-broker serve -config "{{ CONFIG }}"
+
 # Prepare the embedded classifier models (download + convert + verify).
 # When `uv` is available this runs under `uv run --with torch --with
 # safetensors --with numpy` so no system Python setup is required.

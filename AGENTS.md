@@ -2099,9 +2099,25 @@ See [docs/development.md](docs/development.md) for the full local and QA workflo
   Any new place that writes a tool's output or a transcript line must pass it through
   `vaultenv.Default.Scrub` or `ScrubBytes`. See [docs/vault-env.md](docs/vault-env.md).
 
+- **The vLLM broker is a gateway, and its analytics are facts.**
+  `belai-broker` (`cmd/belai-broker`, `internal/broker`, docs/broker.md) builds
+  vLLM's argv from its validated config only (`vllm.Args`; `extra_args` cannot
+  set `--host`, `--port`, `--api-key`, `--model` or `--served-model-name`),
+  binds it to loopback, gives it a per-launch key through `VLLM_API_KEY` in its
+  environment and never in argv, and runs it with `proc.ScrubEnvKeeping` and the
+  operator's `pass_env`, in its own process group. Client keys are stored as
+  SHA-256 digests, and a config with none fails unless `allow_anonymous` is set.
+  Nonces are signed per client name (`noncegate.Issuer`), never stored, and a
+  block is judged by `delimiters.Gateway`, which shares `Egress`'s tag grammar:
+  do not add a second delimiter parser. `auto` canonicalises only a request
+  whose every block verified and otherwise strips nothing. An analytics row
+  holds ids, enums, counts and timings only, never a prompt, completion, header
+  or key, and `Recorder.Record` never blocks: a full buffer drops the row.
+
 ## Layout
 
 - `cmd/belai` — entrypoint.
+- `cmd/belai-broker`: the vLLM broker (`internal/broker`, docs/broker.md).
 - `internal/...` — library code, one package per concern.
 - `e2e/` — end-to-end tests that drive the built binary.
 - `docs/` — architecture, specs, and the development workflow.

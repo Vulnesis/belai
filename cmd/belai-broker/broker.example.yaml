@@ -1,0 +1,45 @@
+# belai-broker configuration. See docs/broker.md.
+#
+# Generate a client key and paste its digest below:
+#   belai-broker keygen
+listen: 0.0.0.0:8000
+# tls: {cert_file: /etc/belai-broker/tls.crt, key_file: /etc/belai-broker/tls.key}
+
+keys:
+  - name: belai
+    sha256: 0000000000000000000000000000000000000000000000000000000000000000
+
+max_body_bytes: 16777216   # 16 MiB
+ready_wait: 10m            # how long a request waits for vLLM to come up
+stream_usage: true         # ask vLLM for usage on every stream, hide it if the client did not
+
+vllm:
+  binary: vllm
+  model: Qwen/Qwen3.8-27B-AWQ
+  served_model_name: qwen3.8-27b
+  quantization: awq_marlin
+  dtype: float16
+  gpu_memory_utilization: 0.92
+  max_model_len: 4096
+  max_num_seqs: 16
+  enable_prefix_caching: true
+  port: 8001                 # loopback only; the broker is the front door
+  pass_env: [HF_TOKEN, HF_HOME, CUDA_VISIBLE_DEVICES]
+  extra_args: []
+  start: eager               # or on_demand (with optional idle_stop: 30m)
+  startup_timeout: 30m
+  stop_grace: 30s
+
+nonce:
+  secret_file: /var/lib/belai-broker/nonce.key   # created 0600 on first start
+  ttl: 24h
+  default_mode: auto         # observe | enforce | canonical | auto
+
+analytics:
+  driver: sqlite             # sqlite | postgres | none
+  dsn: /var/lib/belai-broker/analytics.db
+  # driver: postgres
+  # dsn_env: BELAI_BROKER_PG_DSN   # postgres://user:pass@host/db
+  buffer: 8192
+  batch_size: 256
+  flush_interval: 1s
