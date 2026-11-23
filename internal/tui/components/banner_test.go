@@ -7,6 +7,8 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
+
+	"github.com/vulnetix/belai/internal/brand"
 )
 
 func TestBannerPixViewNotEmpty(t *testing.T) {
@@ -172,5 +174,20 @@ func TestBannerCompactKeepsTagline(t *testing.T) {
 		if w := lipgloss.Width(l); w > 30 {
 			t.Fatalf("line is %d cells at width 30: %q", w, l)
 		}
+	}
+}
+
+// The pixel owl is gold under Vulnesis and teal under Vulnetix.
+func TestOwlColorsFollowTheBrand(t *testing.T) {
+	prev := brand.Current()
+	t.Cleanup(func() { brand.Set(prev) })
+
+	brand.Set(brand.Vulnetix)
+	if owlColors()['T'] != pixColors['T'] {
+		t.Fatal("Vulnetix must keep Pix's palette")
+	}
+	brand.Set(brand.Vulnesis)
+	if owlColors()['T'] != strixColors['T'] || strixColors['T'] == pixColors['T'] {
+		t.Fatal("Vulnesis must use Strix's palette")
 	}
 }

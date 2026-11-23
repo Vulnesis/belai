@@ -53,7 +53,28 @@ var pixColors = map[rune]lipgloss.Color{
 	'.': lipgloss.Color(""),
 }
 
-// Banner renders the Pix owl + wordmark.
+// strixColors is the Vulnesis owl's palette: the keleustes gold, ink and amber.
+var strixColors = map[rune]lipgloss.Color{
+	'#': lipgloss.Color("#05080D"),
+	'T': lipgloss.Color("#FFC400"),
+	't': lipgloss.Color("#FFE08A"),
+	'O': lipgloss.Color("#FFF3CC"),
+	'@': lipgloss.Color("#05080D"),
+	'*': lipgloss.Color("#FFFFFF"),
+	'o': lipgloss.Color("#FF8A00"),
+	'.': lipgloss.Color(""),
+}
+
+// owlColors is the pixel owl's palette under the current brand: Pix's teal for
+// Vulnetix, Strix's gold for Vulnesis.
+func owlColors() map[rune]lipgloss.Color {
+	if brand.Current() == brand.Vulnesis {
+		return strixColors
+	}
+	return pixColors
+}
+
+// Banner renders the owl + wordmark.
 type Banner struct {
 	Width   int
 	Version string
@@ -174,8 +195,8 @@ func (b Banner) pixView() string {
 		for col := 0; col < 12; col++ {
 			upper := rune(PixGrid[row*2][col*2])
 			lower := rune(PixGrid[row*2+1][col*2])
-			fg := pixColors[upper]
-			bg := pixColors[lower]
+			fg := owlColors()[upper]
+			bg := owlColors()[lower]
 			if upper == '.' && lower == '.' {
 				line.WriteString(" ")
 				continue

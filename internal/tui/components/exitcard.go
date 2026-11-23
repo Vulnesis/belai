@@ -43,8 +43,8 @@ func (c ExitCard) pixView() string {
 		for col := 0; col < 12; col++ {
 			upper := rune(PixGrid[row*2][col*2])
 			lower := rune(PixGrid[row*2+1][col*2])
-			fg := pixColors[upper]
-			bg := pixColors[lower]
+			fg := owlColors()[upper]
+			bg := owlColors()[lower]
 			if upper == '.' && lower == '.' {
 				line.WriteString(" ")
 				continue
