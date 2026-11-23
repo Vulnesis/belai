@@ -1,4 +1,4 @@
-// Package attribution builds the trailer block that every Pix [bot] and
+// Package attribution builds the trailer block that every Vulnesis [bot] and
 // vulnetix[bot] action on GitHub carries. A commit message gets every line; a
 // pull request body, an issue, a comment or a review gets the links only
 // (Session, Finding, Vulnerability, Advisory), because Co-authored-by and
@@ -64,7 +64,7 @@ type Context struct {
 // Bots are the identities that sign off. The Vulnetix address is the GitHub
 // App's noreply address, the one its own commits use.
 var Bots = map[Bot]Human{
-	Pix:      {Name: "Pix [bot]", Email: "security@vulnetix.com"},
+	Pix:      {Name: "Vulnesis [bot]", Email: "security@vulnetix.com"},
 	Vulnetix: {Name: "vulnetix[bot]", Email: "176591487+vulnetix[bot]@users.noreply.github.com"},
 }
 
