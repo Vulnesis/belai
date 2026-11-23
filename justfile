@@ -162,9 +162,10 @@ version:
 test *ARGS:
     go test ./... {{ ARGS }}
 
-# Run the full suite under the race detector, as CI does.
+# Run the full suite under the race detector, as CI does. The e2e package
+# drives real binaries and runs close to go test's 10m default, hence 20m.
 test-race *ARGS:
-    go test -race ./... {{ ARGS }}
+    go test -race -timeout 20m ./... {{ ARGS }}
 
 # Run the suite as the Pix Sandbox build compiles it (-tags belai_sandbox).
 test-sandbox *ARGS:
@@ -183,7 +184,7 @@ mutate *ARGS:
 
 # Run the end-to-end suite: builds the binary, drives it against a mock provider.
 e2e *ARGS:
-    go test -race ./e2e {{ ARGS }}
+    go test -race -timeout 20m ./... {{ ARGS }}
 
 # Run the Keleustes host management end-to-end tests against a built keleustes:
 # `KELEUSTES_BIN=../keleustes/target/release/keleustes just e2e-host`. They skip
