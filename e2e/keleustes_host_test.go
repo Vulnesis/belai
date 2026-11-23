@@ -33,7 +33,8 @@ import (
 // organisation credential (VULNETIX_E2E_ORG_ID with VULNETIX_E2E_ORG_KEY for an
 // ApiKey, or VULNETIX_E2E_ORG_SECRET for a SigV4 secret) assert the
 // unauthenticated path without them, and the sensor step (5) runs only as
-// root in a systemd container with KELEUSTES_E2E_SENSOR=1.
+// root in a systemd container with KELEUSTES_E2E_SENSOR=1 and a sensor
+// profile id in VULNETIX_E2E_SENSOR_PROFILE.
 
 // hostCLI skips the test unless keleustes has the host subcommands.
 func hostCLI(t *testing.T, k *keleustes) {
@@ -377,7 +378,13 @@ func TestKeleustesHostManagement(t *testing.T) {
 		if _, err := os.Stat("/run/systemd/system"); err != nil {
 			t.Skip("systemd is not running here")
 		}
-		_, run := k.provision(t, node, "product_install", "product=sensor", "profile=default", "version="+envOr("VULNETIX_E2E_SENSOR_VERSION", "v0.9.3"))
+		// Enrolling needs a signed-in CLI (step 2) and a sensor profile of
+		// that organisation, by id. The sensor ships in the CLI's releases.
+		profile := os.Getenv("VULNETIX_E2E_SENSOR_PROFILE")
+		if !signedIn || profile == "" {
+			t.Skip("the sensor step needs an organisation credential and VULNETIX_E2E_SENSOR_PROFILE (a sensor profile id)")
+		}
+		_, run := k.provision(t, node, "product_install", "product=sensor", "profile="+profile, "version="+envOr("VULNETIX_E2E_SENSOR_VERSION", "v4.24.35"))
 		if run.State != "needs_human" || run.HandoffReason != "needs_root" {
 			t.Fatalf("install = %+v, want the needs_root hand-off", run)
 		}

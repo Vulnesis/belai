@@ -541,7 +541,7 @@ func TestRecipeDryRunsAreDeterministic(t *testing.T) {
 	// Ecosystems without a writer are refused.
 	e.wantRefused(e.act(&nodev1.HostAction{Kind: "product_configure", DryRun: true, Params: map[string]string{"product": "package_firewall", "on": "oci"}}), "cannot configure")
 	f := newEnv(t, LevelProvision)
-	for _, k := range []map[string]string{{"product": "sensor", "version": "v0.9.3", "profile": "p-1"}, {"product": "cli", "method": "direct", "version": "v4.24.37"}} {
+	for _, k := range []map[string]string{{"product": "sensor", "version": "v4.24.35", "profile": "0b6f2c1e-6a1d-4c5e-9f0a-3d2b1c4e5f60"}, {"product": "cli", "method": "direct", "version": "v4.24.37"}} {
 		x := last(f.act(&nodev1.HostAction{Kind: "product_install", DryRun: true, Params: k}))
 		y := last(f.act(&nodev1.HostAction{Kind: "product_install", DryRun: true, Params: k}))
 		if x.GetState() != stateDone || x.GetPreviewSha256() != y.GetPreviewSha256() {
@@ -553,11 +553,11 @@ func TestRecipeDryRunsAreDeterministic(t *testing.T) {
 func TestSensorInstallHandsOffForRoot(t *testing.T) {
 	e := newEnv(t, LevelProvision)
 	e.stub("vulnetix-sensor", `"--version") echo 0.9.3;;`)
-	p := map[string]string{"product": "sensor", "profile": "p-1"}
+	p := map[string]string{"product": "sensor", "profile": "0b6f2c1e-6a1d-4c5e-9f0a-3d2b1c4e5f60"}
 	dry := last(e.act(&nodev1.HostAction{Kind: "product_install", DryRun: true, Params: p}))
 	us := e.act(&nodev1.HostAction{Kind: "product_install", PreviewSha256: dry.GetPreviewSha256(), Params: p})
 	u := last(us)
-	if u.GetState() != stateNeedsHuman || u.GetHandoffReason() != "needs_root" || u.GetHandoffCommand() != "sudo vulnetix-sensor enroll --from-cli-login --profile p-1" {
+	if u.GetState() != stateNeedsHuman || u.GetHandoffReason() != "needs_root" || u.GetHandoffCommand() != "sudo vulnetix-sensor enroll --from-cli-login --profile 0b6f2c1e-6a1d-4c5e-9f0a-3d2b1c4e5f60" {
 		t.Fatalf("sensor install = %+v", u)
 	}
 	if ev := e.auditFor(u.GetActionId()); ev[len(ev)-1].Kind != string(audit.HostActionNeedsHuman) || ev[len(ev)-1].Data["reason"] != "needs_root" {
