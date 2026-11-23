@@ -13,9 +13,9 @@
             "lines": [
                 "Co-authored-by: Ada Lovelace <ada@example.com>",
                 "Signed-off-by: Vulnesis [bot] <security@vulnetix.com>",
-                "Session: https://vulnetix.com/resolve/factory-session?id=ses_123",
-                "Finding: https://vulnetix.com/resolve/scanner-results/finding/0f8fad5b-d9cb-469f-a165-70867728950e",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2021-44228"
+                "Session: https://www.vulnes.is/resolve/factory-session?id=ses_123",
+                "Finding: https://www.vulnes.is/resolve/scanner-results/finding/0f8fad5b-d9cb-469f-a165-70867728950e",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2021-44228"
             ]
         },
         {
@@ -60,7 +60,7 @@
             "lines": [
                 "Co-authored-by: Vulnesis [bot] <security@vulnetix.com>",
                 "Signed-off-by: vulnetix[bot] <176591487+vulnetix[bot]@users.noreply.github.com>",
-                "Vulnerability: https://vulnetix.com/vdb/GCVE-110-NPM-2026-001552",
+                "Vulnerability: https://www.vulnes.is/vdb/GCVE-110-NPM-2026-001552",
                 "Advisory: https://github.com/Vulnetix/advisory-database/blob/main/advisories/npm/GCVE-110-NPM-2026-001552.json"
             ]
         },
@@ -87,8 +87,8 @@
             "lines": [
                 "Co-authored-by: Vulnesis [bot] <security@vulnetix.com>",
                 "Signed-off-by: Ada Lovelace <ada@example.com>",
-                "Session: https://vulnetix.com/resolve/factory-session?id=ses_123",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2021-44228"
+                "Session: https://www.vulnes.is/resolve/factory-session?id=ses_123",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2021-44228"
             ]
         },
         {
@@ -109,7 +109,7 @@
             "lines": [
                 "Co-authored-by: Vulnesis [bot] <security@vulnetix.com>",
                 "Signed-off-by: vulnetix[bot] <176591487+vulnetix[bot]@users.noreply.github.com>",
-                "Vulnerability: https://vulnetix.com/vdb/GCVE-110-NPM-2026-001552",
+                "Vulnerability: https://www.vulnes.is/vdb/GCVE-110-NPM-2026-001552",
                 "Advisory: https://github.com/Vulnetix/advisory-database"
             ]
         },
@@ -119,7 +119,7 @@
             "lines": [
                 "Co-authored-by: Vulnesis [bot] <security@vulnetix.com>",
                 "Signed-off-by: vulnetix[bot] <176591487+vulnetix[bot]@users.noreply.github.com>",
-                "Vulnerability: https://vulnetix.com/vdb/GCVE-110-NPM-2026-001552",
+                "Vulnerability: https://www.vulnes.is/vdb/GCVE-110-NPM-2026-001552",
                 "Advisory: https://github.com/Vulnetix/advisory-database"
             ]
         },
@@ -134,7 +134,7 @@
             "lines": [
                 "Co-authored-by: vulnetix[bot] <176591487+vulnetix[bot]@users.noreply.github.com>",
                 "Signed-off-by: Vulnesis [bot] <security@vulnetix.com>",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0001"
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0001"
             ]
         },
         {
@@ -149,16 +149,16 @@
             "lines": [
                 "Co-authored-by: vulnetix[bot] <176591487+vulnetix[bot]@users.noreply.github.com>",
                 "Signed-off-by: Vulnesis [bot] <security@vulnetix.com>",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0001",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0002",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0003",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0004",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0005",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0006",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0007",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0008",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0009",
-                "Vulnerability: https://vulnetix.com/vdb/CVE-2024-0010"
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0001",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0002",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0003",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0004",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0005",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0006",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0007",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0008",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0009",
+                "Vulnerability: https://www.vulnes.is/vdb/CVE-2024-0010"
             ]
         },
         {
@@ -198,28 +198,28 @@
             "ctx": { "bot": "vulnetix", "sessionId": "ses_1" },
             "markdown": true,
             "text": "Opened by the factory.\n\n<!-- vulnetix-factory run=1 node=2 -->",
-            "want": "Opened by the factory.\n\nSession: https://vulnetix.com/resolve/factory-session?id=ses_1\n\n<!-- vulnetix-factory run=1 node=2 -->"
+            "want": "Opened by the factory.\n\nSession: https://www.vulnes.is/resolve/factory-session?id=ses_1\n\n<!-- vulnetix-factory run=1 node=2 -->"
         },
         {
             "name": "a body with its marker is left alone the second time",
             "ctx": { "bot": "vulnetix", "sessionId": "ses_1" },
             "markdown": true,
-            "text": "Opened by the factory.\n\nSession: https://vulnetix.com/resolve/factory-session?id=ses_1\n\n<!-- vulnetix-factory run=1 node=2 -->",
-            "want": "Opened by the factory.\n\nSession: https://vulnetix.com/resolve/factory-session?id=ses_1\n\n<!-- vulnetix-factory run=1 node=2 -->"
+            "text": "Opened by the factory.\n\nSession: https://www.vulnes.is/resolve/factory-session?id=ses_1\n\n<!-- vulnetix-factory run=1 node=2 -->",
+            "want": "Opened by the factory.\n\nSession: https://www.vulnes.is/resolve/factory-session?id=ses_1\n\n<!-- vulnetix-factory run=1 node=2 -->"
         },
         {
             "name": "a markdown body whose last paragraph looks like a trailer still gets a blank line",
             "ctx": { "bot": "pix", "vulnIds": ["CVE-2021-44228"] },
             "markdown": true,
             "text": "Note: this is prose.",
-            "want": "Note: this is prose.\n\nVulnerability: https://vulnetix.com/vdb/CVE-2021-44228"
+            "want": "Note: this is prose.\n\nVulnerability: https://www.vulnes.is/vdb/CVE-2021-44228"
         },
         {
             "name": "a markdown body carries no Co-authored-by or Signed-off-by, which belong to a commit",
             "ctx": { "bot": "pix", "human": { "name": "Ada Lovelace", "email": "ada@example.com" }, "sessionId": "ses_1" },
             "markdown": true,
             "text": "Closed as a duplicate of #4.",
-            "want": "Closed as a duplicate of #4.\n\nSession: https://vulnetix.com/resolve/factory-session?id=ses_1"
+            "want": "Closed as a duplicate of #4.\n\nSession: https://www.vulnes.is/resolve/factory-session?id=ses_1"
         },
         {
             "name": "a markdown body with nothing to link is left alone",

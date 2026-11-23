@@ -49,8 +49,8 @@ func TestMessageInsideASandbox(t *testing.T) {
 	for _, want := range []string{
 		"Co-authored-by: Ada Lovelace <ada@example.com>",
 		"Signed-off-by: Vulnesis [bot] <security@vulnetix.com>",
-		"Session: https://vulnetix.com/resolve/factory-session?id=ses_1",
-		"Vulnerability: https://vulnetix.com/vdb/CVE-2021-44228",
+		"Session: https://www.vulnes.is/resolve/factory-session?id=ses_1",
+		"Vulnerability: https://www.vulnes.is/vdb/CVE-2021-44228",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("missing %q in %q", want, got)

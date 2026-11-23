@@ -25,7 +25,7 @@ func TestIdentityEnvSuppliesAnIdentityOnAnUnconfiguredMachine(t *testing.T) {
 // The Pix sandbox names the committer in the environment; the worker must not
 // replace it, or the commit signer refuses the commit.
 func TestIdentityEnvNeverReplacesACommitterTheEnvironmentSets(t *testing.T) {
-	t.Setenv("GIT_COMMITTER_NAME", "Pix [bot]")
+	t.Setenv("GIT_COMMITTER_NAME", "Vulnesis [bot]")
 	t.Setenv("GIT_COMMITTER_EMAIL", "security@vulnetix.com")
 	got := identityEnv(context.Background(), noIdentity, t.TempDir())
 	want := []string{"GIT_AUTHOR_NAME=Belai agent", "GIT_AUTHOR_EMAIL=agent@belai.invalid"}

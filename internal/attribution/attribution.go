@@ -31,7 +31,7 @@ const (
 
 const (
 	// Origin is the site the links point at.
-	Origin = "https://vulnetix.com"
+	Origin = "https://www.vulnes.is"
 	// AdvisoryRepoURL is the public GCVE advisory repository.
 	AdvisoryRepoURL = "https://github.com/Vulnetix/advisory-database"
 	// MaxVulnLinks caps the Vulnerability lines of one message.
