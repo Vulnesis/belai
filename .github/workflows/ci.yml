@@ -14,7 +14,7 @@ env:
 
 jobs:
   test:
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, vulnesis-cf-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
@@ -50,7 +50,7 @@ jobs:
   # It runs as its own job because a full coverage run takes over ten minutes
   # and would otherwise lengthen the race job above. Same command as `just cover`.
   coverage:
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, vulnesis-cf-large]
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
