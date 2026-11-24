@@ -272,6 +272,7 @@ func TestEnabledPreservesOrder(t *testing.T) {
 }
 
 func TestLoadReadErrorPropagates(t *testing.T) {
+	skipIfModesAreBypassed(t)
 	s, workdir := testSpec(t)
 	dir := filepath.Join(workdir, ".vulnetix", "prompts")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -291,5 +292,19 @@ func TestLoadReadErrorPropagates(t *testing.T) {
 		t.Fatal("expected read error for an unreadable entry")
 	} else if errors.Is(err, os.ErrNotExist) {
 		t.Fatal("unexpected not-exist error")
+	}
+}
+
+// skipIfModesAreBypassed skips a test that needs a permission denial when this
+// process is not denied: root, or a user holding CAP_DAC_OVERRIDE, as the jobs
+// on the Cloudflare container runners do (CI run 45313265842).
+func skipIfModesAreBypassed(t *testing.T) {
+	t.Helper()
+	probe := filepath.Join(t.TempDir(), "probe")
+	if err := os.WriteFile(probe, []byte("x"), 0o000); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.ReadFile(probe); err == nil {
+		t.Skip("this process reads a mode-000 file (root or CAP_DAC_OVERRIDE), so it cannot be denied")
 	}
 }

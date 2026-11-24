@@ -630,8 +630,12 @@ func (d *Daemon) Run(ctx context.Context) error {
 	}
 	d.logf("start sessions at %s", d.o.URL)
 
-	go d.heartbeat(ctx)
-	go d.watchCredential(ctx)
+	// In the wait group shutdown waits on: the heartbeat rewrites rc.json, and
+	// one still running after Run returned wrote a record into the next
+	// daemon's BELAI_HOME (TestRelayFilesWithKeleustes, CI run 45363758380).
+	d.wg.Add(2)
+	go func() { defer d.wg.Done(); d.heartbeat(ctx) }()
+	go func() { defer d.wg.Done(); d.watchCredential(ctx) }()
 	// Workers run in their own sessions, so an ended one is adopted by the
 	// nearest subreaper; without this that is PID 1, which in a container may
 	// never reap and so fills the process table.
