@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/gittest"
 	"github.com/vulnetix/belai/internal/sandbox"
 	"github.com/vulnetix/belai/internal/testenv"
@@ -27,5 +28,9 @@ func TestMain(m *testing.M) {
 	// its own git metadata (read-only to these tests); the fixture
 	// repositories the CLI tests build must resolve to their own .git.
 	gittest.IsolateProcess()
+	// These tests assert Vulnetix URLs. Vulnesis is the default brand
+	// (internal/brand covers it); pin Vulnetix before anything reads the brand.
+	os.Setenv("VULNETIX_BRAND", "vulnetix")
+	brand.Set(brand.Vulnetix)
 	os.Exit(m.Run())
 }

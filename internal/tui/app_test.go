@@ -20,6 +20,7 @@ import (
 	"github.com/vulnetix/belai/internal/agent"
 	"github.com/vulnetix/belai/internal/agentpool"
 	"github.com/vulnetix/belai/internal/attribution"
+	"github.com/vulnetix/belai/internal/brand"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/gittest"
@@ -76,6 +77,10 @@ func TestMain(m *testing.M) {
 	// trailers, so pin the whole package outside the file (two autocommit
 	// tests pin it per test for the same reason).
 	os.Setenv(attribution.FileEnv, os.DevNull)
+	// These tests assert Vulnetix URLs. Vulnesis is the default brand
+	// (internal/brand covers it); pin Vulnetix before anything reads the brand.
+	os.Setenv("VULNETIX_BRAND", "vulnetix")
+	brand.Set(brand.Vulnetix)
 	os.Exit(m.Run())
 }
 
