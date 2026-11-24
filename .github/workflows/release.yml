@@ -22,13 +22,8 @@ concurrency:
 env:
   # Force JS actions to Node 24 so deprecated Node 20 runs stop firing.
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  # Models and binaries pass between jobs through the S3 stage, not Actions artifacts, which are
-  # billed in GB-hours per month (github-runner-aws README, "Staging large hand-offs in S3"). The
-  # role is assumed through OIDC and can read and write only this repository's prefix; objects
-  # expire after a day. Release assets, which users install from, are unchanged.
-  STAGE_BUCKET: vulnetix-gha-stage-061882422009
-  STAGE_PREFIX: ${{ github.event.repository.name }}/${{ github.run_id }}
-  STAGE_ROLE: arn:aws:iam::061882422009:role/gha-stage-${{ github.event.repository.name }}
+  # Models and binaries pass between jobs as Actions artifacts kept for a day. The S3 stage they
+  # used went with the Vulnetix AWS account, whose role does not trust Vulnesis repositories.
 
 jobs:
   version:
@@ -53,11 +48,10 @@ jobs:
   # rather than per variant.
   models:
     needs: version
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, vulnesis-cf-large]
     timeout-minutes: 30
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -91,25 +85,24 @@ jobs:
       - name: Prepare models
         run: go run ./tools/modelprep -python python -phase1 -phase2
 
-      - uses: aws-actions/configure-aws-credentials@v6.3.0
-        with:
-          role-to-assume: ${{ env.STAGE_ROLE }}
-          aws-region: ap-southeast-2
       # Only the build job below reads these, in this same run.
       - name: Stage models
-        run: |
-          set -euo pipefail
-          tar -czf - -C internal/mlclassify/assets . | aws s3 cp - "s3://$STAGE_BUCKET/$STAGE_PREFIX/models.tgz"
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: models
+          path: internal/mlclassify/assets/
+          retention-days: 1
+          if-no-files-found: error
 
   # Belai is pure Go (CGO_ENABLED=0), so every target cross-compiles from one
   # Linux box. Each variant family is built for all six targets.
   build:
     needs: [version, models]
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
-    timeout-minutes: 30
+    # standard-4: cli's cross builds took 40 of 45 minutes on the standard-2 container.
+    runs-on: [self-hosted, vulnesis-cf-large]
+    timeout-minutes: 45
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v7.0.1
         with:
@@ -120,15 +113,11 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - uses: aws-actions/configure-aws-credentials@v6.3.0
-        with:
-          role-to-assume: ${{ env.STAGE_ROLE }}
-          aws-region: ap-southeast-2
       - name: Fetch the staged models
-        run: |
-          set -euo pipefail
-          mkdir -p internal/mlclassify/assets
-          aws s3 cp "s3://$STAGE_BUCKET/$STAGE_PREFIX/models.tgz" - | tar -xzf - -C internal/mlclassify/assets
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: models
+          path: internal/mlclassify/assets
 
       # The speech model every variant embeds for voice input. The key follows
       # the checksum pinned in the source, so a changed model cannot slip into
@@ -195,9 +184,13 @@ jobs:
 
       # About 4 GB a release: only the release job reads it, in this same run.
       - name: Stage binaries
-        run: |
-          set -euo pipefail
-          tar -czf - -C bin . | aws s3 cp - "s3://$STAGE_BUCKET/$STAGE_PREFIX/binaries.tgz"
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: binaries
+          path: bin/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
 
   release:
     needs: [version, build]
@@ -215,15 +208,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: aws-actions/configure-aws-credentials@v6.3.0
-        with:
-          role-to-assume: ${{ env.STAGE_ROLE }}
-          aws-region: ap-southeast-2
       - name: Fetch the staged binaries
-        run: |
-          set -euo pipefail
-          mkdir -p bin
-          aws s3 cp "s3://$STAGE_BUCKET/$STAGE_PREFIX/binaries.tgz" - | tar -xzf - -C bin
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: binaries
+          path: bin
 
       # Ship the installer with the release so a vanity host can redirect to
       # releases/latest/download/install.sh, and so the script that fetches a
@@ -259,9 +248,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # SLSA v1 build provenance for every binary in the release, signed and
-  # verified by the reusable workflow in Vulnetix/cli (the cli release uses the
-  # same one). It runs beside update-packages, not after it, because the
-  # package managers carry the binaries and not the provenance.
+  # verified by the reusable workflow in Vulnesis/cli (the cli release uses the
+  # same one). The package managers follow the release, not the provenance.
   provenance:
     needs: release
     permissions:
@@ -272,187 +260,16 @@ jobs:
       subjects_artifact: release-subjects
       version: ${{ needs.release.outputs.version }}
 
-  update-packages:
-    needs: release
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
-    timeout-minutes: 20
-    # One package update at a time across versions: two releases tagged
-    # minutes apart raced on the tap (v0.64.0's push was rejected), and an
-    # older one finishing last would have downgraded the formula. A queued
-    # older run is also skipped below once a newer version is in place.
-    concurrency:
-      group: belai-package-managers
-      cancel-in-progress: false
-    steps:
-      - name: Checkout belai repo
-        uses: actions/checkout@v7.0.1
-        with:
-          token: ${{ secrets.PACKAGES_TOKEN }}
-
-      - name: Checkout homebrew-tap
-        uses: actions/checkout@v7.0.1
-        with:
-          repository: Vulnetix/homebrew-tap
-          ref: main
-          token: ${{ secrets.PACKAGES_TOKEN }}
-          path: homebrew-tap
-
-      - name: Checkout scoop-bucket
-        uses: actions/checkout@v7.0.1
-        with:
-          repository: Vulnetix/scoop-bucket
-          ref: main
-          token: ${{ secrets.PACKAGES_TOKEN }}
-          path: scoop-bucket
-
-      - name: Download checksums
-        run: |
-          curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 \
-            "https://github.com/Vulnetix/belai/releases/download/${{ needs.release.outputs.version }}/checksums.txt" \
-            -o checksums.txt
-
-      - name: Update Homebrew formula
-        run: |
-          set -euo pipefail
-          VER_NUM="${{ needs.release.outputs.version }}"
-          VER_NUM="${VER_NUM#v}"
-
-          hash_for() {
-            local sum
-            sum=$(awk -v f="$1" '$2 == f { print $1 }' checksums.txt)
-            if [ ${#sum} -ne 64 ]; then
-              echo "::error::no SHA-256 for $1 in checksums.txt" >&2
-              exit 1
-            fi
-            printf '%s' "$sum"
-          }
-          DARWIN_ARM64=$(hash_for belai-bert-guardrails-darwin-arm64)
-          DARWIN_AMD64=$(hash_for belai-bert-guardrails-darwin-amd64)
-          LINUX_ARM64=$(hash_for belai-bert-guardrails-linux-arm64)
-          LINUX_AMD64=$(hash_for belai-bert-guardrails-linux-amd64)
-
-          cd homebrew-tap
-          BREW="Formula/belai.rb"
-          if [ ! -f "$BREW" ]; then
-            echo "::error::homebrew-tap has no Formula/belai.rb" >&2
-            exit 1
-          fi
-          # Never downgrade: a release that finishes after a newer one leaves
-          # the newer formula in place.
-          CUR=$(sed -n 's/^ *version "\([^"]*\)".*/\1/p' "$BREW" | head -n1)
-          if [ -n "$CUR" ] && [ "$CUR" != "$VER_NUM" ] && \
-             [ "$(printf '%s\n%s\n' "$CUR" "$VER_NUM" | sort -V | tail -n1)" = "$CUR" ]; then
-            echo "::notice::homebrew-tap already has belai ${CUR}, newer than ${VER_NUM}; not updating"
-            exit 0
-          fi
-
-          # The default asset family is the embedded guardrails build. The
-          # leading slash keeps these substitutions from colliding with the
-          # already-prefixed variant asset names.
-          sed -i "s#/belai-darwin-arm64#/belai-bert-guardrails-darwin-arm64#" "$BREW"
-          sed -i "s#/belai-darwin-amd64#/belai-bert-guardrails-darwin-amd64#" "$BREW"
-          sed -i "s#/belai-linux-arm64#/belai-bert-guardrails-linux-arm64#" "$BREW"
-          sed -i "s#/belai-linux-amd64#/belai-bert-guardrails-linux-amd64#" "$BREW"
-
-          sed -i "s/version \"[^\"]*\"/version \"${VER_NUM}\"/" "$BREW"
-          sed -i "/belai-bert-guardrails-darwin-arm64/{n;s/sha256 \"[a-f0-9]*\"/sha256 \"${DARWIN_ARM64}\"/}" "$BREW"
-          sed -i "/belai-bert-guardrails-darwin-amd64/{n;s/sha256 \"[a-f0-9]*\"/sha256 \"${DARWIN_AMD64}\"/}" "$BREW"
-          sed -i "/belai-bert-guardrails-linux-arm64/{n;s/sha256 \"[a-f0-9]*\"/sha256 \"${LINUX_ARM64}\"/}" "$BREW"
-          sed -i "/belai-bert-guardrails-linux-amd64/{n;s/sha256 \"[a-f0-9]*\"/sha256 \"${LINUX_AMD64}\"/}" "$BREW"
-
-          for want in "${VER_NUM}" "${DARWIN_ARM64}" "${DARWIN_AMD64}" "${LINUX_ARM64}" "${LINUX_AMD64}"; do
-            if ! grep -q "$want" "$BREW"; then
-              echo "::error::$BREW does not contain $want after the edit; the formula layout has moved" >&2
-              exit 1
-            fi
-          done
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add "$BREW"
-          if ! git diff --cached --quiet; then
-            git commit -m "belai ${VER_NUM}"
-            # Someone else may have pushed to the tap meanwhile: rebase and
-            # try again rather than fail the release.
-            for attempt in 1 2 3 4; do
-              git push && break
-              [ "$attempt" = 4 ] && { echo "::error::could not push to homebrew-tap" >&2; exit 1; }
-              sleep $((attempt * 5))
-              git pull --rebase origin main
-            done
-          fi
-
-      - name: Update Scoop manifest
-        run: |
-          set -euo pipefail
-          VER_NUM="${{ needs.release.outputs.version }}"
-          VER_NUM="${VER_NUM#v}"
-
-          hash_for() {
-            local sum
-            sum=$(awk -v f="$1" '$2 == f { print $1 }' checksums.txt)
-            if [ ${#sum} -ne 64 ]; then
-              echo "::error::no SHA-256 for $1 in checksums.txt" >&2
-              exit 1
-            fi
-            printf '%s' "$sum"
-          }
-          WIN_AMD64=$(hash_for belai-bert-guardrails-windows-amd64.exe)
-          WIN_ARM64=$(hash_for belai-bert-guardrails-windows-arm64.exe)
-
-          cd scoop-bucket
-          if [ ! -f bucket/belai.json ]; then
-            echo "::error::scoop-bucket has no bucket/belai.json" >&2
-            exit 1
-          fi
-          CUR=$(jq -r '.version // ""' bucket/belai.json)
-          if [ -n "$CUR" ] && [ "$CUR" != "$VER_NUM" ] && \
-             [ "$(printf '%s\n%s\n' "$CUR" "$VER_NUM" | sort -V | tail -n1)" = "$CUR" ]; then
-            echo "::notice::scoop-bucket already has belai ${CUR}, newer than ${VER_NUM}; not updating"
-            exit 0
-          fi
-          jq --indent 4 \
-            --arg v "$VER_NUM" \
-            --arg h64 "$WIN_AMD64" \
-            --arg harm "$WIN_ARM64" \
-            '.version = $v |
-             .architecture."64bit".url = "https://github.com/Vulnetix/belai/releases/download/v\($v)/belai-bert-guardrails-windows-amd64.exe#/belai.exe" |
-             .architecture."64bit".hash = $h64 |
-             .architecture.arm64.url = "https://github.com/Vulnetix/belai/releases/download/v\($v)/belai-bert-guardrails-windows-arm64.exe#/belai.exe" |
-             .architecture.arm64.hash = $harm |
-             .autoupdate.architecture."64bit".url = "https://github.com/Vulnetix/belai/releases/download/v$version/belai-bert-guardrails-windows-amd64.exe#/belai.exe" |
-             .autoupdate.architecture."64bit".hash.regex = "([a-fA-F0-9]{64})  belai-bert-guardrails-windows-amd64.exe" |
-             .autoupdate.architecture.arm64.url = "https://github.com/Vulnetix/belai/releases/download/v$version/belai-bert-guardrails-windows-arm64.exe#/belai.exe" |
-             .autoupdate.architecture.arm64.hash.regex = "([a-fA-F0-9]{64})  belai-bert-guardrails-windows-arm64.exe"' bucket/belai.json > /tmp/belai.json
-          mv /tmp/belai.json bucket/belai.json
-
-          test "$(jq -r .version bucket/belai.json)" = "$VER_NUM"
-          test "$(jq -r '.architecture."64bit".hash' bucket/belai.json)" = "$WIN_AMD64"
-          test "$(jq -r '.architecture.arm64.hash' bucket/belai.json)" = "$WIN_ARM64"
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add bucket/belai.json
-          if ! git diff --cached --quiet; then
-            git commit -m "belai ${VER_NUM}"
-            for attempt in 1 2 3 4; do
-              git push && break
-              [ "$attempt" = 4 ] && { echo "::error::could not push to scoop-bucket" >&2; exit 1; }
-              sleep $((attempt * 5))
-              git pull --rebase origin main
-            done
-          fi
-
   # Publish the release to the Transparency Exchange API.
   #
-  # Runs after update-packages for the reason the cli's job does: the Homebrew
-  # and Scoop channels it names must carry the version before a machine is
-  # told to install it from there.
+  # Homebrew and Scoop are not updated from here: Vulnesis/homebrew-tap and
+  # Vulnesis/scoop-bucket follow each published release with their own token
+  # (follow-releases.yml), within half an hour of the release job.
   publish-tea:
-    needs: [release, update-packages, provenance]
+    needs: [release, provenance]
     # A provenance failure publishes the release without the bundle, with a
     # warning below, rather than leaving the transparency log silent about it.
-    if: ${{ !cancelled() && needs.release.result == 'success' && needs.update-packages.result == 'success' }}
+    if: ${{ !cancelled() && needs.release.result == 'success' }}
     runs-on: [self-hosted, Linux, X64, vulnetix-local]
     timeout-minutes: 20
     # id-token lets this job get an OIDC token from GitHub, the identity public
@@ -499,7 +316,7 @@ jobs:
       - name: Download checksums
         run: |
           curl -fsSL --retry 8 --retry-all-errors --retry-delay 5 \
-            "https://github.com/Vulnetix/belai/releases/download/${{ needs.release.outputs.version }}/checksums.txt" \
+            "https://github.com/${{ github.repository }}/releases/download/${{ needs.release.outputs.version }}/checksums.txt" \
             -o checksums.txt
 
       # The organisation's quality gate makes `sca` exit non-zero on a policy
