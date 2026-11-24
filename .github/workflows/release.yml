@@ -282,7 +282,7 @@ jobs:
       VULNETIX_API_KEY: ${{ secrets.VULNETIX_API_KEY }}
       # Pinned, not latest: a CLI regression must not stop belai releases
       # publishing with no way to roll back short of a CLI release.
-      CLI_VERSION: v3.126.7
+      CLI_VERSION: v4.26.4
     steps:
       # Without these the CLI falls back to the shared community organisation,
       # which persists nothing, so a missing secret must stop the job instead
@@ -301,7 +301,7 @@ jobs:
           # Download to a file, never `curl | sh`: a failed download would
           # otherwise run an empty script and pass the step.
           curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 \
-            -o "$RUNNER_TEMP/vulnetix-install.sh" https://cli.vulnetix.com/install.sh
+            -o "$RUNNER_TEMP/vulnetix-install.sh" https://cli.vulnes.is/install.sh
           sh "$RUNNER_TEMP/vulnetix-install.sh" --install-dir "$HOME/.local/bin" --version "$CLI_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
@@ -394,8 +394,8 @@ jobs:
             --version "$VERSION" \
             --checksums checksums.txt \
             --exclude checksums.txt \
-            --channel "name=Homebrew: brew install vulnetix/tap/belai,url=https://github.com/Vulnetix/homebrew-tap" \
-            --channel "name=Scoop: scoop bucket add vulnetix https://github.com/Vulnetix/scoop-bucket && scoop install belai,url=https://github.com/Vulnetix/scoop-bucket" \
+            --channel "name=Homebrew: brew install vulnesis/tap/belai,url=https://github.com/Vulnesis/homebrew-tap" \
+            --channel "name=Scoop: scoop bucket add vulnesis https://github.com/Vulnesis/scoop-bucket && scoop install belai,url=https://github.com/Vulnesis/scoop-bucket" \
             --channel "name=go install github.com/vulnetix/belai/cmd/belai@${VERSION},purl=pkg:golang/github.com/vulnetix/belai@${VERSION}" \
-            --channel "name=Install script: curl -fsSL https://raw.githubusercontent.com/Vulnetix/belai/main/install.sh | sh,url=https://raw.githubusercontent.com/Vulnetix/belai/main/install.sh" \
+            --channel "name=Install script: curl -fsSL https://raw.githubusercontent.com/Vulnesis/belai/main/install.sh | sh,url=https://raw.githubusercontent.com/Vulnesis/belai/main/install.sh" \
             --visibility public
