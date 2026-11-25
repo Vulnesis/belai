@@ -27,7 +27,7 @@ env:
 
 jobs:
   version:
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, Linux, X64, vulnesis-cf]
     timeout-minutes: 5
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
@@ -194,7 +194,7 @@ jobs:
 
   release:
     needs: [version, build]
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, Linux, X64, vulnesis-cf]
     # The binaries are about 3.4 GB; on a local podman runner their download alone ran past 20
     # minutes and v0.109.0's release was cancelled.
     timeout-minutes: 60
@@ -270,7 +270,7 @@ jobs:
     # A provenance failure publishes the release without the bundle, with a
     # warning below, rather than leaving the transparency log silent about it.
     if: ${{ !cancelled() && needs.release.result == 'success' }}
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, Linux, X64, vulnesis-cf]
     timeout-minutes: 20
     # id-token lets this job get an OIDC token from GitHub, the identity public
     # Fulcio issues a short-lived certificate against: keyless signing.

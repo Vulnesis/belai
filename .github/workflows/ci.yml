@@ -84,7 +84,7 @@ jobs:
   # The embedded-model path is exercised here so a drift in the modelprep tool,
   # the attack-label orientation, or the tagged build fails CI before a release.
   models:
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, Linux, X64, vulnesis-cf]
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
@@ -133,7 +133,7 @@ jobs:
   # pinned checksum still matches what Hugging Face serves, that the tagged
   # build compiles with the 32 MB file inside, and that the embedded model loads.
   voice:
-    runs-on: [self-hosted, Linux, X64, vulnetix-local]
+    runs-on: [self-hosted, Linux, X64, vulnesis-cf]
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
