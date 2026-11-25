@@ -293,3 +293,8 @@ site-submit-sitemap:
 shots:
     go run ./tools/shot -out site/src/assets/shots
     cd site && node scripts/ansi-to-svg.mjs
+
+# Terraform for the belai site (site/terraform). State is in R2 (vulnesis-terraform-state,
+# key belai-site/terraform.tfstate) through vx-tf (Vulnesis/ops tools). Example: just tf plan
+tf *args:
+    vx-secrets run shared -- vx-tf site/terraform {{args}}
