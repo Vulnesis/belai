@@ -26,7 +26,7 @@ func TestLoadReadsThePersonAndTheSignOff(t *testing.T) {
 }
 
 func TestLoadTreatsABotCoAuthorAsNoPerson(t *testing.T) {
-	p := writeAttr(t, "Co-authored-by: vulnetix[bot] <176591487+vulnetix[bot]@users.noreply.github.com>\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>\n")
+	p := writeAttr(t, "Co-authored-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>\n")
 	c, ok := Load(p)
 	if !ok || c.Human != nil {
 		t.Fatalf("got %+v ok=%v", c, ok)
