@@ -425,4 +425,4 @@ Highlights — full reference in [docs/README.md](docs/README.md):
 - [Turn latency](docs/performance.md): what runs before the first token and between passes, and how classification stays cheap
 - [Nonce endpoint](docs/nonce-endpoint-spec.md): provider/gateway `GET /v1/nonces` contract
 - [Image attachments (deferred)](docs/image-attachments.md): multimodal design considerations
-- [Marketing site](docs/site.md): source for belai.vulnetix.com
+- [Marketing site](docs/site.md): source for belai.vulnes.is

@@ -115,10 +115,10 @@ func TestSitePageNamesRealAssetsAndInfrastructure(t *testing.T) {
 	}
 
 	pages := docparity.Read(t, ".github/workflows/pages.yml")
-	if !strings.Contains(pages, "dist/CNAME") || !strings.Contains(pages, "belai.vulnetix.com") {
-		t.Error("pages.yml no longer checks dist/CNAME for belai.vulnetix.com")
+	if !strings.Contains(pages, "dist/CNAME") || !strings.Contains(pages, "belai.vulnes.is") {
+		t.Error("pages.yml no longer checks dist/CNAME for belai.vulnes.is")
 	}
-	if cname := strings.TrimSpace(docparity.Read(t, "site/public/CNAME")); cname != "belai.vulnetix.com" {
-		t.Errorf("site/public/CNAME = %q, want belai.vulnetix.com", cname)
+	if cname := strings.TrimSpace(docparity.Read(t, "site/public/CNAME")); cname != "belai.vulnes.is" {
+		t.Errorf("site/public/CNAME = %q, want belai.vulnes.is", cname)
 	}
 }

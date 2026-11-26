@@ -1,6 +1,6 @@
 output "site_url" {
   description = "Public URL of the marketing site."
-  value       = "https://belai.vulnetix.com/"
+  value       = "https://belai.vulnes.is/"
 }
 
 output "site_record" {

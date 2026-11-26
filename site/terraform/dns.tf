@@ -1,6 +1,6 @@
 # DNS for the Belai marketing site.
 #
-# belai.vulnetix.com -> GitHub Pages.
+# belai.vulnes.is -> GitHub Pages.
 #
 # Must NOT be proxied. GitHub Pages terminates TLS itself using a certificate it
 # issues for the custom domain, and it can only complete that issuance when it

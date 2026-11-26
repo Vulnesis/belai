@@ -21,7 +21,7 @@ resource "github_repository_pages" "belai" {
   # actions/deploy-pages; GitHub therefore runs in "workflow" build mode and
   # the custom domain is declared here to match site/public/CNAME.
   build_type = "workflow"
-  cname      = "belai.vulnetix.com"
+  cname      = "belai.vulnes.is"
 
   lifecycle {
     # Never let a stray `terraform destroy` delete the Pages binding.

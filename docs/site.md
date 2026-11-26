@@ -1,6 +1,6 @@
 # Marketing site
 
-The single-scroll marketing site at [belai.vulnetix.com](https://belai.vulnetix.com/), built from `site/`.
+The single-scroll marketing site at [belai.vulnes.is](https://belai.vulnes.is/), built from `site/`.
 
 ## Stack
 
@@ -236,7 +236,7 @@ first (`terraform import github_repository_pages.belai belai`).
 ## Deploy
 
 `.github/workflows/pages.yml` builds `site/`, asserts `dist/CNAME` still reads
-`belai.vulnetix.com` (a missing CNAME silently unbinds the custom domain), runs
+`belai.vulnes.is` (a missing CNAME silently unbinds the custom domain), runs
 the link checker, then uploads and deploys the Pages artifact.
 
 ## Local workflow
