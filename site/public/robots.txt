@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://belai.vulnetix.com/sitemap.xml
+Sitemap: https://belai.vulnes.is/sitemap.xml

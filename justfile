@@ -266,7 +266,7 @@ site-build:
 
 # Build the site, assert the custom domain survived, and check internal links.
 site-check:
-    cd site && node --experimental-strip-types --test 'scripts/*.test.mjs' && yarn build && node scripts/check-links.mjs dist && test -f dist/CNAME && grep -qx 'belai.vulnetix.com' dist/CNAME
+    cd site && node --experimental-strip-types --test 'scripts/*.test.mjs' && yarn build && node scripts/check-links.mjs dist && test -f dist/CNAME && grep -qx 'belai.vulnes.is' dist/CNAME
 
 # Notify search engines that the sitemap changed. Google retired its sitemap
 # ping endpoint in 2023, so Bing (whose index also feeds DuckDuckGo/Yahoo) is
@@ -276,14 +276,14 @@ site-check:
 site-submit-sitemap:
     #!/usr/bin/env bash
     set -euo pipefail
-    sitemap="https://belai.vulnetix.com/sitemap.xml"
+    sitemap="https://belai.vulnes.is/sitemap.xml"
     echo "Pinging Bing: ${sitemap}"
     curl -fsS "https://www.bing.com/ping?sitemap=${sitemap}"
     if [ -n "${INDEXNOW_KEY:-}" ]; then
       echo "Submitting via IndexNow..."
       curl -fsS -X POST "https://api.indexnow.org/indexnow" \
         -H "Content-Type: application/json" \
-        -d "{\"host\":\"belai.vulnetix.com\",\"key\":\"${INDEXNOW_KEY}\",\"urlList\":[\"https://belai.vulnetix.com/\"]}"
+        -d "{\"host\":\"belai.vulnes.is\",\"key\":\"${INDEXNOW_KEY}\",\"urlList\":[\"https://belai.vulnes.is/\"]}"
     else
       echo "INDEXNOW_KEY not set; skipping IndexNow submission."
     fi
