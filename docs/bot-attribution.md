@@ -1,9 +1,10 @@
 # Bot attribution trailers
 
-Last Updated: 2026-11-04
+Last Updated: 2026-11-28
 
-Inside a Pix sandbox, what Belai commits carries `Co-authored-by`, `Signed-off-by: Pix [bot]` and links to the
-session and any vulnerability ids. The package is `internal/attribution`; the rules and the other builders are
+Inside a Pix sandbox, what Belai commits carries `Co-authored-by`, `Signed-off-by: vulnesis[bot]` and links to the
+session and any vulnerability ids. Both bot identities (`attribution.Bots`) are the GitHub App's bot,
+`vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>`, so GitHub credits the commits to vulnesis[bot]. The package is `internal/attribution`; the rules and the other builders are
 in the website's `.repo/bot-attribution.md`. `internal/attribution/testdata/attribution-cases.json` is a copy of the
 website's shared cases.
 

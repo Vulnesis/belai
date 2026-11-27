@@ -14,7 +14,7 @@ import (
 func sandboxFile(t *testing.T) {
 	t.Helper()
 	p := filepath.Join(t.TempDir(), "attribution")
-	if err := os.WriteFile(p, []byte("Co-authored-by: Ada Lovelace <ada@example.com>\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>\n"), 0o600); err != nil {
+	if err := os.WriteFile(p, []byte("Co-authored-by: Ada Lovelace <ada@example.com>\nSigned-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("PIX_ATTRIBUTION_FILE", p)
@@ -51,7 +51,7 @@ func TestWorkspaceCommitCarriesTheSession(t *testing.T) {
 		t.Fatalf("commit: %d %v", n, err)
 	}
 	msgs := commitMessages(t, ws.Dir, ws.Base)
-	if len(msgs) != 1 || !strings.Contains(msgs[0], "Signed-off-by: Vulnesis [bot] <security@vulnetix.com>") ||
+	if len(msgs) != 1 || !strings.Contains(msgs[0], "Signed-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>") ||
 		!strings.Contains(msgs[0], "Session: https://www.vulnes.is/resolve/factory-session?id=ses_77") {
 		t.Fatalf("messages %q", msgs)
 	}
@@ -85,7 +85,7 @@ func TestEnsureAttributionRewritesOnlyWhatLacksIt(t *testing.T) {
 		t.Fatalf("both commits stay: %q", msgs)
 	}
 	for _, m := range msgs {
-		if strings.Count(m, "Signed-off-by: Vulnesis [bot]") != 1 || !strings.Contains(m, "Co-authored-by: Ada Lovelace <ada@example.com>") {
+		if strings.Count(m, "Signed-off-by: vulnesis[bot]") != 1 || !strings.Contains(m, "Co-authored-by: Ada Lovelace <ada@example.com>") {
 			t.Fatalf("message lacks its trailers: %q", m)
 		}
 	}

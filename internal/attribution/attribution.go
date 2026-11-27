@@ -61,10 +61,10 @@ type Context struct {
 	Origin       string `json:"origin,omitempty"`
 }
 
-// Bots are the identities that sign off. The Vulnetix address is the GitHub
-// App's noreply address, the one its own commits use.
+// Bots are the identities that sign off. Both are the GitHub App's bot and its
+// noreply address, so GitHub credits the commits to vulnesis[bot].
 var Bots = map[Bot]Human{
-	Pix:      {Name: "Vulnesis [bot]", Email: "security@vulnetix.com"},
+	Pix:      {Name: "vulnesis[bot]", Email: "176591487+vulnesis[bot]@users.noreply.github.com"},
 	Vulnetix: {Name: "vulnesis[bot]", Email: "176591487+vulnesis[bot]@users.noreply.github.com"},
 }
 
