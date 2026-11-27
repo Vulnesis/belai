@@ -359,7 +359,7 @@ func runRCCLI(ctx context.Context, args []string, stdout, stderr io.Writer) int 
 		Max:           *max, MaxWorkers: workerOverride(fs, *max, *maxWorkers), ReservedWorkers: reservedOverride(fs, *reservedWorkers), Idle: *idle, URL: url, Out: stderr, LogPath: logPath,
 		ScheduleRemote: scheduleRemote,
 		Schedules:      schedules, DrawAvatar: rcDrawAvatar(wd), Distill: rcDistill(wd), TeleportPush: teleportPushPolicy(wd),
-		ModelJob: rcModelJob(wd), InitDraft: rcInitDraft,
+		ModelJob: rcModelJob(wd), InitDraft: rcInitDraft, ReviewJob: rcReviewJob,
 		AdmitText: rcAdmitText,
 		Controls:  *webControls, GuardrailsOff: *webGuardrailsOff, ProjectSettings: *webProjectSettings,
 		Shell: *webShell, NoClone: *noClone,

@@ -46,6 +46,9 @@ import (
 //   - "init_draft": an InitDraftRequest; one call of this host's model drafts an
 //     AGENTS.md from the repository map's facts, written nowhere
 //     (factoryinitdraft.go, Options.InitDraft).
+//   - "review": a ReviewJobRequest; the rubric code review of `belai review`
+//     in a directory this host offers, read only and never posted, answered
+//     as a ReviewResult (factoryreview.go, Options.ReviewJob).
 //
 // Any other kind is refused.
 
@@ -60,7 +63,7 @@ const (
 // in Capabilities.job_kinds: Keleustes sends a forge job only to a node
 // that lists "forge" and falls back to the github job for github.com.
 var factoryJobKinds = []string{jobKindGitHub, jobKindModel, jobKindTeleport, forgejob.KindPush, forgejob.KindForge, libraryjob.Kind,
-	jobKindKnowledgeSearch, jobKindInitDraft}
+	jobKindKnowledgeSearch, jobKindInitDraft, jobKindReview}
 
 // Limits on a job.
 const (
@@ -183,6 +186,8 @@ func (d *Daemon) handleFactoryJob(ctx context.Context, j *nodev1.Job) {
 		run, why = d.runKnowledgeSearchJob(j.GetPayloadJson())
 	case jobKindInitDraft:
 		run, why = d.runInitDraftJob(j.GetPayloadJson(), grant)
+	case jobKindReview:
+		run, why = d.runReviewJob(j.GetPayloadJson(), grant, facts)
 	case jobKindTeleport:
 		req, why := parseTeleportJob(j.GetPayloadJson())
 		if why != "" {
@@ -195,7 +200,7 @@ func (d *Daemon) handleFactoryJob(ctx context.Context, j *nodev1.Job) {
 		return
 	}
 	if run == nil {
-		refuse(why) // knowledge_search, init_draft: a payload their parser refused
+		refuse(why) // knowledge_search, init_draft, review: a payload their parser refused
 		return
 	}
 	select {

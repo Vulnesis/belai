@@ -2808,7 +2808,8 @@ type Job struct {
 	// forges.md WP-9),
 	// "library" (payload: {"task":"convert","kind","format","name","files"};
 	// library-search.md WP9),
-	// "model" (payload: {"task":"draft|classify|avatar|systemone", ...}).
+	// "model" (payload: {"task":"draft|classify|avatar|systemone", ...}),
+	// "review" (payload: a ReviewJobRequest; output: a ReviewResult; row 47).
 	Kind          string      `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	PayloadJson   string      `protobuf:"bytes,3,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
 	Vault         *VaultGrant `protobuf:"bytes,4,opt,name=vault,proto3" json:"vault,omitempty"`
@@ -9630,6 +9631,333 @@ func (x *InitDraftResult) GetBaseSha256() string {
 	return ""
 }
 
+// Job kind "review" (row 47): belai's rubric code review (`belai review`,
+// belai docs/review.md) of a working tree, a branch or a pull request in a
+// directory the host offers. payload_json is a ReviewJobRequest; output_json
+// a ReviewResult. Read only: the host posts nothing; Keleustes's pr_review
+// output posts the findings. Everything in a ReviewResult is data.
+type ReviewJobRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// A trusted directory on the host, or owner/name of a clone it offers.
+	Cwd  string `protobuf:"bytes,1,opt,name=cwd,proto3" json:"cwd,omitempty"`
+	Repo string `protobuf:"bytes,2,opt,name=repo,proto3" json:"repo,omitempty"`
+	// "workdir", "branch" or "pr".
+	Target string `protobuf:"bytes,3,opt,name=target,proto3" json:"target,omitempty"`
+	// The branch (empty: HEAD) or the pull request number.
+	Ref string `protobuf:"bytes,4,opt,name=ref,proto3" json:"ref,omitempty"`
+	// What a branch is compared with (empty: the remote's default branch).
+	Base     string `protobuf:"bytes,5,opt,name=base,proto3" json:"base,omitempty"`
+	Provider string `protobuf:"bytes,6,opt,name=provider,proto3" json:"provider,omitempty"`
+	Model    string `protobuf:"bytes,7,opt,name=model,proto3" json:"model,omitempty"`
+	// Review again even when the host has a review of this head.
+	Force         bool `protobuf:"varint,8,opt,name=force,proto3" json:"force,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewJobRequest) Reset() {
+	*x = ReviewJobRequest{}
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[116]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewJobRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewJobRequest) ProtoMessage() {}
+
+func (x *ReviewJobRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[116]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewJobRequest.ProtoReflect.Descriptor instead.
+func (*ReviewJobRequest) Descriptor() ([]byte, []int) {
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{116}
+}
+
+func (x *ReviewJobRequest) GetCwd() string {
+	if x != nil {
+		return x.Cwd
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetRepo() string {
+	if x != nil {
+		return x.Repo
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetRef() string {
+	if x != nil {
+		return x.Ref
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetBase() string {
+	if x != nil {
+		return x.Base
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *ReviewJobRequest) GetForce() bool {
+	if x != nil {
+		return x.Force
+	}
+	return false
+}
+
+type ReviewResult struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "approve", "comment" or "request_changes". Advisory only.
+	Verdict  string           `protobuf:"bytes,1,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	Findings []*ReviewFinding `protobuf:"bytes,2,rep,name=findings,proto3" json:"findings,omitempty"`
+	// "workdir", "branch" or "pr", as reviewed.
+	Target  string `protobuf:"bytes,3,opt,name=target,proto3" json:"target,omitempty"`
+	HeadSha string `protobuf:"bytes,4,opt,name=head_sha,json=headSha,proto3" json:"head_sha,omitempty"`
+	Pr      uint32 `protobuf:"varint,5,opt,name=pr,proto3" json:"pr,omitempty"`
+	// Files reviewed, changed files not reviewed, finding lines dropped.
+	Files   uint32 `protobuf:"varint,6,opt,name=files,proto3" json:"files,omitempty"`
+	Skipped uint32 `protobuf:"varint,7,opt,name=skipped,proto3" json:"skipped,omitempty"`
+	Dropped uint32 `protobuf:"varint,8,opt,name=dropped,proto3" json:"dropped,omitempty"`
+	// A cap cut the diff; the model gave no verdict line; answered from the
+	// host's store with no model turn.
+	Truncated     bool `protobuf:"varint,9,opt,name=truncated,proto3" json:"truncated,omitempty"`
+	Incomplete    bool `protobuf:"varint,10,opt,name=incomplete,proto3" json:"incomplete,omitempty"`
+	Cached        bool `protobuf:"varint,11,opt,name=cached,proto3" json:"cached,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewResult) Reset() {
+	*x = ReviewResult{}
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[117]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewResult) ProtoMessage() {}
+
+func (x *ReviewResult) ProtoReflect() protoreflect.Message {
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[117]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewResult.ProtoReflect.Descriptor instead.
+func (*ReviewResult) Descriptor() ([]byte, []int) {
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{117}
+}
+
+func (x *ReviewResult) GetVerdict() string {
+	if x != nil {
+		return x.Verdict
+	}
+	return ""
+}
+
+func (x *ReviewResult) GetFindings() []*ReviewFinding {
+	if x != nil {
+		return x.Findings
+	}
+	return nil
+}
+
+func (x *ReviewResult) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *ReviewResult) GetHeadSha() string {
+	if x != nil {
+		return x.HeadSha
+	}
+	return ""
+}
+
+func (x *ReviewResult) GetPr() uint32 {
+	if x != nil {
+		return x.Pr
+	}
+	return 0
+}
+
+func (x *ReviewResult) GetFiles() uint32 {
+	if x != nil {
+		return x.Files
+	}
+	return 0
+}
+
+func (x *ReviewResult) GetSkipped() uint32 {
+	if x != nil {
+		return x.Skipped
+	}
+	return 0
+}
+
+func (x *ReviewResult) GetDropped() uint32 {
+	if x != nil {
+		return x.Dropped
+	}
+	return 0
+}
+
+func (x *ReviewResult) GetTruncated() bool {
+	if x != nil {
+		return x.Truncated
+	}
+	return false
+}
+
+func (x *ReviewResult) GetIncomplete() bool {
+	if x != nil {
+		return x.Incomplete
+	}
+	return false
+}
+
+func (x *ReviewResult) GetCached() bool {
+	if x != nil {
+		return x.Cached
+	}
+	return false
+}
+
+// One finding, checked by the host against the diff and the closed lists.
+type ReviewFinding struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Line  uint32                 `protobuf:"varint,2,opt,name=line,proto3" json:"line,omitempty"`
+	// "blocker", "major", "minor" or "nit".
+	Severity string `protobuf:"bytes,3,opt,name=severity,proto3" json:"severity,omitempty"`
+	// A rubric id: "correctness", "security", "tests", "errors",
+	// "concurrency", "performance", "compatibility", "maintainability", "docs".
+	Criterion     string `protobuf:"bytes,4,opt,name=criterion,proto3" json:"criterion,omitempty"`
+	Body          string `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
+	Fix           string `protobuf:"bytes,6,opt,name=fix,proto3" json:"fix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewFinding) Reset() {
+	*x = ReviewFinding{}
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[118]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewFinding) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewFinding) ProtoMessage() {}
+
+func (x *ReviewFinding) ProtoReflect() protoreflect.Message {
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[118]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewFinding.ProtoReflect.Descriptor instead.
+func (*ReviewFinding) Descriptor() ([]byte, []int) {
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{118}
+}
+
+func (x *ReviewFinding) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *ReviewFinding) GetLine() uint32 {
+	if x != nil {
+		return x.Line
+	}
+	return 0
+}
+
+func (x *ReviewFinding) GetSeverity() string {
+	if x != nil {
+		return x.Severity
+	}
+	return ""
+}
+
+func (x *ReviewFinding) GetCriterion() string {
+	if x != nil {
+		return x.Criterion
+	}
+	return ""
+}
+
+func (x *ReviewFinding) GetBody() string {
+	if x != nil {
+		return x.Body
+	}
+	return ""
+}
+
+func (x *ReviewFinding) GetFix() string {
+	if x != nil {
+		return x.Fix
+	}
+	return ""
+}
+
 var File_keleustes_node_v1_node_proto protoreflect.FileDescriptor
 
 const file_keleustes_node_v1_node_proto_rawDesc = "" +
@@ -10492,7 +10820,38 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"\bmarkdown\x18\x02 \x01(\tR\bmarkdown\x12\x16\n" +
 	"\x06sha256\x18\x03 \x01(\tR\x06sha256\x12\x1f\n" +
 	"\vbase_sha256\x18\x04 \x01(\tR\n" +
-	"baseSha2562\x99\x01\n" +
+	"baseSha256\"\xbe\x01\n" +
+	"\x10ReviewJobRequest\x12\x10\n" +
+	"\x03cwd\x18\x01 \x01(\tR\x03cwd\x12\x12\n" +
+	"\x04repo\x18\x02 \x01(\tR\x04repo\x12\x16\n" +
+	"\x06target\x18\x03 \x01(\tR\x06target\x12\x10\n" +
+	"\x03ref\x18\x04 \x01(\tR\x03ref\x12\x12\n" +
+	"\x04base\x18\x05 \x01(\tR\x04base\x12\x1a\n" +
+	"\bprovider\x18\x06 \x01(\tR\bprovider\x12\x14\n" +
+	"\x05model\x18\a \x01(\tR\x05model\x12\x14\n" +
+	"\x05force\x18\b \x01(\bR\x05force\"\xc9\x02\n" +
+	"\fReviewResult\x12\x18\n" +
+	"\averdict\x18\x01 \x01(\tR\averdict\x12<\n" +
+	"\bfindings\x18\x02 \x03(\v2 .keleustes.node.v1.ReviewFindingR\bfindings\x12\x16\n" +
+	"\x06target\x18\x03 \x01(\tR\x06target\x12\x19\n" +
+	"\bhead_sha\x18\x04 \x01(\tR\aheadSha\x12\x0e\n" +
+	"\x02pr\x18\x05 \x01(\rR\x02pr\x12\x14\n" +
+	"\x05files\x18\x06 \x01(\rR\x05files\x12\x18\n" +
+	"\askipped\x18\a \x01(\rR\askipped\x12\x18\n" +
+	"\adropped\x18\b \x01(\rR\adropped\x12\x1c\n" +
+	"\ttruncated\x18\t \x01(\bR\ttruncated\x12\x1e\n" +
+	"\n" +
+	"incomplete\x18\n" +
+	" \x01(\bR\n" +
+	"incomplete\x12\x16\n" +
+	"\x06cached\x18\v \x01(\bR\x06cached\"\x97\x01\n" +
+	"\rReviewFinding\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
+	"\x04line\x18\x02 \x01(\rR\x04line\x12\x1a\n" +
+	"\bseverity\x18\x03 \x01(\tR\bseverity\x12\x1c\n" +
+	"\tcriterion\x18\x04 \x01(\tR\tcriterion\x12\x12\n" +
+	"\x04body\x18\x05 \x01(\tR\x04body\x12\x10\n" +
+	"\x03fix\x18\x06 \x01(\tR\x03fix2\x99\x01\n" +
 	"\x04Node\x12G\n" +
 	"\x04Join\x12\x1e.keleustes.node.v1.JoinRequest\x1a\x1f.keleustes.node.v1.JoinResponse\x12H\n" +
 	"\x04Link\x12\x1c.keleustes.node.v1.NodeFrame\x1a\x1e.keleustes.node.v1.ServerFrame(\x010\x012\xd2\x04\n" +
@@ -10555,7 +10914,7 @@ func file_keleustes_node_v1_node_proto_rawDescGZIP() []byte {
 	return file_keleustes_node_v1_node_proto_rawDescData
 }
 
-var file_keleustes_node_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 119)
+var file_keleustes_node_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 122)
 var file_keleustes_node_v1_node_proto_goTypes = []any{
 	(*Ok)(nil),                     // 0: keleustes.node.v1.Ok
 	(*JoinRequest)(nil),            // 1: keleustes.node.v1.JoinRequest
@@ -10673,9 +11032,12 @@ var file_keleustes_node_v1_node_proto_goTypes = []any{
 	(*KnowledgeSearchResult)(nil),  // 113: keleustes.node.v1.KnowledgeSearchResult
 	(*InitDraftRequest)(nil),       // 114: keleustes.node.v1.InitDraftRequest
 	(*InitDraftResult)(nil),        // 115: keleustes.node.v1.InitDraftResult
-	nil,                            // 116: keleustes.node.v1.Dispatch.MemberModelsEntry
-	nil,                            // 117: keleustes.node.v1.Dispatch.PrefsSetEntry
-	nil,                            // 118: keleustes.node.v1.Dispatch.OptionsEntry
+	(*ReviewJobRequest)(nil),       // 116: keleustes.node.v1.ReviewJobRequest
+	(*ReviewResult)(nil),           // 117: keleustes.node.v1.ReviewResult
+	(*ReviewFinding)(nil),          // 118: keleustes.node.v1.ReviewFinding
+	nil,                            // 119: keleustes.node.v1.Dispatch.MemberModelsEntry
+	nil,                            // 120: keleustes.node.v1.Dispatch.PrefsSetEntry
+	nil,                            // 121: keleustes.node.v1.Dispatch.OptionsEntry
 }
 var file_keleustes_node_v1_node_proto_depIdxs = []int32{
 	13,  // 0: keleustes.node.v1.JoinRequest.host:type_name -> keleustes.node.v1.HostAdvert
@@ -10704,12 +11066,12 @@ var file_keleustes_node_v1_node_proto_depIdxs = []int32{
 	27,  // 23: keleustes.node.v1.Dispatch.vault:type_name -> keleustes.node.v1.VaultGrant
 	21,  // 24: keleustes.node.v1.Dispatch.trigger:type_name -> keleustes.node.v1.Trigger
 	22,  // 25: keleustes.node.v1.Dispatch.budget:type_name -> keleustes.node.v1.WorkerBudget
-	116, // 26: keleustes.node.v1.Dispatch.member_models:type_name -> keleustes.node.v1.Dispatch.MemberModelsEntry
+	119, // 26: keleustes.node.v1.Dispatch.member_models:type_name -> keleustes.node.v1.Dispatch.MemberModelsEntry
 	23,  // 27: keleustes.node.v1.Dispatch.clone:type_name -> keleustes.node.v1.CloneSpec
 	24,  // 28: keleustes.node.v1.Dispatch.control:type_name -> keleustes.node.v1.CrewControl
 	95,  // 29: keleustes.node.v1.Dispatch.library:type_name -> keleustes.node.v1.LibraryRef
-	117, // 30: keleustes.node.v1.Dispatch.prefs_set:type_name -> keleustes.node.v1.Dispatch.PrefsSetEntry
-	118, // 31: keleustes.node.v1.Dispatch.options:type_name -> keleustes.node.v1.Dispatch.OptionsEntry
+	120, // 30: keleustes.node.v1.Dispatch.prefs_set:type_name -> keleustes.node.v1.Dispatch.PrefsSetEntry
+	121, // 31: keleustes.node.v1.Dispatch.options:type_name -> keleustes.node.v1.Dispatch.OptionsEntry
 	110, // 32: keleustes.node.v1.Dispatch.budget_push:type_name -> keleustes.node.v1.BudgetPush
 	20,  // 33: keleustes.node.v1.Dispatch.adhoc:type_name -> keleustes.node.v1.AdhocWorker
 	44,  // 34: keleustes.node.v1.Dispatch.attachments:type_name -> keleustes.node.v1.Attachment
@@ -10761,79 +11123,80 @@ var file_keleustes_node_v1_node_proto_depIdxs = []int32{
 	104, // 80: keleustes.node.v1.ForgePart.request:type_name -> keleustes.node.v1.ForgeRequest
 	95,  // 81: keleustes.node.v1.LibraryScanReport.found:type_name -> keleustes.node.v1.LibraryRef
 	112, // 82: keleustes.node.v1.KnowledgeSearchResult.hits:type_name -> keleustes.node.v1.KnowledgeHit
-	1,   // 83: keleustes.node.v1.Node.Join:input_type -> keleustes.node.v1.JoinRequest
-	3,   // 84: keleustes.node.v1.Node.Link:input_type -> keleustes.node.v1.NodeFrame
-	30,  // 85: keleustes.node.v1.Sessions.Upsert:input_type -> keleustes.node.v1.SessionUpsert
-	37,  // 86: keleustes.node.v1.Sessions.Append:input_type -> keleustes.node.v1.SessionEntries
-	40,  // 87: keleustes.node.v1.Sessions.End:input_type -> keleustes.node.v1.SessionEnd
-	41,  // 88: keleustes.node.v1.Sessions.Inbox:input_type -> keleustes.node.v1.InboxRequest
-	49,  // 89: keleustes.node.v1.Sessions.Ack:input_type -> keleustes.node.v1.InboxAck
-	50,  // 90: keleustes.node.v1.Sessions.Audit:input_type -> keleustes.node.v1.AuditBatch
-	51,  // 91: keleustes.node.v1.Sessions.AuditHead:input_type -> keleustes.node.v1.AuditStreamRequest
-	45,  // 92: keleustes.node.v1.Sessions.FetchAttachment:input_type -> keleustes.node.v1.AttachmentRequest
-	55,  // 93: keleustes.node.v1.Board.KanbanPull:input_type -> keleustes.node.v1.KanbanPullRequest
-	57,  // 94: keleustes.node.v1.Board.KanbanPush:input_type -> keleustes.node.v1.KanbanBatch
-	60,  // 95: keleustes.node.v1.Board.MemoryPull:input_type -> keleustes.node.v1.MemoryPullRequest
-	59,  // 96: keleustes.node.v1.Board.MemoryPush:input_type -> keleustes.node.v1.MemoryNote
-	62,  // 97: keleustes.node.v1.Board.A2ASend:input_type -> keleustes.node.v1.A2AEnvelope
-	64,  // 98: keleustes.node.v1.Board.A2AReceive:input_type -> keleustes.node.v1.A2AReceiveRequest
-	65,  // 99: keleustes.node.v1.Board.State:input_type -> keleustes.node.v1.StateRequest
-	78,  // 100: keleustes.node.v1.Board.Attention:input_type -> keleustes.node.v1.AttentionRequest
-	82,  // 101: keleustes.node.v1.Board.A2APeers:input_type -> keleustes.node.v1.A2APeersRequest
-	91,  // 102: keleustes.node.v1.Board.SchedulePull:input_type -> keleustes.node.v1.SchedulePullRequest
-	93,  // 103: keleustes.node.v1.Board.SchedulePush:input_type -> keleustes.node.v1.ScheduleBatch
-	26,  // 104: keleustes.node.v1.Jobs.Complete:input_type -> keleustes.node.v1.JobResult
-	66,  // 105: keleustes.node.v1.Teleport.Upload:input_type -> keleustes.node.v1.TeleportPart
-	69,  // 106: keleustes.node.v1.Teleport.Download:input_type -> keleustes.node.v1.TeleportRequest
-	103, // 107: keleustes.node.v1.Forge.File:input_type -> keleustes.node.v1.ForgePart
-	96,  // 108: keleustes.node.v1.Library.Fetch:input_type -> keleustes.node.v1.LibraryFetch
-	97,  // 109: keleustes.node.v1.Library.Backup:input_type -> keleustes.node.v1.LibraryDoc
-	100, // 110: keleustes.node.v1.Library.Reconcile:input_type -> keleustes.node.v1.LibraryInventory
-	106, // 111: keleustes.node.v1.Library.ScanReport:input_type -> keleustes.node.v1.LibraryScanReport
-	85,  // 112: keleustes.node.v1.Screen.Stream:input_type -> keleustes.node.v1.ScreenUp
-	70,  // 113: keleustes.node.v1.Fleet.Nodes:input_type -> keleustes.node.v1.NodesRequest
-	73,  // 114: keleustes.node.v1.Fleet.Request:input_type -> keleustes.node.v1.DispatchRequest
-	75,  // 115: keleustes.node.v1.Fleet.Watch:input_type -> keleustes.node.v1.WatchRequest
-	77,  // 116: keleustes.node.v1.Fleet.Prompt:input_type -> keleustes.node.v1.PeerPrompt
-	2,   // 117: keleustes.node.v1.Node.Join:output_type -> keleustes.node.v1.JoinResponse
-	4,   // 118: keleustes.node.v1.Node.Link:output_type -> keleustes.node.v1.ServerFrame
-	0,   // 119: keleustes.node.v1.Sessions.Upsert:output_type -> keleustes.node.v1.Ok
-	39,  // 120: keleustes.node.v1.Sessions.Append:output_type -> keleustes.node.v1.AppendResult
-	0,   // 121: keleustes.node.v1.Sessions.End:output_type -> keleustes.node.v1.Ok
-	42,  // 122: keleustes.node.v1.Sessions.Inbox:output_type -> keleustes.node.v1.InboxItem
-	0,   // 123: keleustes.node.v1.Sessions.Ack:output_type -> keleustes.node.v1.Ok
-	0,   // 124: keleustes.node.v1.Sessions.Audit:output_type -> keleustes.node.v1.Ok
-	52,  // 125: keleustes.node.v1.Sessions.AuditHead:output_type -> keleustes.node.v1.AuditStreamHead
-	46,  // 126: keleustes.node.v1.Sessions.FetchAttachment:output_type -> keleustes.node.v1.AttachmentPart
-	56,  // 127: keleustes.node.v1.Board.KanbanPull:output_type -> keleustes.node.v1.KanbanPage
-	58,  // 128: keleustes.node.v1.Board.KanbanPush:output_type -> keleustes.node.v1.KanbanPushResult
-	61,  // 129: keleustes.node.v1.Board.MemoryPull:output_type -> keleustes.node.v1.MemoryPage
-	59,  // 130: keleustes.node.v1.Board.MemoryPush:output_type -> keleustes.node.v1.MemoryNote
-	63,  // 131: keleustes.node.v1.Board.A2ASend:output_type -> keleustes.node.v1.A2ASendResult
-	62,  // 132: keleustes.node.v1.Board.A2AReceive:output_type -> keleustes.node.v1.A2AEnvelope
-	18,  // 133: keleustes.node.v1.Board.State:output_type -> keleustes.node.v1.FactoryControl
-	79,  // 134: keleustes.node.v1.Board.Attention:output_type -> keleustes.node.v1.AttentionReceipt
-	84,  // 135: keleustes.node.v1.Board.A2APeers:output_type -> keleustes.node.v1.A2APeerList
-	92,  // 136: keleustes.node.v1.Board.SchedulePull:output_type -> keleustes.node.v1.SchedulePage
-	94,  // 137: keleustes.node.v1.Board.SchedulePush:output_type -> keleustes.node.v1.SchedulePushResult
-	0,   // 138: keleustes.node.v1.Jobs.Complete:output_type -> keleustes.node.v1.Ok
-	68,  // 139: keleustes.node.v1.Teleport.Upload:output_type -> keleustes.node.v1.TeleportReceipt
-	66,  // 140: keleustes.node.v1.Teleport.Download:output_type -> keleustes.node.v1.TeleportPart
-	105, // 141: keleustes.node.v1.Forge.File:output_type -> keleustes.node.v1.ForgeFiled
-	97,  // 142: keleustes.node.v1.Library.Fetch:output_type -> keleustes.node.v1.LibraryDoc
-	99,  // 143: keleustes.node.v1.Library.Backup:output_type -> keleustes.node.v1.LibraryReceipt
-	101, // 144: keleustes.node.v1.Library.Reconcile:output_type -> keleustes.node.v1.LibraryVerdicts
-	0,   // 145: keleustes.node.v1.Library.ScanReport:output_type -> keleustes.node.v1.Ok
-	89,  // 146: keleustes.node.v1.Screen.Stream:output_type -> keleustes.node.v1.ScreenDown
-	71,  // 147: keleustes.node.v1.Fleet.Nodes:output_type -> keleustes.node.v1.NodeList
-	74,  // 148: keleustes.node.v1.Fleet.Request:output_type -> keleustes.node.v1.DispatchTicket
-	76,  // 149: keleustes.node.v1.Fleet.Watch:output_type -> keleustes.node.v1.DispatchStatus
-	74,  // 150: keleustes.node.v1.Fleet.Prompt:output_type -> keleustes.node.v1.DispatchTicket
-	117, // [117:151] is the sub-list for method output_type
-	83,  // [83:117] is the sub-list for method input_type
-	83,  // [83:83] is the sub-list for extension type_name
-	83,  // [83:83] is the sub-list for extension extendee
-	0,   // [0:83] is the sub-list for field type_name
+	118, // 83: keleustes.node.v1.ReviewResult.findings:type_name -> keleustes.node.v1.ReviewFinding
+	1,   // 84: keleustes.node.v1.Node.Join:input_type -> keleustes.node.v1.JoinRequest
+	3,   // 85: keleustes.node.v1.Node.Link:input_type -> keleustes.node.v1.NodeFrame
+	30,  // 86: keleustes.node.v1.Sessions.Upsert:input_type -> keleustes.node.v1.SessionUpsert
+	37,  // 87: keleustes.node.v1.Sessions.Append:input_type -> keleustes.node.v1.SessionEntries
+	40,  // 88: keleustes.node.v1.Sessions.End:input_type -> keleustes.node.v1.SessionEnd
+	41,  // 89: keleustes.node.v1.Sessions.Inbox:input_type -> keleustes.node.v1.InboxRequest
+	49,  // 90: keleustes.node.v1.Sessions.Ack:input_type -> keleustes.node.v1.InboxAck
+	50,  // 91: keleustes.node.v1.Sessions.Audit:input_type -> keleustes.node.v1.AuditBatch
+	51,  // 92: keleustes.node.v1.Sessions.AuditHead:input_type -> keleustes.node.v1.AuditStreamRequest
+	45,  // 93: keleustes.node.v1.Sessions.FetchAttachment:input_type -> keleustes.node.v1.AttachmentRequest
+	55,  // 94: keleustes.node.v1.Board.KanbanPull:input_type -> keleustes.node.v1.KanbanPullRequest
+	57,  // 95: keleustes.node.v1.Board.KanbanPush:input_type -> keleustes.node.v1.KanbanBatch
+	60,  // 96: keleustes.node.v1.Board.MemoryPull:input_type -> keleustes.node.v1.MemoryPullRequest
+	59,  // 97: keleustes.node.v1.Board.MemoryPush:input_type -> keleustes.node.v1.MemoryNote
+	62,  // 98: keleustes.node.v1.Board.A2ASend:input_type -> keleustes.node.v1.A2AEnvelope
+	64,  // 99: keleustes.node.v1.Board.A2AReceive:input_type -> keleustes.node.v1.A2AReceiveRequest
+	65,  // 100: keleustes.node.v1.Board.State:input_type -> keleustes.node.v1.StateRequest
+	78,  // 101: keleustes.node.v1.Board.Attention:input_type -> keleustes.node.v1.AttentionRequest
+	82,  // 102: keleustes.node.v1.Board.A2APeers:input_type -> keleustes.node.v1.A2APeersRequest
+	91,  // 103: keleustes.node.v1.Board.SchedulePull:input_type -> keleustes.node.v1.SchedulePullRequest
+	93,  // 104: keleustes.node.v1.Board.SchedulePush:input_type -> keleustes.node.v1.ScheduleBatch
+	26,  // 105: keleustes.node.v1.Jobs.Complete:input_type -> keleustes.node.v1.JobResult
+	66,  // 106: keleustes.node.v1.Teleport.Upload:input_type -> keleustes.node.v1.TeleportPart
+	69,  // 107: keleustes.node.v1.Teleport.Download:input_type -> keleustes.node.v1.TeleportRequest
+	103, // 108: keleustes.node.v1.Forge.File:input_type -> keleustes.node.v1.ForgePart
+	96,  // 109: keleustes.node.v1.Library.Fetch:input_type -> keleustes.node.v1.LibraryFetch
+	97,  // 110: keleustes.node.v1.Library.Backup:input_type -> keleustes.node.v1.LibraryDoc
+	100, // 111: keleustes.node.v1.Library.Reconcile:input_type -> keleustes.node.v1.LibraryInventory
+	106, // 112: keleustes.node.v1.Library.ScanReport:input_type -> keleustes.node.v1.LibraryScanReport
+	85,  // 113: keleustes.node.v1.Screen.Stream:input_type -> keleustes.node.v1.ScreenUp
+	70,  // 114: keleustes.node.v1.Fleet.Nodes:input_type -> keleustes.node.v1.NodesRequest
+	73,  // 115: keleustes.node.v1.Fleet.Request:input_type -> keleustes.node.v1.DispatchRequest
+	75,  // 116: keleustes.node.v1.Fleet.Watch:input_type -> keleustes.node.v1.WatchRequest
+	77,  // 117: keleustes.node.v1.Fleet.Prompt:input_type -> keleustes.node.v1.PeerPrompt
+	2,   // 118: keleustes.node.v1.Node.Join:output_type -> keleustes.node.v1.JoinResponse
+	4,   // 119: keleustes.node.v1.Node.Link:output_type -> keleustes.node.v1.ServerFrame
+	0,   // 120: keleustes.node.v1.Sessions.Upsert:output_type -> keleustes.node.v1.Ok
+	39,  // 121: keleustes.node.v1.Sessions.Append:output_type -> keleustes.node.v1.AppendResult
+	0,   // 122: keleustes.node.v1.Sessions.End:output_type -> keleustes.node.v1.Ok
+	42,  // 123: keleustes.node.v1.Sessions.Inbox:output_type -> keleustes.node.v1.InboxItem
+	0,   // 124: keleustes.node.v1.Sessions.Ack:output_type -> keleustes.node.v1.Ok
+	0,   // 125: keleustes.node.v1.Sessions.Audit:output_type -> keleustes.node.v1.Ok
+	52,  // 126: keleustes.node.v1.Sessions.AuditHead:output_type -> keleustes.node.v1.AuditStreamHead
+	46,  // 127: keleustes.node.v1.Sessions.FetchAttachment:output_type -> keleustes.node.v1.AttachmentPart
+	56,  // 128: keleustes.node.v1.Board.KanbanPull:output_type -> keleustes.node.v1.KanbanPage
+	58,  // 129: keleustes.node.v1.Board.KanbanPush:output_type -> keleustes.node.v1.KanbanPushResult
+	61,  // 130: keleustes.node.v1.Board.MemoryPull:output_type -> keleustes.node.v1.MemoryPage
+	59,  // 131: keleustes.node.v1.Board.MemoryPush:output_type -> keleustes.node.v1.MemoryNote
+	63,  // 132: keleustes.node.v1.Board.A2ASend:output_type -> keleustes.node.v1.A2ASendResult
+	62,  // 133: keleustes.node.v1.Board.A2AReceive:output_type -> keleustes.node.v1.A2AEnvelope
+	18,  // 134: keleustes.node.v1.Board.State:output_type -> keleustes.node.v1.FactoryControl
+	79,  // 135: keleustes.node.v1.Board.Attention:output_type -> keleustes.node.v1.AttentionReceipt
+	84,  // 136: keleustes.node.v1.Board.A2APeers:output_type -> keleustes.node.v1.A2APeerList
+	92,  // 137: keleustes.node.v1.Board.SchedulePull:output_type -> keleustes.node.v1.SchedulePage
+	94,  // 138: keleustes.node.v1.Board.SchedulePush:output_type -> keleustes.node.v1.SchedulePushResult
+	0,   // 139: keleustes.node.v1.Jobs.Complete:output_type -> keleustes.node.v1.Ok
+	68,  // 140: keleustes.node.v1.Teleport.Upload:output_type -> keleustes.node.v1.TeleportReceipt
+	66,  // 141: keleustes.node.v1.Teleport.Download:output_type -> keleustes.node.v1.TeleportPart
+	105, // 142: keleustes.node.v1.Forge.File:output_type -> keleustes.node.v1.ForgeFiled
+	97,  // 143: keleustes.node.v1.Library.Fetch:output_type -> keleustes.node.v1.LibraryDoc
+	99,  // 144: keleustes.node.v1.Library.Backup:output_type -> keleustes.node.v1.LibraryReceipt
+	101, // 145: keleustes.node.v1.Library.Reconcile:output_type -> keleustes.node.v1.LibraryVerdicts
+	0,   // 146: keleustes.node.v1.Library.ScanReport:output_type -> keleustes.node.v1.Ok
+	89,  // 147: keleustes.node.v1.Screen.Stream:output_type -> keleustes.node.v1.ScreenDown
+	71,  // 148: keleustes.node.v1.Fleet.Nodes:output_type -> keleustes.node.v1.NodeList
+	74,  // 149: keleustes.node.v1.Fleet.Request:output_type -> keleustes.node.v1.DispatchTicket
+	76,  // 150: keleustes.node.v1.Fleet.Watch:output_type -> keleustes.node.v1.DispatchStatus
+	74,  // 151: keleustes.node.v1.Fleet.Prompt:output_type -> keleustes.node.v1.DispatchTicket
+	118, // [118:152] is the sub-list for method output_type
+	84,  // [84:118] is the sub-list for method input_type
+	84,  // [84:84] is the sub-list for extension type_name
+	84,  // [84:84] is the sub-list for extension extendee
+	0,   // [0:84] is the sub-list for field type_name
 }
 
 func init() { file_keleustes_node_v1_node_proto_init() }
@@ -10879,7 +11242,7 @@ func file_keleustes_node_v1_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_keleustes_node_v1_node_proto_rawDesc), len(file_keleustes_node_v1_node_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   119,
+			NumMessages:   122,
 			NumExtensions: 0,
 			NumServices:   9,
 		},

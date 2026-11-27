@@ -22,6 +22,7 @@ import (
 	"github.com/vulnetix/belai/internal/budget"
 	"github.com/vulnetix/belai/internal/config"
 	"github.com/vulnetix/belai/internal/factorylink"
+	"github.com/vulnetix/belai/internal/factorylink/nodev1"
 	"github.com/vulnetix/belai/internal/fleet"
 	"github.com/vulnetix/belai/internal/libitem"
 	"github.com/vulnetix/belai/internal/modes"
@@ -114,6 +115,11 @@ type Options struct {
 	// offers, with one call of this host's model (Keleustes init_draft job).
 	// Nothing is written. nil refuses the job.
 	InitDraft func(ctx context.Context, dir, provider, model string, grant *factorylink.Grant) (InitDraft, string, error)
+	// ReviewJob runs the rubric code review (docs/review.md) a Keleustes review
+	// job asks for, in j.Dir, a directory this daemon offers, with the job's
+	// grant as the review turn's provider keys. It never posts the review. It
+	// returns the result, or a refusal reason. nil refuses the job.
+	ReviewJob func(ctx context.Context, j ReviewJob, grant *factorylink.Grant) (*nodev1.ReviewResult, string, error)
 	// ForgeSpool is the fleet registry directory whose <worker>.forge spools
 	// the daemon files with the forge coordinator (the host's registry unless a
 	// test replaces it); ForgeRelayEvery is how often it looks (5s).

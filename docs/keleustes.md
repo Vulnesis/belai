@@ -540,13 +540,14 @@ through `Jobs.Complete`: `ok` with `output_json`, `refused` with the reason,
 or `failed`. It runs for its `deadline_ms` (at most ten minutes; ninety
 seconds when it names none), and one that arrives past it is refused. Every
 field of a job is untrusted. Any kind but `github`, `forge`, `model`,
-`teleport`, `forge_push` and `library` is refused. The host lists the kinds
+`teleport`, `forge_push`, `library`, `knowledge_search`, `init_draft` and
+`review` is refused. The host lists the kinds
 it runs in `Capabilities.job_kinds`; Keleustes sends a `forge` job only to a
 node that lists it, and for github.com falls back to the `github` job on an
 older node. Every job's outcome, a refusal included, is a `host.dispatch`
 audit fact (`dispatch: job`, the kind, the status; `reason: kill_switch`
 when the factory is stopped; a `forge` job's host and CLI as `forge` and
-`tool`).
+`tool`; a `review` job's `target`, and when it ran its `pr` and `files`).
 
 ### `github`
 
@@ -660,6 +661,31 @@ directory. The answer is `{"doc", "sha256", "name", "format", "notes":
 [{"kind", "field", "text"}], "skills": [{"name", "doc", "sha256"}]}`; a
 definition the importer refuses is refused with its reason. Nothing is
 installed: Keleustes reviews and imports the answer like any other preview.
+
+### `review`
+
+The payload is a `ReviewJobRequest`: `cwd` (a directory the daemon offers)
+or `repo` (`owner/name` of one), `target` (`workdir`, `branch` or `pr`;
+default `workdir`), `ref` (the branch, or the pull request number), `base`,
+optionally `provider` and `model`, and `force`. The host runs the rubric code
+review of `belai review` ([Code review](review.md)) in that directory: the same
+read-only review turn, caps, validation against the diff and store, with the
+model resolved as a `model` job's is and the job's vault grant as the review
+turn's provider keys. It is refused unless the directory is offered and
+trusted, the target is one of the three words, a branch ref has
+`review.ValidRef`'s shape, a pull request is a number, and `review.enabled` is
+on. A working tree takes no `ref` or `base`, a pull request no `base`.
+
+The answer is a `ReviewResult`: the verdict (advisory), the findings (`path`,
+`line`, `severity`, `criterion`, `body`, `fix`), the target, the head commit,
+the pull request, the files reviewed, skipped and dropped, and whether the diff
+was truncated, the verdict incomplete or the review answered from the store.
+The daemon checks each finding again before it leaves (the closed severity and
+criterion lists, the path alphabet, a line, the caps; any other is dropped and
+counted) and narrows a `request_changes` that no `blocker` or `major` finding
+backs. The model's reply and the diff never leave. Nothing is posted from the
+host, whatever `review.post` says: Keleustes posts the findings with its
+`pr_review` output, as data.
 
 ## Vault grants
 

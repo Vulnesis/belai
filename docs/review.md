@@ -176,6 +176,20 @@ Exit codes: 0 for `approve` or `comment`, 1 for `request_changes`, 2 for an
 error, including a post that was asked for and refused. The command fails closed
 in a directory you have not trusted, and `review.enabled` false turns it off.
 
+## As a Keleustes job
+
+`belai rc` takes a `review` job from Keleustes and runs this review in a
+directory it offers: a working tree, a branch against a base, or a pull request
+by number. It is the same review as the command line (the read-only turn, the
+caps, the validation and the store) with the model resolved as a Keleustes
+model job's is and the job's vault grant as the turn's provider keys. The job
+never posts, whatever `review.post` says. The answer is the validated result
+only (verdict, findings, counts and the head commit), never the model's reply or
+any diff text, and the daemon checks every finding against the closed lists once
+more before it leaves. A stopped factory takes no review job. Keleustes stores
+the findings and posts them with its `pr_review` output. The request, the checks
+and the answer are in [Keleustes nodes](keleustes.md#review).
+
 ## Where results are kept
 
 One file per repository and head, `reviews/<repository>-<head>.json` in the
@@ -224,6 +238,8 @@ settings file keys.
 | The settings | `internal/config/review.go` |
 | The command line | `cmd/belai/reviewcmd.go` |
 | The slash command and the post question | `internal/tui/code_review.go` |
+| The Keleustes `review` job: the request, the checks on the answer | `internal/rc/factoryreview.go` |
+| The job's runner, the result as a `ReviewResult` | `cmd/belai/reviewjob.go` |
 
 ## Limits
 
@@ -234,5 +250,5 @@ settings file keys.
   to spot it.
 - On Gitea and Forgejo a pull request review needs the checkout at the pull
   request's head.
-- It works in the TUI and on the command line. It is not a model-facing tool,
-  and there is no web or editor surface for it.
+- It works in the TUI, on the command line and as a Keleustes job. It is not a
+  model-facing tool, and there is no web or editor surface for it.

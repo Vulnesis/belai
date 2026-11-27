@@ -14,6 +14,7 @@ import (
 	"github.com/vulnetix/belai/internal/agentprofile"
 	"github.com/vulnetix/belai/internal/avatar"
 	"github.com/vulnetix/belai/internal/config"
+	"github.com/vulnetix/belai/internal/credentials"
 	"github.com/vulnetix/belai/internal/factorylink"
 	"github.com/vulnetix/belai/internal/httpclient"
 	"github.com/vulnetix/belai/internal/posture"
@@ -52,6 +53,9 @@ type modelJobEnv struct {
 	pol      posture.Policy
 	cfg      run.Config
 	pipe     *rolemanager.Pipeline
+	// resolver answers provider keys with the grant's first (a review job's
+	// background agent reads its keys through it).
+	resolver *credentials.Resolver
 }
 
 // rcModelJob is the daemon's runner for Keleustes model jobs.
@@ -118,7 +122,8 @@ func resolveModelJob(wd string, payload json.RawMessage, grant *factorylink.Gran
 		return modelJobEnv{}, jobUnchecked
 	}
 	cache, _ := rolemanager.LoadCache(rolemanager.DefaultCachePath())
-	return modelJobEnv{settings: settings, pol: pol, cfg: cfg, pipe: run.NewPipeline(cfg, httpclient.Default(), cache)}, ""
+	return modelJobEnv{settings: settings, pol: pol, cfg: cfg, pipe: run.NewPipeline(cfg, httpclient.Default(), cache),
+		resolver: resolver}, ""
 }
 
 // admit checks the job's text with the security classifier. It returns the
