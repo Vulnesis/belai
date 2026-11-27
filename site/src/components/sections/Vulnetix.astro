@@ -165,9 +165,9 @@ const firewallRules: [string, string][] = [
 ];
 
 const products = [
-  { cmd: '/vulnetix review', name: 'Code Scanner', what: 'Nine scanners, triage and fixes', href: 'https://www.vulnetix.com/features/code-scanner', accent: false },
-  { cmd: '/vulnetix firewall', name: 'AI Firewall', what: 'A filtering gateway for model traffic', href: 'https://www.vulnetix.com/features/ai-firewall', accent: false },
-  { cmd: '/vulnetix mcp', name: 'MCP server', what: 'Vulnetix as MCP tools in your session', href: 'https://www.vulnetix.com/features/mcp-server', accent: true },
+  { cmd: '/vulnetix review', name: 'Code Scanner', what: 'Nine scanners, triage and fixes', href: 'https://www.vulnes.is/features/code-scanner', accent: false },
+  { cmd: '/vulnetix firewall', name: 'AI Firewall', what: 'A filtering gateway for model traffic', href: 'https://www.vulnes.is/features/ai-firewall', accent: false },
+  { cmd: '/vulnetix mcp', name: 'MCP server', what: 'Vulnetix as MCP tools in your session', href: 'https://www.vulnes.is/features/mcp-server', accent: true },
 ];
 
 const codeish = /^(sca|esc|belai:vulnetix-review|vulnetix fix|code-review-report\.md)$/;
@@ -423,7 +423,7 @@ const parts = (s: string) => s.split(/(\bsca\b|\besc\b|belai:vulnetix-review|vul
 
   <!-- AI Firewall -->
   <SubHead title="AI Firewall" surfaces={['vulnetix only', 'pix sandbox']}>
-      <a class="text-vx-ink underline" href="https://www.vulnetix.com/features/ai-firewall">AI Firewall</a>{' '}
+      <a class="text-vx-ink underline" href="https://www.vulnes.is/features/ai-firewall">AI Firewall</a>{' '}
       sends your model traffic through a filtering gateway, which uses its own key in place of the
       provider's. If any of its four required settings is missing, Belai talks to the provider directly.
     </SubHead>
@@ -498,5 +498,5 @@ const parts = (s: string) => s.split(/(\bsca\b|\besc\b|belai:vulnetix-review|vul
       </a>
     ))}
   </div>
-  <p class="mt-4 text-sm text-vx-ink/70">The scanners, the firewall and the MCP server are <a class="text-vx-ink underline" href="https://www.vulnetix.com/features/community">free for everyone</a>.</p>
+  <p class="mt-4 text-sm text-vx-ink/70">The scanners, the firewall and the MCP server are <a class="text-vx-ink underline" href="https://www.vulnes.is/features/community">free for everyone</a>.</p>
 </SealedSection>
