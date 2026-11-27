@@ -107,6 +107,7 @@ func runTeleportKeleustes(ctx context.Context, p *factorylink.Profile, workdir, 
 	if push {
 		say("-teleport-push has no effect through Keleustes: the bundle carries the changes, and nothing goes to the forge")
 	}
+	var needs []factorylink.TeleportNeed
 	res, err := teleport.RunBundle(ctx, teleport.Options{
 		RefOverride: override,
 		Workdir:     workdir,
@@ -118,10 +119,17 @@ func runTeleportKeleustes(ctx context.Context, p *factorylink.Profile, workdir, 
 		if err != nil {
 			return teleport.Fetched{}, fmt.Errorf("keleustes did not hand over teleport %s: %s", sanitize.Ident(ref, 64), keleustesWhy(err))
 		}
+		needs = b.Needs
 		return teleport.Fetched{TeleportID: b.TeleportID, SessionID: b.SessionID, Data: b.Data}, nil
 	})
 	if err != nil {
 		return res, nil, fmt.Errorf("teleport: %w", err)
+	}
+	// The profile and crews the session ran under, before it continues
+	// (Library.Fetch with the teleport id; validated as a library install is).
+	for _, n := range rc.InstallTeleportNeeds(ctx, c.LibraryFetchTeleport, ref, needs) {
+		say(n)
+		res.Notices = append(res.Notices, n)
 	}
 	return finishTeleport(ctx, res, providerFlag, modelFlag, stderr)
 }

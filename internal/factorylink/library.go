@@ -2,6 +2,7 @@ package factorylink
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc"
 
@@ -17,6 +18,21 @@ import (
 func (c *Client) LibraryFetch(ctx context.Context, dispatchID string, ref *nodev1.LibraryRef) (*nodev1.LibraryDoc, error) {
 	d, err := call(ctx, c, func(ctx context.Context, conn *grpc.ClientConn) (*nodev1.LibraryDoc, error) {
 		return nodev1.NewLibraryClient(conn).Fetch(ctx, &nodev1.LibraryFetch{DispatchId: dispatchID, Ref: ref})
+	})
+	return d, mapErr(err)
+}
+
+// LibraryFetchTeleport reads a profile or crew the teleport id needs
+// (Library.Fetch with the teleport id): Keleustes answers only for the node
+// the teleport is addressed to, while it is ready or delivered, and only for
+// a need it stored with the teleport. The document is untrusted; the caller
+// validates it as its kind before writing anything.
+func (c *Client) LibraryFetchTeleport(ctx context.Context, teleportID string, ref *nodev1.LibraryRef) (*nodev1.LibraryDoc, error) {
+	if !teleportIDShape.MatchString(teleportID) {
+		return nil, errors.New("that is not a Keleustes teleport id")
+	}
+	d, err := call(ctx, c, func(ctx context.Context, conn *grpc.ClientConn) (*nodev1.LibraryDoc, error) {
+		return nodev1.NewLibraryClient(conn).Fetch(ctx, &nodev1.LibraryFetch{TeleportId: teleportID, Ref: ref})
 	})
 	return d, mapErr(err)
 }

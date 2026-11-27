@@ -220,7 +220,9 @@ func (c *Client) UploadTeleport(ctx context.Context, u TeleportUpload, data []by
 }
 
 // DownloadTeleport fetches the bundle of teleport id, which Keleustes hands
-// only to the node it is addressed to. The bytes are checked against the
+// only to the node it is addressed to. The request says this node fetches
+// the header's needs itself (LibraryFetchTeleport), so Keleustes sends no
+// library_install dispatch for them. The bytes are checked against the
 // header the first part carries: it must be addressed to this node, the
 // declared size must be within TeleportMaxBytes, every part must name this
 // teleport, the stream must end on the last part with exactly the declared
@@ -235,7 +237,7 @@ func (c *Client) DownloadTeleport(ctx context.Context, id string) (TeleportBundl
 	}
 	ctx, cancel := context.WithTimeout(ctx, teleportTimeout)
 	defer cancel()
-	st, err := nodev1.NewTeleportClient(conn).Download(ctx, &nodev1.TeleportRequest{TeleportId: id})
+	st, err := nodev1.NewTeleportClient(conn).Download(ctx, &nodev1.TeleportRequest{TeleportId: id, FetchNeeds: true})
 	if err != nil {
 		c.failed(conn, err)
 		return TeleportBundle{}, err

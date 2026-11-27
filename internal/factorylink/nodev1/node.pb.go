@@ -6200,8 +6200,12 @@ func (x *TeleportReceipt) GetSize() int64 {
 }
 
 type TeleportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TeleportId    string                 `protobuf:"bytes,1,opt,name=teleport_id,json=teleportId,proto3" json:"teleport_id,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	TeleportId string                 `protobuf:"bytes,1,opt,name=teleport_id,json=teleportId,proto3" json:"teleport_id,omitempty"`
+	// The downloader installs the header's needs itself, each through
+	// Library.Fetch(teleport_id); Keleustes then sends the target no
+	// library_install dispatch for them.
+	FetchNeeds    bool `protobuf:"varint,2,opt,name=fetch_needs,json=fetchNeeds,proto3" json:"fetch_needs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -6241,6 +6245,13 @@ func (x *TeleportRequest) GetTeleportId() string {
 		return x.TeleportId
 	}
 	return ""
+}
+
+func (x *TeleportRequest) GetFetchNeeds() bool {
+	if x != nil {
+		return x.FetchNeeds
+	}
+	return false
 }
 
 type NodesRequest struct {
@@ -8584,7 +8595,11 @@ type LibraryVerdict struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Ref   *LibraryRef            `protobuf:"bytes,1,opt,name=ref,proto3" json:"ref,omitempty"`
 	// "push", "current", "diverged", "install".
-	Verdict       string `protobuf:"bytes,2,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	Verdict string `protobuf:"bytes,2,opt,name=verdict,proto3" json:"verdict,omitempty"`
+	// The library_backup (push) or library_install (install) dispatch
+	// Keleustes queued for this item (automatic sync); empty when none was
+	// queued, so the host still asks the owner. Never set for hook or mcp.
+	DispatchId    string `protobuf:"bytes,3,opt,name=dispatch_id,json=dispatchId,proto3" json:"dispatch_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -8629,6 +8644,13 @@ func (x *LibraryVerdict) GetRef() *LibraryRef {
 func (x *LibraryVerdict) GetVerdict() string {
 	if x != nil {
 		return x.Verdict
+	}
+	return ""
+}
+
+func (x *LibraryVerdict) GetDispatchId() string {
+	if x != nil {
+		return x.DispatchId
 	}
 	return ""
 }
@@ -10530,10 +10552,12 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"\x0fTeleportReceipt\x12\x1f\n" +
 	"\vteleport_id\x18\x01 \x01(\tR\n" +
 	"teleportId\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\x03R\x04size\"2\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\"S\n" +
 	"\x0fTeleportRequest\x12\x1f\n" +
 	"\vteleport_id\x18\x01 \x01(\tR\n" +
-	"teleportId\"\x0e\n" +
+	"teleportId\x12\x1f\n" +
+	"\vfetch_needs\x18\x02 \x01(\bR\n" +
+	"fetchNeeds\"\x0e\n" +
 	"\fNodesRequest\"@\n" +
 	"\bNodeList\x124\n" +
 	"\x05nodes\x18\x01 \x03(\v2\x1e.keleustes.node.v1.NodeSummaryR\x05nodes\"\xd3\x02\n" +
@@ -10731,10 +10755,12 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"\x10LibraryInventory\x123\n" +
 	"\x05items\x18\x01 \x03(\v2\x1d.keleustes.node.v1.LibraryRefR\x05items\"P\n" +
 	"\x0fLibraryVerdicts\x12=\n" +
-	"\bverdicts\x18\x01 \x03(\v2!.keleustes.node.v1.LibraryVerdictR\bverdicts\"[\n" +
+	"\bverdicts\x18\x01 \x03(\v2!.keleustes.node.v1.LibraryVerdictR\bverdicts\"|\n" +
 	"\x0eLibraryVerdict\x12/\n" +
 	"\x03ref\x18\x01 \x01(\v2\x1d.keleustes.node.v1.LibraryRefR\x03ref\x12\x18\n" +
-	"\averdict\x18\x02 \x01(\tR\averdict\"p\n" +
+	"\averdict\x18\x02 \x01(\tR\averdict\x12\x1f\n" +
+	"\vdispatch_id\x18\x03 \x01(\tR\n" +
+	"dispatchId\"p\n" +
 	"\tForgePart\x129\n" +
 	"\arequest\x18\x01 \x01(\v2\x1f.keleustes.node.v1.ForgeRequestR\arequest\x12\x14\n" +
 	"\x05chunk\x18\x02 \x01(\fR\x05chunk\x12\x12\n" +
