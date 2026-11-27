@@ -32,13 +32,15 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	defer os.RemoveAll(tmp)
-
+	// os.Exit skips deferred calls, so the binary's directory is removed by
+	// hand on every exit path: a deferred RemoveAll left an 84 MB belai build
+	// in the temp dir after each run.
 	belaiBin = filepath.Join(tmp, "belai")
 	cmd := exec.Command("go", "build", "-o", belaiBin, "./cmd/belai")
 	cmd.Dir = moduleRoot()
 	if out, err := cmd.CombinedOutput(); err != nil {
 		fmt.Fprintf(os.Stderr, "go build belai: %v\n%s\n", err, out)
+		os.RemoveAll(tmp)
 		os.Exit(1)
 	}
 	// The binary resolves the developer's real Vulnetix CLI credential from
@@ -55,7 +57,9 @@ func TestMain(m *testing.M) {
 	// (GIT_DIR, GIT_WORK_TREE, the object overrides); the e2e fleet flows
 	// build real git fixtures and must see only their own.
 	gittest.IsolateProcess()
-	os.Exit(m.Run())
+	code := m.Run()
+	os.RemoveAll(tmp)
+	os.Exit(code)
 }
 
 // moduleRoot walks up from the test's working directory to the module root.

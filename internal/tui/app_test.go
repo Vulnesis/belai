@@ -50,7 +50,7 @@ func TestMain(m *testing.M) {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	defer os.RemoveAll(tmp)
+	// os.Exit skips deferred calls: tmp is removed after m.Run below.
 
 	// Isolate state/session files and provider env from the developer machine.
 	os.Setenv("BELAI_HOME", tmp)
@@ -81,7 +81,9 @@ func TestMain(m *testing.M) {
 	// (internal/brand covers it); pin Vulnetix before anything reads the brand.
 	os.Setenv("VULNETIX_BRAND", "vulnetix")
 	brand.Set(brand.Vulnetix)
-	os.Exit(m.Run())
+	code := m.Run()
+	os.RemoveAll(tmp)
+	os.Exit(code)
 }
 
 // fakeClassifier records payloads and returns a fixed result (or error).
