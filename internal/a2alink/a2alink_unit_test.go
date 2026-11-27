@@ -258,16 +258,71 @@ func TestReceivedWithheldReplyNotDelivered(t *testing.T) {
 	}
 }
 
+// waitFor polls the recorder for an entry of typ.
+func (r *stubRecorder) waitFor(t *testing.T, typ string) recorded {
+	t.Helper()
+	for deadline := time.Now().Add(5 * time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+		if e, ok := r.find(typ); ok {
+			return e
+		}
+	}
+	t.Fatalf("no %s entry in %v", typ, r.entries)
+	return recorded{}
+}
+
+func shortAttachWait(d time.Duration) func(*Options) {
+	return func(o *Options) { o.AttachWait = d }
+}
+
+// A session that never attaches answers with FailedReply once AttachWait
+// passes.
 func TestSideTurnNilSession(t *testing.T) {
-	l, rec, cleanup := testLink(t)
+	l, rec, cleanup := testLink(t, shortAttachWait(20*time.Millisecond))
 	defer cleanup()
 
 	env := messageEnvelope("hello")
 	l.sideTurn(context.Background(), env, "hello")
 
+	if e := rec.waitFor(t, EntryReplyOut); e.content != FailedReply || e.meta["harness"] != true {
+		t.Fatalf("expected failed reply, got %v", rec.entries)
+	}
+}
+
+// The link opens (and announces the session) before the session is built;
+// a message that arrives in that window waits for Attach and gets the
+// session's own answer, not FailedReply.
+func TestSideTurnBeforeAttachWaitsForTheSession(t *testing.T) {
+	l, rec, cleanup := testLink(t)
+	defer cleanup()
+
+	l.sideTurn(context.Background(), messageEnvelope("are you editing x.go?"), "are you editing x.go?")
+	time.Sleep(50 * time.Millisecond)
+	if e, ok := rec.find(EntryReplyOut); ok {
+		t.Fatalf("answered before the session was attached: %v", e)
+	}
+	l.Attach(&fakeSession{reply: "yes, until the tests pass"})
+	if e := rec.waitFor(t, EntryReplyOut); e.content != "yes, until the tests pass" || e.meta["harness"] != nil {
+		t.Fatalf("expected the session's reply, got %v", rec.entries)
+	}
+}
+
+// Close answers a message still waiting for a session with FailedReply
+// before it closes the node, so the sender is not left without a reply.
+func TestCloseAnswersAWaitingMessage(t *testing.T) {
+	l, rec, _ := testLink(t)
+	l.sideTurn(context.Background(), messageEnvelope("hello"), "hello")
+	done := make(chan struct{})
+	go func() { l.Close(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Close waited for AttachWait")
+	}
 	if e, ok := rec.find(EntryReplyOut); !ok || e.content != FailedReply {
 		t.Fatalf("expected failed reply, got %v", rec.entries)
 	}
+	// After Close a message is answered at once.
+	l.sideTurn(context.Background(), messageEnvelope("again"), "again")
 }
 
 func TestSideTurnResultAndCalls(t *testing.T) {
@@ -363,14 +418,14 @@ func TestNilAttachAndStamp(t *testing.T) {
 // A nil *agent.Session is a non-nil Session; Attach must still ignore it, so
 // a side turn answers with the failed reply instead of panicking.
 func TestAttachIgnoresATypedNilSession(t *testing.T) {
-	l, rec, cleanup := testLink(t)
+	l, rec, cleanup := testLink(t, shortAttachWait(20*time.Millisecond))
 	defer cleanup()
 	l.Attach((*agent.Session)(nil))
 	if l.session() != nil {
 		t.Fatal("a typed-nil session was attached")
 	}
 	l.sideTurn(context.Background(), messageEnvelope("hello"), "hello")
-	if e, ok := rec.find(EntryReplyOut); !ok || e.content != FailedReply {
+	if e := rec.waitFor(t, EntryReplyOut); e.content != FailedReply {
 		t.Fatalf("expected failed reply, got %v", rec.entries)
 	}
 }

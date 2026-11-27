@@ -60,7 +60,8 @@ func TestLinksBroadcastAndAnswerWithoutASession(t *testing.T) {
 	ra, rb := &rec{}, &rec{}
 	open := func(sess string, r *rec) *Link {
 		l := Open(context.Background(), Options{Dir: dir, HostID: host, SessionID: sess, Settings: settings,
-			Posture: posture.AllIgnore(), Git: gitJSON(), Record: r.record, PollEvery: 20 * time.Millisecond, Debounce: time.Millisecond})
+			Posture: posture.AllIgnore(), Git: gitJSON(), Record: r.record, PollEvery: 20 * time.Millisecond, Debounce: time.Millisecond,
+			AttachWait: 50 * time.Millisecond})
 		if l == nil {
 			t.Fatal("no link")
 		}
@@ -91,7 +92,8 @@ func TestLinksBroadcastAndAnswerWithoutASession(t *testing.T) {
 	}
 	ra.wait(t, EntryBroadcastOut)
 
-	// A message to an agent with no session yet is answered by the harness.
+	// A message to an agent whose session never attaches is answered by the
+	// harness once AttachWait passes.
 	if _, _, err := b.Hub().A2AMessage(context.Background(), a.Node().Self().Display(), "Are you editing x.go?"); err != nil {
 		t.Fatal(err)
 	}

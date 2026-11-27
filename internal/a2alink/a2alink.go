@@ -58,6 +58,12 @@ const FailedReply = "The receiving agent could not answer this message (its side
 // SideTurnTimeout bounds one side-turn.
 const SideTurnTimeout = 2 * time.Minute
 
+// AttachWait bounds how long a message that arrives before the session is
+// attached waits for it. The link opens before the session is built (the
+// node announces the session at once), so a peer can message it while the
+// session is still starting.
+const AttachWait = 2 * time.Minute
+
 // Recorder writes one A2A transcript entry. It must be safe to call from
 // any goroutine.
 type Recorder func(entryType, content string, meta map[string]any)
@@ -98,6 +104,9 @@ type Options struct {
 	HostID string
 	// PollEvery overrides the bus poll (1s).
 	PollEvery time.Duration
+	// AttachWait overrides how long a message waits for the session
+	// (AttachWait).
+	AttachWait time.Duration
 	// Debounce overrides the broadcaster's (10s).
 	Debounce time.Duration
 }
@@ -124,6 +133,12 @@ type Link struct {
 	sess    Session
 	pending []agent.PeerNote
 	closed  bool
+	// ready closes when the first session is attached, stop when Close
+	// starts; waiting counts the messages waiting for either, which Close
+	// lets answer before it closes the node.
+	ready   chan struct{}
+	stop    chan struct{}
+	waiting sync.WaitGroup
 }
 
 // Open opens the session's A2A endpoint and starts it, or returns nil when
@@ -161,7 +176,10 @@ func Open(ctx context.Context, o Options) *Link {
 		node.Broadcaster().SetTicket(o.Ticket)
 	}
 	ctx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-	l := &Link{o: o, node: node, hostID: hostID, cancel: cancel}
+	if o.AttachWait <= 0 {
+		o.AttachWait = AttachWait
+	}
+	l := &Link{o: o, node: node, hostID: hostID, cancel: cancel, ready: make(chan struct{}), stop: make(chan struct{})}
 	l.SetRecorder(o.Record)
 	if o.Factory != nil {
 		l.relay = a2a.NewRelay(o.Factory, hostID, node.Bus(), node.Audit(), func() string { return node.Self().SessionID })
@@ -300,8 +318,9 @@ func (l *Link) Install(reg *tools.Registry) *tools.Registry {
 	return reg
 }
 
-// Attach binds the session the link tells and answers for, and hands it the
-// notes that arrived before it existed.
+// Attach binds the session the link tells and answers for, hands it the
+// notes that arrived before it existed, and releases the messages waiting
+// for it to their side-turns.
 func (l *Link) Attach(s Session) {
 	if l == nil || s == nil {
 		return
@@ -313,9 +332,13 @@ func (l *Link) Attach(s Session) {
 	}
 	s.SetFilesHook(func(paths []string) { l.node.Broadcaster().AddFiles(paths...) })
 	l.mu.Lock()
+	first := l.sess == nil
 	l.sess = s
 	pending := l.pending
 	l.pending = nil
+	if first {
+		close(l.ready)
+	}
 	l.mu.Unlock()
 	for _, n := range pending {
 		s.Peer(n)
@@ -340,7 +363,11 @@ func (l *Link) Close() {
 		return
 	}
 	l.closed = true
+	close(l.stop)
 	l.mu.Unlock()
+	// Messages still waiting for a session are answered with FailedReply
+	// while the node can still send.
+	l.waiting.Wait()
 	// The last change is broadcast before the end.
 	l.node.Flush()
 	l.node.Close()
@@ -474,10 +501,52 @@ func (l *Link) received(ctx context.Context, ev a2a.Event, body string, verdict 
 }
 
 // sideTurn answers a message on the session's model; the main loop is not
-// interrupted. A session that is not attached yet answers with FailedReply.
+// interrupted. A message that arrives before the session is attached waits
+// for it, off the event pump, for at most Options.AttachWait; it is answered
+// with FailedReply only when no session comes or the link closes first.
 func (l *Link) sideTurn(ctx context.Context, q a2a.Envelope, body string) {
+	l.mu.Lock()
+	s, closed := l.sess, l.closed
+	if s == nil && !closed {
+		l.waiting.Add(1)
+	}
+	l.mu.Unlock()
+	if s != nil || closed {
+		l.answer(ctx, q, body, s)
+		return
+	}
+	l.goRun(func() {
+		s := l.awaitSession(ctx)
+		if s == nil {
+			// Answered before Close closes the node.
+			l.answer(ctx, q, body, nil)
+			l.waiting.Done()
+			return
+		}
+		l.waiting.Done()
+		l.answer(ctx, q, body, s)
+	})
+}
+
+// awaitSession waits for Attach, Close or Options.AttachWait, and returns the
+// attached session or nil.
+func (l *Link) awaitSession(ctx context.Context) Session {
+	t := time.NewTimer(l.o.AttachWait)
+	defer t.Stop()
+	select {
+	case <-l.ready:
+	case <-l.stop:
+	case <-t.C:
+	case <-ctx.Done():
+	}
+	return l.session()
+}
+
+// answer runs the side-turn on s and sends its reply, or FailedReply when s
+// is nil or the side-turn fails.
+func (l *Link) answer(ctx context.Context, q a2a.Envelope, body string, s Session) {
 	reply, extra := FailedReply, map[string]any{"harness": true}
-	if s := l.session(); s != nil {
+	if s != nil {
 		sctx, cancel := context.WithTimeout(ctx, SideTurnTimeout)
 		res, err := s.SideReply(sctx, agent.SideReplyInput{From: q.Agent.Display(), Work: WorkLine(q.Work), Question: body,
 			MessageID: q.MessageID, ContextID: q.ContextID, Context: l.summary()})
