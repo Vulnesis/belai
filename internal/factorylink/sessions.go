@@ -228,7 +228,18 @@ drain:
 				refuse(stoppedReason(c))
 				continue
 			}
-			in.Prompts = append(in.Prompts, sessionsync.RemotePrompt{ID: id, SessionID: sessionID, Content: body.Prompt.GetText(), CreatedAt: now})
+			p := sessionsync.RemotePrompt{ID: id, SessionID: sessionID, Content: body.Prompt.GetText(), CreatedAt: now}
+			// Attachments (#53): read and checked against their hash here,
+			// admitted by the session (rc.AdmitAttachments) before its turn.
+			if list := body.Prompt.GetAttachments(); len(list) > 0 {
+				atts, err := b.c.FetchAttachments(ctx, &nodev1.AttachmentRequest{SessionId: sessionID, ItemId: id}, list)
+				if err != nil {
+					refuse("an attachment could not be read: " + attachmentReason(err))
+					continue
+				}
+				p.Attachments = atts
+			}
+			in.Prompts = append(in.Prompts, p)
 		case *nodev1.InboxItem_Answer:
 			b.mu.Lock()
 			askKind := b.trackOf(sessionID).kinds[body.Answer.GetQuestionId()]

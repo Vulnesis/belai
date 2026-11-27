@@ -541,7 +541,7 @@ func TestRecipeDryRunsAreDeterministic(t *testing.T) {
 	// Ecosystems without a writer are refused.
 	e.wantRefused(e.act(&nodev1.HostAction{Kind: "product_configure", DryRun: true, Params: map[string]string{"product": "package_firewall", "on": "oci"}}), "cannot configure")
 	f := newEnv(t, LevelProvision)
-	for _, k := range []map[string]string{{"product": "sensor", "version": "v0.9.3", "profile": "p-1"}, {"product": "cli", "method": "direct", "version": "v4.24.37"}} {
+	for _, k := range []map[string]string{{"product": "sensor", "version": "v4.24.35", "profile": "0b6f2c1e-6a1d-4c5e-9f0a-3d2b1c4e5f60"}, {"product": "cli", "method": "direct", "version": "v4.24.37"}} {
 		x := last(f.act(&nodev1.HostAction{Kind: "product_install", DryRun: true, Params: k}))
 		y := last(f.act(&nodev1.HostAction{Kind: "product_install", DryRun: true, Params: k}))
 		if x.GetState() != stateDone || x.GetPreviewSha256() != y.GetPreviewSha256() {
@@ -553,11 +553,11 @@ func TestRecipeDryRunsAreDeterministic(t *testing.T) {
 func TestSensorInstallHandsOffForRoot(t *testing.T) {
 	e := newEnv(t, LevelProvision)
 	e.stub("vulnetix-sensor", `"--version") echo 0.9.3;;`)
-	p := map[string]string{"product": "sensor", "profile": "p-1"}
+	p := map[string]string{"product": "sensor", "profile": "0b6f2c1e-6a1d-4c5e-9f0a-3d2b1c4e5f60"}
 	dry := last(e.act(&nodev1.HostAction{Kind: "product_install", DryRun: true, Params: p}))
 	us := e.act(&nodev1.HostAction{Kind: "product_install", PreviewSha256: dry.GetPreviewSha256(), Params: p})
 	u := last(us)
-	if u.GetState() != stateNeedsHuman || u.GetHandoffReason() != "needs_root" || u.GetHandoffCommand() != "sudo vulnetix-sensor enroll --from-cli-login --profile p-1" {
+	if u.GetState() != stateNeedsHuman || u.GetHandoffReason() != "needs_root" || u.GetHandoffCommand() != "sudo vulnetix-sensor enroll --from-cli-login --profile 0b6f2c1e-6a1d-4c5e-9f0a-3d2b1c4e5f60" {
 		t.Fatalf("sensor install = %+v", u)
 	}
 	if ev := e.auditFor(u.GetActionId()); ev[len(ev)-1].Kind != string(audit.HostActionNeedsHuman) || ev[len(ev)-1].Data["reason"] != "needs_root" {
@@ -788,4 +788,43 @@ func TestRestartTakesExpectVersion(t *testing.T) {
 		t.Fatalf("preview = %s", dry.GetPreviewJson())
 	}
 	e.wantRefused(e.act(&nodev1.HostAction{Kind: "rc_restart", DryRun: true, Params: map[string]string{"expect_version": "nope; rm"}}), "release version")
+}
+
+// A SigV4 pair signs the CLI in the same way, from the child's environment
+// only; half a pair (or one of each) still hands off to a person.
+func TestProductAuthSigV4Grant(t *testing.T) {
+	e := newEnv(t, LevelProvision)
+	envFile := filepath.Join(t.TempDir(), "env")
+	e.stub("vulnetix", `"auth login --noninteractive --store keyring") env > `+envFile+`; echo "logged in";;`)
+	secret := "sv4-CANARY-abcdefghijklmnopqrstuvwxyz"
+	org := "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+	grant := func(id string, s ...*nodev1.VaultSecret) *nodev1.VaultGrant {
+		return &nodev1.VaultGrant{GrantId: id, ExpiresAtMs: time.Now().Add(time.Minute).UnixMilli(), Secrets: s}
+	}
+	dry := last(e.act(&nodev1.HostAction{Kind: "product_auth", DryRun: true, Params: map[string]string{"product": "cli"}}))
+	run := func(id string, g *nodev1.VaultGrant) *nodev1.HostActionUpdate {
+		return last(e.act(&nodev1.HostAction{Id: id, Kind: "product_auth", Vault: g, PreviewSha256: dry.GetPreviewSha256(), Params: map[string]string{"product": "cli"}}))
+	}
+	half := run("auth-half", grant("g0",
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VVD_SECRET", Value: secret},
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VULNETIX_ORG_ID", Value: org}))
+	if half.GetState() != stateNeedsHuman {
+		t.Fatalf("a mixed half pair = %s, want a hand-off", half.GetState())
+	}
+	if u := run("auth-sigv4", grant("g1",
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VVD_ORG", Value: org},
+		&nodev1.VaultSecret{Provider: "vulnetix", Env: "VVD_SECRET", Value: secret})); u.GetState() != stateDone {
+		t.Fatalf("product_auth = %s %s", u.GetState(), u.GetError())
+	}
+	child, _ := os.ReadFile(envFile)
+	if !strings.Contains(string(child), "VVD_SECRET="+secret) || !strings.Contains(string(child), "VVD_ORG="+org) {
+		t.Fatal("the child did not get the SigV4 grant")
+	}
+	if os.Getenv("VVD_SECRET") != "" {
+		t.Fatal("the grant reached this process's environment")
+	}
+	data, _ := os.ReadFile(e.rec.Path())
+	if strings.Contains(string(data), "CANARY") {
+		t.Fatal("the audit log carries the secret")
+	}
 }

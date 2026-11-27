@@ -61,6 +61,11 @@ func (b *webInbox) run(ctx context.Context) {
 }
 
 func (b *webInbox) deliver(p sessionsync.RemotePrompt) {
+	// Keleustes attachments (#53) are taken by `belai rc` sessions only.
+	if len(p.Attachments) > 0 {
+		b.mirror.Ack(p.ID, sessionsync.AckRefused, "a worker takes no attachments", "")
+		return
+	}
 	text := sessionsync.CleanPrompt(p.Content)
 	if text == "" {
 		b.mirror.Ack(p.ID, sessionsync.AckRefused, "the message was empty after cleaning", "")

@@ -726,6 +726,22 @@ type Dispatch struct {
 	Fork    string     `json:"-"`
 	Answers string     `json:"-"`
 	Adhoc   *AdhocSpec `json:"-"`
+	// Attachments (#53) are the files and images a Keleustes session dispatch
+	// carries for its first prompt: bytes read from Keleustes and checked
+	// against their hash, not yet admitted (rc.AdmitAttachments does that).
+	Attachments []RemoteAttachment `json:"-"`
+}
+
+// RemoteAttachment is a file or an image a Keleustes prompt or dispatch
+// carries (belai-counterparts #53): its name, the media type Keleustes
+// named and the bytes, which hash to the SHA-256 it listed. Untrusted until
+// rc.AdmitAttachments admits it like a local `@` attachment. Never on the
+// website wire.
+type RemoteAttachment struct {
+	Name      string
+	MediaType string
+	SHA256    string
+	Data      []byte
 }
 
 // AdhocSpec is a worker with no stored profile, as `belai agent start
@@ -877,6 +893,9 @@ type RemotePrompt struct {
 	// Command names the custom slash command the host expanded this prompt from,
 	// for the transcript. It is never on the wire.
 	Command string `json:"-"`
+	// Attachments are the files and images a Keleustes prompt carries (#53),
+	// not yet admitted. Never on the website wire.
+	Attachments []RemoteAttachment `json:"-"`
 }
 
 // RemoteAnswer is a web answer to a question the host asked, claimed from the

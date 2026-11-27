@@ -288,13 +288,13 @@ func planProductAuth(_ context.Context, c *call) (*Plan, string) {
 	// preview made without one still matches the run that carries it.
 	return &Plan{Params: map[string]string{"product": products.CLI},
 		Steps: []Step{{Argv: []string{path, "auth", "login", "--noninteractive", "--store", "keyring"}, Env: slicesClone(grantVars), Timeout: 120}},
-		Notes: []string{"without a vault grant holding both variables this hands off to a person: vulnetix auth login (needs_browser)"}}, ""
+		Notes: []string{"without a vault grant holding an ApiKey or a SigV4 pair this hands off to a person: vulnetix auth login (needs_browser)"}}, ""
 }
 
 // runProductAuth signs the CLI in with the grant, or hands off to a person
 // when the action carries none.
 func runProductAuth(ctx context.Context, c *call, pl *Plan) result {
-	if len(grantEnv(c)) != len(grantVars) {
+	if !grantComplete(grantEnv(c)) {
 		return handoff("vulnetix auth login", "needs_browser")
 	}
 	return runSteps(ctx, c, pl)
@@ -302,11 +302,28 @@ func runProductAuth(ctx context.Context, c *call, pl *Plan) result {
 
 func slicesClone(s []string) []string { return append([]string(nil), s...) }
 
-// grantVars are the variables product_auth takes from the vault grant.
-var grantVars = []string{"VULNETIX_API_KEY", "VULNETIX_ORG_ID"}
+// grantPairs are the credential pairs `vulnetix auth login --noninteractive`
+// reads from its environment: an org-scoped ApiKey, or a SigV4 secret. Both
+// come from the environment only, never argv.
+var grantPairs = [][2]string{
+	{"VULNETIX_API_KEY", "VULNETIX_ORG_ID"},
+	{"VVD_ORG", "VVD_SECRET"},
+}
 
-// grantEnv names the grant's variables product_auth uses, when both are
-// there.
+// grantVars are every variable product_auth may take from the vault grant.
+var grantVars = []string{"VULNETIX_API_KEY", "VULNETIX_ORG_ID", "VVD_ORG", "VVD_SECRET"}
+
+// grantComplete reports whether the names hold at least one whole pair.
+func grantComplete(names []string) bool {
+	for _, p := range grantPairs {
+		if has(names, p[0]) && has(names, p[1]) {
+			return true
+		}
+	}
+	return false
+}
+
+// grantEnv names the grant's variables product_auth uses.
 func grantEnv(c *call) []string {
 	var out []string
 	for _, s := range c.grant.Secrets(c.m.o.Now()) {

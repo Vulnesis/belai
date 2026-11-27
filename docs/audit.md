@@ -68,11 +68,16 @@ the harness read itself, and nothing else can be recorded.
 | agent | `hazard.asked`, `hazard.denied` | the always-ask floor put a call to a person, and a call it withheld or the person refused ([hazard rails](hazard-rails.md)); `id` holds the hazard identifiers joined by `+` and `tool` the tool name, never a command or a path |
 | agent | `egress.denied` | the sandbox egress proxy refused connections ([egress proxy](sandbox.md#egress-proxy)); recorded for the first refusal of each `reason` (`not_allowed`, `port`, `invalid`, `address`, `resolve`, `limit`) and again at the 10th, 100th and every 1000th, with `count` the running total for that reason; never a host name |
 
-`data` keys: `action`, `attempt`, `candidate`, `candidates`, `change`, `class`, `commit`, `control`, `count`, `decision`, `digest`, `dispatch`, `ecosystem`, `exit`,
-`files`, `forge`, `from`, `gate`, `hops`, `id`, `justification`, `kind`, `list`, `message_id`, `met`, `os`,
-`package`, `passes`, `path`, `peer`, `plan`, `plan_run`, `pr`, `preview`, `previous`, `profile`, `reason`,
-`regressed`, `retries`, `rule`, `run`, `schedule`, `severity`, `state`, `status`, `step`,
+`data` keys: `action`, `attempt`, `candidate`, `candidates`, `change`, `checkpoint`, `class`, `commit`, `control`, `conversation`, `count`, `decision`, `digest`, `dispatch`, `ecosystem`, `exit`,
+`files`, `forge`, `from`, `gate`, `hops`, `id`, `justification`, `kind`, `left`, `list`, `message_id`, `met`, `os`,
+`package`, `passes`, `path`, `peer`, `plan`, `plan_run`, `pr`, `preview`, `previous`, `profile`, `prompts`, `reason`,
+`regressed`, `removed`, `restored`, `retries`, `rewound`, `rule`, `run`, `safety`, `schedule`, `severity`, `state`, `status`, `step`,
 `suite`, `surface`, `target`, `to`, `tokens`, `tool`, `total`, `version`, `worker`, `workflow`. `schedule` is a schedule's UUID.
+A console `undo` or `rewind` (`host.dispatch`, `dispatch` `session_action`, `itemId` the Keleustes inbox
+item) records `checkpoint` (its id), `conversation` (`rewound` or `unchanged`), the file counts `restored`,
+`removed` and `left`, `safety` (the checkpoint holding what the restore overwrote) and, for a rewound
+conversation, `from` and `to` (the entry ids it left and returns to), `rewound` (entries that left it) and
+`prompts` (user prompts that left it).
 `class` is a fault code (`provider_auth`, `provider_rate_limit`, …; see [fleet.md](fleet.md#the-provider-pool)), `retries` a count and
 `target` a `provider/model` pair; `message_id` an A2A `a2a-<ulid>`, `kind` an envelope kind, `peer` an Agent Card id
 (`<hostId>:<sessionId>`) and `decision` an acknowledgement's enum, never a text part; all reduced by `audit.Clean`. Adding one is adding something that can leave the machine, so it

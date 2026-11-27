@@ -1349,7 +1349,8 @@ type Capabilities struct {
 	// #46, #51, #52, #55): "resume" (resume_session), "fork" (fork_entry),
 	// "answers" (answers_json), "gates" (the gate keys in options), "adhoc"
 	// (adhoc), "plan_upload" (a plan-mode session returns its plan file),
-	// "session_actions" (the console session actions in Command.name). An
+	// "session_actions" (the console session actions in Command.name),
+	// "attachments" (Dispatch.attachments and Prompt.attachments, row 53). An
 	// older host sends none; Keleustes then sends none of those fields.
 	DispatchFeatures []string `protobuf:"bytes,12,rep,name=dispatch_features,json=dispatchFeatures,proto3" json:"dispatch_features,omitempty"`
 	unknownFields    protoimpl.UnknownFields
@@ -1861,7 +1862,11 @@ type Dispatch struct {
 	AnswersJson string `protobuf:"bytes,56,opt,name=answers_json,json=answersJson,proto3" json:"answers_json,omitempty"`
 	// Row 55, kind "worker" with agent empty: a worker made from a prompt,
 	// with no stored profile. Refused together with agent.
-	Adhoc         *AdhocWorker `protobuf:"bytes,57,opt,name=adhoc,proto3" json:"adhoc,omitempty"`
+	Adhoc *AdhocWorker `protobuf:"bytes,57,opt,name=adhoc,proto3" json:"adhoc,omitempty"`
+	// Row 53, kind "session": files and images the first prompt carries (see
+	// Attachment for the caps); the host reads each with Sessions.FetchAttachment
+	// naming this dispatch.
+	Attachments   []*Attachment `protobuf:"bytes,58,rep,name=attachments,proto3" json:"attachments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2291,6 +2296,13 @@ func (x *Dispatch) GetAnswersJson() string {
 func (x *Dispatch) GetAdhoc() *AdhocWorker {
 	if x != nil {
 		return x.Adhoc
+	}
+	return nil
+}
+
+func (x *Dispatch) GetAttachments() []*Attachment {
+	if x != nil {
+		return x.Attachments
 	}
 	return nil
 }
@@ -4434,8 +4446,12 @@ func (*InboxItem_Answer) isInboxItem_Body() {}
 func (*InboxItem_Command) isInboxItem_Body() {}
 
 type Prompt struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Text  string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	// Row 53: files and images the prompt carries, by reference (the host
+	// reads each with Sessions.FetchAttachment naming this item). Sent only to
+	// hosts that list "attachments" in Capabilities.dispatch_features.
+	Attachments   []*Attachment `protobuf:"bytes,2,rep,name=attachments,proto3" json:"attachments,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4477,6 +4493,221 @@ func (x *Prompt) GetText() string {
 	return ""
 }
 
+func (x *Prompt) GetAttachments() []*Attachment {
+	if x != nil {
+		return x.Attachments
+	}
+	return nil
+}
+
+// Row 53: a file or an image on a prompt or a session dispatch. Caps (both
+// sides enforce them): at most 8 per prompt or dispatch; an image
+// (image/png, image/jpeg) at most 8 MiB, a text file (text/plain: UTF-8, no
+// NUL byte) at most 64 KiB; 16 MiB in all. The host admits each one as it
+// admits a local `@` attachment (an image through imageguard, a text file
+// through the classifier); one refusal refuses the prompt or the start.
+type Attachment struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Display name only (no directory), at most 255 bytes.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// "image/png", "image/jpeg" or "text/plain".
+	Mime string `protobuf:"bytes,2,opt,name=mime,proto3" json:"mime,omitempty"`
+	// Lower-case hex SHA-256 of the bytes.
+	Sha256        string `protobuf:"bytes,3,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	Size          int64  `protobuf:"varint,4,opt,name=size,proto3" json:"size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Attachment) Reset() {
+	*x = Attachment{}
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Attachment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Attachment) ProtoMessage() {}
+
+func (x *Attachment) ProtoReflect() protoreflect.Message {
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Attachment.ProtoReflect.Descriptor instead.
+func (*Attachment) Descriptor() ([]byte, []int) {
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *Attachment) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Attachment) GetMime() string {
+	if x != nil {
+		return x.Mime
+	}
+	return ""
+}
+
+func (x *Attachment) GetSha256() string {
+	if x != nil {
+		return x.Sha256
+	}
+	return ""
+}
+
+func (x *Attachment) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+type AttachmentRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Sha256 string                 `protobuf:"bytes,1,opt,name=sha256,proto3" json:"sha256,omitempty"`
+	// Either the dispatch that lists it, or the session and the inbox item
+	// that list it.
+	DispatchId    string `protobuf:"bytes,2,opt,name=dispatch_id,json=dispatchId,proto3" json:"dispatch_id,omitempty"`
+	SessionId     string `protobuf:"bytes,3,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
+	ItemId        string `protobuf:"bytes,4,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AttachmentRequest) Reset() {
+	*x = AttachmentRequest{}
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AttachmentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AttachmentRequest) ProtoMessage() {}
+
+func (x *AttachmentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AttachmentRequest.ProtoReflect.Descriptor instead.
+func (*AttachmentRequest) Descriptor() ([]byte, []int) {
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *AttachmentRequest) GetSha256() string {
+	if x != nil {
+		return x.Sha256
+	}
+	return ""
+}
+
+func (x *AttachmentRequest) GetDispatchId() string {
+	if x != nil {
+		return x.DispatchId
+	}
+	return ""
+}
+
+func (x *AttachmentRequest) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *AttachmentRequest) GetItemId() string {
+	if x != nil {
+		return x.ItemId
+	}
+	return ""
+}
+
+type AttachmentPart struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Chunk []byte                 `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
+	// The whole size, on the first part.
+	Size          int64 `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	Last          bool  `protobuf:"varint,3,opt,name=last,proto3" json:"last,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AttachmentPart) Reset() {
+	*x = AttachmentPart{}
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AttachmentPart) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AttachmentPart) ProtoMessage() {}
+
+func (x *AttachmentPart) ProtoReflect() protoreflect.Message {
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AttachmentPart.ProtoReflect.Descriptor instead.
+func (*AttachmentPart) Descriptor() ([]byte, []int) {
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *AttachmentPart) GetChunk() []byte {
+	if x != nil {
+		return x.Chunk
+	}
+	return nil
+}
+
+func (x *AttachmentPart) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *AttachmentPart) GetLast() bool {
+	if x != nil {
+		return x.Last
+	}
+	return false
+}
+
 type Answer struct {
 	state      protoimpl.MessageState `protogen:"open.v1"`
 	QuestionId string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
@@ -4491,7 +4722,7 @@ type Answer struct {
 
 func (x *Answer) Reset() {
 	*x = Answer{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[44]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4503,7 +4734,7 @@ func (x *Answer) String() string {
 func (*Answer) ProtoMessage() {}
 
 func (x *Answer) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[44]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4516,7 +4747,7 @@ func (x *Answer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Answer.ProtoReflect.Descriptor instead.
 func (*Answer) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{44}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *Answer) GetQuestionId() string {
@@ -4573,7 +4804,7 @@ type Command struct {
 
 func (x *Command) Reset() {
 	*x = Command{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[45]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4585,7 +4816,7 @@ func (x *Command) String() string {
 func (*Command) ProtoMessage() {}
 
 func (x *Command) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[45]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4598,7 +4829,7 @@ func (x *Command) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Command.ProtoReflect.Descriptor instead.
 func (*Command) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{45}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *Command) GetName() string {
@@ -4628,7 +4859,7 @@ type InboxAck struct {
 
 func (x *InboxAck) Reset() {
 	*x = InboxAck{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[46]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4640,7 +4871,7 @@ func (x *InboxAck) String() string {
 func (*InboxAck) ProtoMessage() {}
 
 func (x *InboxAck) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[46]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4653,7 +4884,7 @@ func (x *InboxAck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InboxAck.ProtoReflect.Descriptor instead.
 func (*InboxAck) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{46}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *InboxAck) GetSessionId() string {
@@ -4697,7 +4928,7 @@ type AuditBatch struct {
 
 func (x *AuditBatch) Reset() {
 	*x = AuditBatch{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[47]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4709,7 +4940,7 @@ func (x *AuditBatch) String() string {
 func (*AuditBatch) ProtoMessage() {}
 
 func (x *AuditBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[47]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4722,7 +4953,7 @@ func (x *AuditBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditBatch.ProtoReflect.Descriptor instead.
 func (*AuditBatch) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{47}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *AuditBatch) GetSessionId() string {
@@ -4755,7 +4986,7 @@ type AuditStreamRequest struct {
 
 func (x *AuditStreamRequest) Reset() {
 	*x = AuditStreamRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[48]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4767,7 +4998,7 @@ func (x *AuditStreamRequest) String() string {
 func (*AuditStreamRequest) ProtoMessage() {}
 
 func (x *AuditStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[48]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4780,7 +5011,7 @@ func (x *AuditStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditStreamRequest.ProtoReflect.Descriptor instead.
 func (*AuditStreamRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{48}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *AuditStreamRequest) GetStreamId() string {
@@ -4800,7 +5031,7 @@ type AuditStreamHead struct {
 
 func (x *AuditStreamHead) Reset() {
 	*x = AuditStreamHead{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[49]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4812,7 +5043,7 @@ func (x *AuditStreamHead) String() string {
 func (*AuditStreamHead) ProtoMessage() {}
 
 func (x *AuditStreamHead) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[49]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4825,7 +5056,7 @@ func (x *AuditStreamHead) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditStreamHead.ProtoReflect.Descriptor instead.
 func (*AuditStreamHead) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{49}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *AuditStreamHead) GetLastIndex() int64 {
@@ -4847,7 +5078,7 @@ type AuditLine struct {
 
 func (x *AuditLine) Reset() {
 	*x = AuditLine{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[50]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4859,7 +5090,7 @@ func (x *AuditLine) String() string {
 func (*AuditLine) ProtoMessage() {}
 
 func (x *AuditLine) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[50]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4872,7 +5103,7 @@ func (x *AuditLine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AuditLine.ProtoReflect.Descriptor instead.
 func (*AuditLine) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{50}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *AuditLine) GetIndex() uint64 {
@@ -4930,7 +5161,7 @@ type KanbanItem struct {
 
 func (x *KanbanItem) Reset() {
 	*x = KanbanItem{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[51]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4942,7 +5173,7 @@ func (x *KanbanItem) String() string {
 func (*KanbanItem) ProtoMessage() {}
 
 func (x *KanbanItem) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[51]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4955,7 +5186,7 @@ func (x *KanbanItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KanbanItem.ProtoReflect.Descriptor instead.
 func (*KanbanItem) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{51}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *KanbanItem) GetId() string {
@@ -5080,7 +5311,7 @@ type KanbanPullRequest struct {
 
 func (x *KanbanPullRequest) Reset() {
 	*x = KanbanPullRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[52]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5092,7 +5323,7 @@ func (x *KanbanPullRequest) String() string {
 func (*KanbanPullRequest) ProtoMessage() {}
 
 func (x *KanbanPullRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[52]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5105,7 +5336,7 @@ func (x *KanbanPullRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KanbanPullRequest.ProtoReflect.Descriptor instead.
 func (*KanbanPullRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{52}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *KanbanPullRequest) GetSinceMs() int64 {
@@ -5133,7 +5364,7 @@ type KanbanPage struct {
 
 func (x *KanbanPage) Reset() {
 	*x = KanbanPage{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[53]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5145,7 +5376,7 @@ func (x *KanbanPage) String() string {
 func (*KanbanPage) ProtoMessage() {}
 
 func (x *KanbanPage) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[53]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5158,7 +5389,7 @@ func (x *KanbanPage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KanbanPage.ProtoReflect.Descriptor instead.
 func (*KanbanPage) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{53}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *KanbanPage) GetItems() []*KanbanItem {
@@ -5191,7 +5422,7 @@ type KanbanBatch struct {
 
 func (x *KanbanBatch) Reset() {
 	*x = KanbanBatch{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[54]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5203,7 +5434,7 @@ func (x *KanbanBatch) String() string {
 func (*KanbanBatch) ProtoMessage() {}
 
 func (x *KanbanBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[54]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5216,7 +5447,7 @@ func (x *KanbanBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KanbanBatch.ProtoReflect.Descriptor instead.
 func (*KanbanBatch) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{54}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *KanbanBatch) GetItems() []*KanbanItem {
@@ -5237,7 +5468,7 @@ type KanbanPushResult struct {
 
 func (x *KanbanPushResult) Reset() {
 	*x = KanbanPushResult{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[55]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5249,7 +5480,7 @@ func (x *KanbanPushResult) String() string {
 func (*KanbanPushResult) ProtoMessage() {}
 
 func (x *KanbanPushResult) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[55]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5262,7 +5493,7 @@ func (x *KanbanPushResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KanbanPushResult.ProtoReflect.Descriptor instead.
 func (*KanbanPushResult) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{55}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *KanbanPushResult) GetAccepted() []*KanbanItem {
@@ -5300,7 +5531,7 @@ type MemoryNote struct {
 
 func (x *MemoryNote) Reset() {
 	*x = MemoryNote{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[56]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5312,7 +5543,7 @@ func (x *MemoryNote) String() string {
 func (*MemoryNote) ProtoMessage() {}
 
 func (x *MemoryNote) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[56]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5325,7 +5556,7 @@ func (x *MemoryNote) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryNote.ProtoReflect.Descriptor instead.
 func (*MemoryNote) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{56}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *MemoryNote) GetId() string {
@@ -5408,7 +5639,7 @@ type MemoryPullRequest struct {
 
 func (x *MemoryPullRequest) Reset() {
 	*x = MemoryPullRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[57]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5420,7 +5651,7 @@ func (x *MemoryPullRequest) String() string {
 func (*MemoryPullRequest) ProtoMessage() {}
 
 func (x *MemoryPullRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[57]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5433,7 +5664,7 @@ func (x *MemoryPullRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryPullRequest.ProtoReflect.Descriptor instead.
 func (*MemoryPullRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{57}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *MemoryPullRequest) GetScope() string {
@@ -5460,7 +5691,7 @@ type MemoryPage struct {
 
 func (x *MemoryPage) Reset() {
 	*x = MemoryPage{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[58]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5472,7 +5703,7 @@ func (x *MemoryPage) String() string {
 func (*MemoryPage) ProtoMessage() {}
 
 func (x *MemoryPage) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[58]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5485,7 +5716,7 @@ func (x *MemoryPage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryPage.ProtoReflect.Descriptor instead.
 func (*MemoryPage) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{58}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *MemoryPage) GetNotes() []*MemoryNote {
@@ -5519,7 +5750,7 @@ type A2AEnvelope struct {
 
 func (x *A2AEnvelope) Reset() {
 	*x = A2AEnvelope{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[59]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5531,7 +5762,7 @@ func (x *A2AEnvelope) String() string {
 func (*A2AEnvelope) ProtoMessage() {}
 
 func (x *A2AEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[59]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5544,7 +5775,7 @@ func (x *A2AEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use A2AEnvelope.ProtoReflect.Descriptor instead.
 func (*A2AEnvelope) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{59}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *A2AEnvelope) GetId() string {
@@ -5614,7 +5845,7 @@ type A2ASendResult struct {
 
 func (x *A2ASendResult) Reset() {
 	*x = A2ASendResult{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[60]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5626,7 +5857,7 @@ func (x *A2ASendResult) String() string {
 func (*A2ASendResult) ProtoMessage() {}
 
 func (x *A2ASendResult) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[60]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5639,7 +5870,7 @@ func (x *A2ASendResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use A2ASendResult.ProtoReflect.Descriptor instead.
 func (*A2ASendResult) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{60}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *A2ASendResult) GetId() string {
@@ -5674,7 +5905,7 @@ type A2AReceiveRequest struct {
 
 func (x *A2AReceiveRequest) Reset() {
 	*x = A2AReceiveRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[61]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5686,7 +5917,7 @@ func (x *A2AReceiveRequest) String() string {
 func (*A2AReceiveRequest) ProtoMessage() {}
 
 func (x *A2AReceiveRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[61]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5699,7 +5930,7 @@ func (x *A2AReceiveRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use A2AReceiveRequest.ProtoReflect.Descriptor instead.
 func (*A2AReceiveRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{61}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *A2AReceiveRequest) GetTo() []string {
@@ -5724,7 +5955,7 @@ type StateRequest struct {
 
 func (x *StateRequest) Reset() {
 	*x = StateRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[62]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5736,7 +5967,7 @@ func (x *StateRequest) String() string {
 func (*StateRequest) ProtoMessage() {}
 
 func (x *StateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[62]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5749,7 +5980,7 @@ func (x *StateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StateRequest.ProtoReflect.Descriptor instead.
 func (*StateRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{62}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{65}
 }
 
 type TeleportPart struct {
@@ -5765,7 +5996,7 @@ type TeleportPart struct {
 
 func (x *TeleportPart) Reset() {
 	*x = TeleportPart{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[63]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5777,7 +6008,7 @@ func (x *TeleportPart) String() string {
 func (*TeleportPart) ProtoMessage() {}
 
 func (x *TeleportPart) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[63]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5790,7 +6021,7 @@ func (x *TeleportPart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeleportPart.ProtoReflect.Descriptor instead.
 func (*TeleportPart) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{63}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *TeleportPart) GetTeleportId() string {
@@ -5838,7 +6069,7 @@ type TeleportHeader struct {
 
 func (x *TeleportHeader) Reset() {
 	*x = TeleportHeader{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[64]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5850,7 +6081,7 @@ func (x *TeleportHeader) String() string {
 func (*TeleportHeader) ProtoMessage() {}
 
 func (x *TeleportHeader) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[64]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5863,7 +6094,7 @@ func (x *TeleportHeader) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeleportHeader.ProtoReflect.Descriptor instead.
 func (*TeleportHeader) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{64}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *TeleportHeader) GetSessionId() string {
@@ -5925,7 +6156,7 @@ type TeleportReceipt struct {
 
 func (x *TeleportReceipt) Reset() {
 	*x = TeleportReceipt{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[65]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5937,7 +6168,7 @@ func (x *TeleportReceipt) String() string {
 func (*TeleportReceipt) ProtoMessage() {}
 
 func (x *TeleportReceipt) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[65]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5950,7 +6181,7 @@ func (x *TeleportReceipt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeleportReceipt.ProtoReflect.Descriptor instead.
 func (*TeleportReceipt) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{65}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *TeleportReceipt) GetTeleportId() string {
@@ -5976,7 +6207,7 @@ type TeleportRequest struct {
 
 func (x *TeleportRequest) Reset() {
 	*x = TeleportRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[66]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5988,7 +6219,7 @@ func (x *TeleportRequest) String() string {
 func (*TeleportRequest) ProtoMessage() {}
 
 func (x *TeleportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[66]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6001,7 +6232,7 @@ func (x *TeleportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeleportRequest.ProtoReflect.Descriptor instead.
 func (*TeleportRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{66}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *TeleportRequest) GetTeleportId() string {
@@ -6019,7 +6250,7 @@ type NodesRequest struct {
 
 func (x *NodesRequest) Reset() {
 	*x = NodesRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[67]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6031,7 +6262,7 @@ func (x *NodesRequest) String() string {
 func (*NodesRequest) ProtoMessage() {}
 
 func (x *NodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[67]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6044,7 +6275,7 @@ func (x *NodesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodesRequest.ProtoReflect.Descriptor instead.
 func (*NodesRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{67}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{70}
 }
 
 type NodeList struct {
@@ -6056,7 +6287,7 @@ type NodeList struct {
 
 func (x *NodeList) Reset() {
 	*x = NodeList{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[68]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6068,7 +6299,7 @@ func (x *NodeList) String() string {
 func (*NodeList) ProtoMessage() {}
 
 func (x *NodeList) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[68]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6081,7 +6312,7 @@ func (x *NodeList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeList.ProtoReflect.Descriptor instead.
 func (*NodeList) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{68}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *NodeList) GetNodes() []*NodeSummary {
@@ -6112,7 +6343,7 @@ type NodeSummary struct {
 
 func (x *NodeSummary) Reset() {
 	*x = NodeSummary{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[69]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6124,7 +6355,7 @@ func (x *NodeSummary) String() string {
 func (*NodeSummary) ProtoMessage() {}
 
 func (x *NodeSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[69]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6137,7 +6368,7 @@ func (x *NodeSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeSummary.ProtoReflect.Descriptor instead.
 func (*NodeSummary) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{69}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *NodeSummary) GetNodeId() string {
@@ -6234,7 +6465,7 @@ type DispatchRequest struct {
 
 func (x *DispatchRequest) Reset() {
 	*x = DispatchRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[70]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6246,7 +6477,7 @@ func (x *DispatchRequest) String() string {
 func (*DispatchRequest) ProtoMessage() {}
 
 func (x *DispatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[70]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6259,7 +6490,7 @@ func (x *DispatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DispatchRequest.ProtoReflect.Descriptor instead.
 func (*DispatchRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{70}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *DispatchRequest) GetTargetNode() string {
@@ -6304,7 +6535,7 @@ type DispatchTicket struct {
 
 func (x *DispatchTicket) Reset() {
 	*x = DispatchTicket{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[71]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6316,7 +6547,7 @@ func (x *DispatchTicket) String() string {
 func (*DispatchTicket) ProtoMessage() {}
 
 func (x *DispatchTicket) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[71]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6329,7 +6560,7 @@ func (x *DispatchTicket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DispatchTicket.ProtoReflect.Descriptor instead.
 func (*DispatchTicket) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{71}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *DispatchTicket) GetRequestId() string {
@@ -6376,7 +6607,7 @@ type WatchRequest struct {
 
 func (x *WatchRequest) Reset() {
 	*x = WatchRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[72]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6388,7 +6619,7 @@ func (x *WatchRequest) String() string {
 func (*WatchRequest) ProtoMessage() {}
 
 func (x *WatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[72]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6401,7 +6632,7 @@ func (x *WatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchRequest.ProtoReflect.Descriptor instead.
 func (*WatchRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{72}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *WatchRequest) GetRequestIds() []string {
@@ -6427,7 +6658,7 @@ type DispatchStatus struct {
 
 func (x *DispatchStatus) Reset() {
 	*x = DispatchStatus{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[73]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6439,7 +6670,7 @@ func (x *DispatchStatus) String() string {
 func (*DispatchStatus) ProtoMessage() {}
 
 func (x *DispatchStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[73]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6452,7 +6683,7 @@ func (x *DispatchStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DispatchStatus.ProtoReflect.Descriptor instead.
 func (*DispatchStatus) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{73}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *DispatchStatus) GetRequestId() string {
@@ -6510,7 +6741,7 @@ type PeerPrompt struct {
 
 func (x *PeerPrompt) Reset() {
 	*x = PeerPrompt{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[74]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6522,7 +6753,7 @@ func (x *PeerPrompt) String() string {
 func (*PeerPrompt) ProtoMessage() {}
 
 func (x *PeerPrompt) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[74]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6535,7 +6766,7 @@ func (x *PeerPrompt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PeerPrompt.ProtoReflect.Descriptor instead.
 func (*PeerPrompt) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{74}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *PeerPrompt) GetTargetSession() string {
@@ -6584,7 +6815,7 @@ type AttentionRequest struct {
 
 func (x *AttentionRequest) Reset() {
 	*x = AttentionRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[75]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6596,7 +6827,7 @@ func (x *AttentionRequest) String() string {
 func (*AttentionRequest) ProtoMessage() {}
 
 func (x *AttentionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[75]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6609,7 +6840,7 @@ func (x *AttentionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttentionRequest.ProtoReflect.Descriptor instead.
 func (*AttentionRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{75}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *AttentionRequest) GetId() string {
@@ -6652,7 +6883,7 @@ type AttentionReceipt struct {
 
 func (x *AttentionReceipt) Reset() {
 	*x = AttentionReceipt{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[76]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6664,7 +6895,7 @@ func (x *AttentionReceipt) String() string {
 func (*AttentionReceipt) ProtoMessage() {}
 
 func (x *AttentionReceipt) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[76]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6677,7 +6908,7 @@ func (x *AttentionReceipt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttentionReceipt.ProtoReflect.Descriptor instead.
 func (*AttentionReceipt) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{76}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *AttentionReceipt) GetId() string {
@@ -6712,7 +6943,7 @@ type AttentionDecided struct {
 
 func (x *AttentionDecided) Reset() {
 	*x = AttentionDecided{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[77]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6724,7 +6955,7 @@ func (x *AttentionDecided) String() string {
 func (*AttentionDecided) ProtoMessage() {}
 
 func (x *AttentionDecided) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[77]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6737,7 +6968,7 @@ func (x *AttentionDecided) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AttentionDecided.ProtoReflect.Descriptor instead.
 func (*AttentionDecided) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{77}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *AttentionDecided) GetId() string {
@@ -6804,7 +7035,7 @@ type Harness struct {
 
 func (x *Harness) Reset() {
 	*x = Harness{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[78]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6816,7 +7047,7 @@ func (x *Harness) String() string {
 func (*Harness) ProtoMessage() {}
 
 func (x *Harness) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[78]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6829,7 +7060,7 @@ func (x *Harness) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Harness.ProtoReflect.Descriptor instead.
 func (*Harness) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{78}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *Harness) GetId() string {
@@ -7017,7 +7248,7 @@ type A2APeersRequest struct {
 
 func (x *A2APeersRequest) Reset() {
 	*x = A2APeersRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[79]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7029,7 +7260,7 @@ func (x *A2APeersRequest) String() string {
 func (*A2APeersRequest) ProtoMessage() {}
 
 func (x *A2APeersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[79]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7042,7 +7273,7 @@ func (x *A2APeersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use A2APeersRequest.ProtoReflect.Descriptor instead.
 func (*A2APeersRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{79}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *A2APeersRequest) GetRepo() string {
@@ -7075,7 +7306,7 @@ type A2APeer struct {
 
 func (x *A2APeer) Reset() {
 	*x = A2APeer{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[80]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7087,7 +7318,7 @@ func (x *A2APeer) String() string {
 func (*A2APeer) ProtoMessage() {}
 
 func (x *A2APeer) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[80]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7100,7 +7331,7 @@ func (x *A2APeer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use A2APeer.ProtoReflect.Descriptor instead.
 func (*A2APeer) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{80}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *A2APeer) GetAgentId() string {
@@ -7168,7 +7399,7 @@ type A2APeerList struct {
 
 func (x *A2APeerList) Reset() {
 	*x = A2APeerList{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[81]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7180,7 +7411,7 @@ func (x *A2APeerList) String() string {
 func (*A2APeerList) ProtoMessage() {}
 
 func (x *A2APeerList) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[81]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7193,7 +7424,7 @@ func (x *A2APeerList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use A2APeerList.ProtoReflect.Descriptor instead.
 func (*A2APeerList) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{81}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *A2APeerList) GetPeers() []*A2APeer {
@@ -7220,7 +7451,7 @@ type ScreenUp struct {
 
 func (x *ScreenUp) Reset() {
 	*x = ScreenUp{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[82]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7232,7 +7463,7 @@ func (x *ScreenUp) String() string {
 func (*ScreenUp) ProtoMessage() {}
 
 func (x *ScreenUp) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[82]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7245,7 +7476,7 @@ func (x *ScreenUp) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScreenUp.ProtoReflect.Descriptor instead.
 func (*ScreenUp) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{82}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *ScreenUp) GetSessionId() string {
@@ -7344,7 +7575,7 @@ type ScreenOpen struct {
 
 func (x *ScreenOpen) Reset() {
 	*x = ScreenOpen{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[83]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7356,7 +7587,7 @@ func (x *ScreenOpen) String() string {
 func (*ScreenOpen) ProtoMessage() {}
 
 func (x *ScreenOpen) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[83]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7369,7 +7600,7 @@ func (x *ScreenOpen) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScreenOpen.ProtoReflect.Descriptor instead.
 func (*ScreenOpen) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{83}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *ScreenOpen) GetSize() *ScreenSize {
@@ -7396,7 +7627,7 @@ type ScreenSize struct {
 
 func (x *ScreenSize) Reset() {
 	*x = ScreenSize{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[84]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7408,7 +7639,7 @@ func (x *ScreenSize) String() string {
 func (*ScreenSize) ProtoMessage() {}
 
 func (x *ScreenSize) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[84]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7421,7 +7652,7 @@ func (x *ScreenSize) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScreenSize.ProtoReflect.Descriptor instead.
 func (*ScreenSize) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{84}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *ScreenSize) GetCols() uint32 {
@@ -7448,7 +7679,7 @@ type ScreenExit struct {
 
 func (x *ScreenExit) Reset() {
 	*x = ScreenExit{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[85]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7460,7 +7691,7 @@ func (x *ScreenExit) String() string {
 func (*ScreenExit) ProtoMessage() {}
 
 func (x *ScreenExit) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[85]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7473,7 +7704,7 @@ func (x *ScreenExit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScreenExit.ProtoReflect.Descriptor instead.
 func (*ScreenExit) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{85}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *ScreenExit) GetCode() int32 {
@@ -7503,7 +7734,7 @@ type ScreenDown struct {
 
 func (x *ScreenDown) Reset() {
 	*x = ScreenDown{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[86]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7515,7 +7746,7 @@ func (x *ScreenDown) String() string {
 func (*ScreenDown) ProtoMessage() {}
 
 func (x *ScreenDown) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[86]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7528,7 +7759,7 @@ func (x *ScreenDown) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScreenDown.ProtoReflect.Descriptor instead.
 func (*ScreenDown) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{86}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *ScreenDown) GetBody() isScreenDown_Body {
@@ -7600,7 +7831,7 @@ type ScheduleItem struct {
 
 func (x *ScheduleItem) Reset() {
 	*x = ScheduleItem{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[87]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7612,7 +7843,7 @@ func (x *ScheduleItem) String() string {
 func (*ScheduleItem) ProtoMessage() {}
 
 func (x *ScheduleItem) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[87]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7625,7 +7856,7 @@ func (x *ScheduleItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScheduleItem.ProtoReflect.Descriptor instead.
 func (*ScheduleItem) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{87}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *ScheduleItem) GetId() string {
@@ -7743,7 +7974,7 @@ type SchedulePullRequest struct {
 
 func (x *SchedulePullRequest) Reset() {
 	*x = SchedulePullRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[88]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7755,7 +7986,7 @@ func (x *SchedulePullRequest) String() string {
 func (*SchedulePullRequest) ProtoMessage() {}
 
 func (x *SchedulePullRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[88]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7768,7 +7999,7 @@ func (x *SchedulePullRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulePullRequest.ProtoReflect.Descriptor instead.
 func (*SchedulePullRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{88}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *SchedulePullRequest) GetSinceMs() int64 {
@@ -7796,7 +8027,7 @@ type SchedulePage struct {
 
 func (x *SchedulePage) Reset() {
 	*x = SchedulePage{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[89]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7808,7 +8039,7 @@ func (x *SchedulePage) String() string {
 func (*SchedulePage) ProtoMessage() {}
 
 func (x *SchedulePage) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[89]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7821,7 +8052,7 @@ func (x *SchedulePage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulePage.ProtoReflect.Descriptor instead.
 func (*SchedulePage) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{89}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *SchedulePage) GetItems() []*ScheduleItem {
@@ -7854,7 +8085,7 @@ type ScheduleBatch struct {
 
 func (x *ScheduleBatch) Reset() {
 	*x = ScheduleBatch{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[90]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7866,7 +8097,7 @@ func (x *ScheduleBatch) String() string {
 func (*ScheduleBatch) ProtoMessage() {}
 
 func (x *ScheduleBatch) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[90]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7879,7 +8110,7 @@ func (x *ScheduleBatch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScheduleBatch.ProtoReflect.Descriptor instead.
 func (*ScheduleBatch) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{90}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *ScheduleBatch) GetItems() []*ScheduleItem {
@@ -7900,7 +8131,7 @@ type SchedulePushResult struct {
 
 func (x *SchedulePushResult) Reset() {
 	*x = SchedulePushResult{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[91]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7912,7 +8143,7 @@ func (x *SchedulePushResult) String() string {
 func (*SchedulePushResult) ProtoMessage() {}
 
 func (x *SchedulePushResult) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[91]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7925,7 +8156,7 @@ func (x *SchedulePushResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SchedulePushResult.ProtoReflect.Descriptor instead.
 func (*SchedulePushResult) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{91}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *SchedulePushResult) GetAccepted() []*ScheduleItem {
@@ -7961,7 +8192,7 @@ type LibraryRef struct {
 
 func (x *LibraryRef) Reset() {
 	*x = LibraryRef{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[92]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7973,7 +8204,7 @@ func (x *LibraryRef) String() string {
 func (*LibraryRef) ProtoMessage() {}
 
 func (x *LibraryRef) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[92]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7986,7 +8217,7 @@ func (x *LibraryRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryRef.ProtoReflect.Descriptor instead.
 func (*LibraryRef) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{92}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *LibraryRef) GetKind() string {
@@ -8036,7 +8267,7 @@ type LibraryFetch struct {
 
 func (x *LibraryFetch) Reset() {
 	*x = LibraryFetch{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[93]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8048,7 +8279,7 @@ func (x *LibraryFetch) String() string {
 func (*LibraryFetch) ProtoMessage() {}
 
 func (x *LibraryFetch) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[93]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8061,7 +8292,7 @@ func (x *LibraryFetch) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryFetch.ProtoReflect.Descriptor instead.
 func (*LibraryFetch) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{93}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *LibraryFetch) GetDispatchId() string {
@@ -8100,7 +8331,7 @@ type LibraryDoc struct {
 
 func (x *LibraryDoc) Reset() {
 	*x = LibraryDoc{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[94]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8112,7 +8343,7 @@ func (x *LibraryDoc) String() string {
 func (*LibraryDoc) ProtoMessage() {}
 
 func (x *LibraryDoc) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[94]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8125,7 +8356,7 @@ func (x *LibraryDoc) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryDoc.ProtoReflect.Descriptor instead.
 func (*LibraryDoc) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{94}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *LibraryDoc) GetDispatchId() string {
@@ -8167,7 +8398,7 @@ type LibraryFile struct {
 
 func (x *LibraryFile) Reset() {
 	*x = LibraryFile{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[95]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8179,7 +8410,7 @@ func (x *LibraryFile) String() string {
 func (*LibraryFile) ProtoMessage() {}
 
 func (x *LibraryFile) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[95]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8192,7 +8423,7 @@ func (x *LibraryFile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryFile.ProtoReflect.Descriptor instead.
 func (*LibraryFile) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{95}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *LibraryFile) GetPath() string {
@@ -8225,7 +8456,7 @@ type LibraryReceipt struct {
 
 func (x *LibraryReceipt) Reset() {
 	*x = LibraryReceipt{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[96]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8237,7 +8468,7 @@ func (x *LibraryReceipt) String() string {
 func (*LibraryReceipt) ProtoMessage() {}
 
 func (x *LibraryReceipt) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[96]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8250,7 +8481,7 @@ func (x *LibraryReceipt) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryReceipt.ProtoReflect.Descriptor instead.
 func (*LibraryReceipt) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{96}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *LibraryReceipt) GetStored() *LibraryRef {
@@ -8269,7 +8500,7 @@ type LibraryInventory struct {
 
 func (x *LibraryInventory) Reset() {
 	*x = LibraryInventory{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[97]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8281,7 +8512,7 @@ func (x *LibraryInventory) String() string {
 func (*LibraryInventory) ProtoMessage() {}
 
 func (x *LibraryInventory) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[97]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8294,7 +8525,7 @@ func (x *LibraryInventory) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryInventory.ProtoReflect.Descriptor instead.
 func (*LibraryInventory) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{97}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *LibraryInventory) GetItems() []*LibraryRef {
@@ -8313,7 +8544,7 @@ type LibraryVerdicts struct {
 
 func (x *LibraryVerdicts) Reset() {
 	*x = LibraryVerdicts{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[98]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8325,7 +8556,7 @@ func (x *LibraryVerdicts) String() string {
 func (*LibraryVerdicts) ProtoMessage() {}
 
 func (x *LibraryVerdicts) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[98]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8338,7 +8569,7 @@ func (x *LibraryVerdicts) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryVerdicts.ProtoReflect.Descriptor instead.
 func (*LibraryVerdicts) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{98}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *LibraryVerdicts) GetVerdicts() []*LibraryVerdict {
@@ -8359,7 +8590,7 @@ type LibraryVerdict struct {
 
 func (x *LibraryVerdict) Reset() {
 	*x = LibraryVerdict{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[99]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8371,7 +8602,7 @@ func (x *LibraryVerdict) String() string {
 func (*LibraryVerdict) ProtoMessage() {}
 
 func (x *LibraryVerdict) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[99]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8384,7 +8615,7 @@ func (x *LibraryVerdict) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryVerdict.ProtoReflect.Descriptor instead.
 func (*LibraryVerdict) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{99}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *LibraryVerdict) GetRef() *LibraryRef {
@@ -8412,7 +8643,7 @@ type ForgePart struct {
 
 func (x *ForgePart) Reset() {
 	*x = ForgePart{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[100]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8424,7 +8655,7 @@ func (x *ForgePart) String() string {
 func (*ForgePart) ProtoMessage() {}
 
 func (x *ForgePart) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[100]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8437,7 +8668,7 @@ func (x *ForgePart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForgePart.ProtoReflect.Descriptor instead.
 func (*ForgePart) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{100}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *ForgePart) GetRequest() *ForgeRequest {
@@ -8487,7 +8718,7 @@ type ForgeRequest struct {
 
 func (x *ForgeRequest) Reset() {
 	*x = ForgeRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[101]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8499,7 +8730,7 @@ func (x *ForgeRequest) String() string {
 func (*ForgeRequest) ProtoMessage() {}
 
 func (x *ForgeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[101]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8512,7 +8743,7 @@ func (x *ForgeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForgeRequest.ProtoReflect.Descriptor instead.
 func (*ForgeRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{101}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *ForgeRequest) GetRequestId() string {
@@ -8616,7 +8847,7 @@ type ForgeFiled struct {
 
 func (x *ForgeFiled) Reset() {
 	*x = ForgeFiled{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[102]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8628,7 +8859,7 @@ func (x *ForgeFiled) String() string {
 func (*ForgeFiled) ProtoMessage() {}
 
 func (x *ForgeFiled) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[102]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8641,7 +8872,7 @@ func (x *ForgeFiled) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForgeFiled.ProtoReflect.Descriptor instead.
 func (*ForgeFiled) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{102}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *ForgeFiled) GetRequestId() string {
@@ -8676,7 +8907,7 @@ type LibraryScanReport struct {
 
 func (x *LibraryScanReport) Reset() {
 	*x = LibraryScanReport{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[103]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8688,7 +8919,7 @@ func (x *LibraryScanReport) String() string {
 func (*LibraryScanReport) ProtoMessage() {}
 
 func (x *LibraryScanReport) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[103]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8701,7 +8932,7 @@ func (x *LibraryScanReport) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LibraryScanReport.ProtoReflect.Descriptor instead.
 func (*LibraryScanReport) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{103}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *LibraryScanReport) GetDispatchId() string {
@@ -8757,7 +8988,7 @@ type HarnessCaveat struct {
 
 func (x *HarnessCaveat) Reset() {
 	*x = HarnessCaveat{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[104]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8769,7 +9000,7 @@ func (x *HarnessCaveat) String() string {
 func (*HarnessCaveat) ProtoMessage() {}
 
 func (x *HarnessCaveat) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[104]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8782,7 +9013,7 @@ func (x *HarnessCaveat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HarnessCaveat.ProtoReflect.Descriptor instead.
 func (*HarnessCaveat) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{104}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *HarnessCaveat) GetCode() string {
@@ -8811,7 +9042,7 @@ type HarnessTiming struct {
 
 func (x *HarnessTiming) Reset() {
 	*x = HarnessTiming{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[105]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8823,7 +9054,7 @@ func (x *HarnessTiming) String() string {
 func (*HarnessTiming) ProtoMessage() {}
 
 func (x *HarnessTiming) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[105]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8836,7 +9067,7 @@ func (x *HarnessTiming) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HarnessTiming.ProtoReflect.Descriptor instead.
 func (*HarnessTiming) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{105}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *HarnessTiming) GetStartupMs() int64 {
@@ -8887,7 +9118,7 @@ type PlanLimit struct {
 
 func (x *PlanLimit) Reset() {
 	*x = PlanLimit{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[106]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8899,7 +9130,7 @@ func (x *PlanLimit) String() string {
 func (*PlanLimit) ProtoMessage() {}
 
 func (x *PlanLimit) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[106]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8912,7 +9143,7 @@ func (x *PlanLimit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PlanLimit.ProtoReflect.Descriptor instead.
 func (*PlanLimit) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{106}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *PlanLimit) GetProvider() string {
@@ -8983,7 +9214,7 @@ type BudgetPush struct {
 
 func (x *BudgetPush) Reset() {
 	*x = BudgetPush{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[107]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8995,7 +9226,7 @@ func (x *BudgetPush) String() string {
 func (*BudgetPush) ProtoMessage() {}
 
 func (x *BudgetPush) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[107]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9008,7 +9239,7 @@ func (x *BudgetPush) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BudgetPush.ProtoReflect.Descriptor instead.
 func (*BudgetPush) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{107}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *BudgetPush) GetAction() string {
@@ -9070,7 +9301,7 @@ type KnowledgeSearchRequest struct {
 
 func (x *KnowledgeSearchRequest) Reset() {
 	*x = KnowledgeSearchRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[108]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9082,7 +9313,7 @@ func (x *KnowledgeSearchRequest) String() string {
 func (*KnowledgeSearchRequest) ProtoMessage() {}
 
 func (x *KnowledgeSearchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[108]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9095,7 +9326,7 @@ func (x *KnowledgeSearchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KnowledgeSearchRequest.ProtoReflect.Descriptor instead.
 func (*KnowledgeSearchRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{108}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *KnowledgeSearchRequest) GetQuery() string {
@@ -9141,7 +9372,7 @@ type KnowledgeHit struct {
 
 func (x *KnowledgeHit) Reset() {
 	*x = KnowledgeHit{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[109]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9153,7 +9384,7 @@ func (x *KnowledgeHit) String() string {
 func (*KnowledgeHit) ProtoMessage() {}
 
 func (x *KnowledgeHit) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[109]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9166,7 +9397,7 @@ func (x *KnowledgeHit) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KnowledgeHit.ProtoReflect.Descriptor instead.
 func (*KnowledgeHit) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{109}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *KnowledgeHit) GetAddress() string {
@@ -9214,7 +9445,7 @@ type KnowledgeSearchResult struct {
 
 func (x *KnowledgeSearchResult) Reset() {
 	*x = KnowledgeSearchResult{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[110]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9226,7 +9457,7 @@ func (x *KnowledgeSearchResult) String() string {
 func (*KnowledgeSearchResult) ProtoMessage() {}
 
 func (x *KnowledgeSearchResult) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[110]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9239,7 +9470,7 @@ func (x *KnowledgeSearchResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use KnowledgeSearchResult.ProtoReflect.Descriptor instead.
 func (*KnowledgeSearchResult) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{110}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *KnowledgeSearchResult) GetHits() []*KnowledgeHit {
@@ -9273,7 +9504,7 @@ type InitDraftRequest struct {
 
 func (x *InitDraftRequest) Reset() {
 	*x = InitDraftRequest{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[111]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9285,7 +9516,7 @@ func (x *InitDraftRequest) String() string {
 func (*InitDraftRequest) ProtoMessage() {}
 
 func (x *InitDraftRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[111]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9298,7 +9529,7 @@ func (x *InitDraftRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitDraftRequest.ProtoReflect.Descriptor instead.
 func (*InitDraftRequest) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{111}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *InitDraftRequest) GetCwd() string {
@@ -9343,7 +9574,7 @@ type InitDraftResult struct {
 
 func (x *InitDraftResult) Reset() {
 	*x = InitDraftResult{}
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[112]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9355,7 +9586,7 @@ func (x *InitDraftResult) String() string {
 func (*InitDraftResult) ProtoMessage() {}
 
 func (x *InitDraftResult) ProtoReflect() protoreflect.Message {
-	mi := &file_keleustes_node_v1_node_proto_msgTypes[112]
+	mi := &file_keleustes_node_v1_node_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9368,7 +9599,7 @@ func (x *InitDraftResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use InitDraftResult.ProtoReflect.Descriptor instead.
 func (*InitDraftResult) Descriptor() ([]byte, []int) {
-	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{112}
+	return file_keleustes_node_v1_node_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *InitDraftResult) GetPath() string {
@@ -9547,7 +9778,7 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"\x0eFactoryControl\x12\x18\n" +
 	"\astopped\x18\x01 \x01(\bR\astopped\x12!\n" +
 	"\fa2a_blackout\x18\x02 \x01(\bR\va2aBlackout\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xf7\x10\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"\xb8\x11\n" +
 	"\bDispatch\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x10\n" +
@@ -9614,7 +9845,8 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"\n" +
 	"fork_entry\x187 \x01(\tR\tforkEntry\x12!\n" +
 	"\fanswers_json\x188 \x01(\tR\vanswersJson\x124\n" +
-	"\x05adhoc\x189 \x01(\v2\x1e.keleustes.node.v1.AdhocWorkerR\x05adhoc\x1a?\n" +
+	"\x05adhoc\x189 \x01(\v2\x1e.keleustes.node.v1.AdhocWorkerR\x05adhoc\x12?\n" +
+	"\vattachments\x18: \x03(\v2\x1d.keleustes.node.v1.AttachmentR\vattachments\x1a?\n" +
 	"\x11MemberModelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a;\n" +
@@ -9831,9 +10063,27 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	" \x01(\v2\x19.keleustes.node.v1.PromptH\x00R\x06prompt\x123\n" +
 	"\x06answer\x18\v \x01(\v2\x19.keleustes.node.v1.AnswerH\x00R\x06answer\x126\n" +
 	"\acommand\x18\f \x01(\v2\x1a.keleustes.node.v1.CommandH\x00R\acommandB\x06\n" +
-	"\x04body\"\x1c\n" +
+	"\x04body\"]\n" +
 	"\x06Prompt\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\"|\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12?\n" +
+	"\vattachments\x18\x02 \x03(\v2\x1d.keleustes.node.v1.AttachmentR\vattachments\"`\n" +
+	"\n" +
+	"Attachment\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
+	"\x04mime\x18\x02 \x01(\tR\x04mime\x12\x16\n" +
+	"\x06sha256\x18\x03 \x01(\tR\x06sha256\x12\x12\n" +
+	"\x04size\x18\x04 \x01(\x03R\x04size\"\x84\x01\n" +
+	"\x11AttachmentRequest\x12\x16\n" +
+	"\x06sha256\x18\x01 \x01(\tR\x06sha256\x12\x1f\n" +
+	"\vdispatch_id\x18\x02 \x01(\tR\n" +
+	"dispatchId\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x03 \x01(\tR\tsessionId\x12\x17\n" +
+	"\aitem_id\x18\x04 \x01(\tR\x06itemId\"N\n" +
+	"\x0eAttachmentPart\x12\x14\n" +
+	"\x05chunk\x18\x01 \x01(\fR\x05chunk\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x12\n" +
+	"\x04last\x18\x03 \x01(\bR\x04last\"|\n" +
 	"\x06Answer\x12\x1f\n" +
 	"\vquestion_id\x18\x01 \x01(\tR\n" +
 	"questionId\x12\x12\n" +
@@ -10245,7 +10495,7 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"baseSha2562\x99\x01\n" +
 	"\x04Node\x12G\n" +
 	"\x04Join\x12\x1e.keleustes.node.v1.JoinRequest\x1a\x1f.keleustes.node.v1.JoinResponse\x12H\n" +
-	"\x04Link\x12\x1c.keleustes.node.v1.NodeFrame\x1a\x1e.keleustes.node.v1.ServerFrame(\x010\x012\xf4\x03\n" +
+	"\x04Link\x12\x1c.keleustes.node.v1.NodeFrame\x1a\x1e.keleustes.node.v1.ServerFrame(\x010\x012\xd2\x04\n" +
 	"\bSessions\x12A\n" +
 	"\x06Upsert\x12 .keleustes.node.v1.SessionUpsert\x1a\x15.keleustes.node.v1.Ok\x12L\n" +
 	"\x06Append\x12!.keleustes.node.v1.SessionEntries\x1a\x1f.keleustes.node.v1.AppendResult\x12;\n" +
@@ -10253,7 +10503,8 @@ const file_keleustes_node_v1_node_proto_rawDesc = "" +
 	"\x05Inbox\x12\x1f.keleustes.node.v1.InboxRequest\x1a\x1c.keleustes.node.v1.InboxItem0\x01\x129\n" +
 	"\x03Ack\x12\x1b.keleustes.node.v1.InboxAck\x1a\x15.keleustes.node.v1.Ok\x12=\n" +
 	"\x05Audit\x12\x1d.keleustes.node.v1.AuditBatch\x1a\x15.keleustes.node.v1.Ok\x12V\n" +
-	"\tAuditHead\x12%.keleustes.node.v1.AuditStreamRequest\x1a\".keleustes.node.v1.AuditStreamHead2\x95\a\n" +
+	"\tAuditHead\x12%.keleustes.node.v1.AuditStreamRequest\x1a\".keleustes.node.v1.AuditStreamHead\x12\\\n" +
+	"\x0fFetchAttachment\x12$.keleustes.node.v1.AttachmentRequest\x1a!.keleustes.node.v1.AttachmentPart0\x012\x95\a\n" +
 	"\x05Board\x12Q\n" +
 	"\n" +
 	"KanbanPull\x12$.keleustes.node.v1.KanbanPullRequest\x1a\x1d.keleustes.node.v1.KanbanPage\x12Q\n" +
@@ -10304,7 +10555,7 @@ func file_keleustes_node_v1_node_proto_rawDescGZIP() []byte {
 	return file_keleustes_node_v1_node_proto_rawDescData
 }
 
-var file_keleustes_node_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 116)
+var file_keleustes_node_v1_node_proto_msgTypes = make([]protoimpl.MessageInfo, 119)
 var file_keleustes_node_v1_node_proto_goTypes = []any{
 	(*Ok)(nil),                     // 0: keleustes.node.v1.Ok
 	(*JoinRequest)(nil),            // 1: keleustes.node.v1.JoinRequest
@@ -10350,78 +10601,81 @@ var file_keleustes_node_v1_node_proto_goTypes = []any{
 	(*InboxRequest)(nil),           // 41: keleustes.node.v1.InboxRequest
 	(*InboxItem)(nil),              // 42: keleustes.node.v1.InboxItem
 	(*Prompt)(nil),                 // 43: keleustes.node.v1.Prompt
-	(*Answer)(nil),                 // 44: keleustes.node.v1.Answer
-	(*Command)(nil),                // 45: keleustes.node.v1.Command
-	(*InboxAck)(nil),               // 46: keleustes.node.v1.InboxAck
-	(*AuditBatch)(nil),             // 47: keleustes.node.v1.AuditBatch
-	(*AuditStreamRequest)(nil),     // 48: keleustes.node.v1.AuditStreamRequest
-	(*AuditStreamHead)(nil),        // 49: keleustes.node.v1.AuditStreamHead
-	(*AuditLine)(nil),              // 50: keleustes.node.v1.AuditLine
-	(*KanbanItem)(nil),             // 51: keleustes.node.v1.KanbanItem
-	(*KanbanPullRequest)(nil),      // 52: keleustes.node.v1.KanbanPullRequest
-	(*KanbanPage)(nil),             // 53: keleustes.node.v1.KanbanPage
-	(*KanbanBatch)(nil),            // 54: keleustes.node.v1.KanbanBatch
-	(*KanbanPushResult)(nil),       // 55: keleustes.node.v1.KanbanPushResult
-	(*MemoryNote)(nil),             // 56: keleustes.node.v1.MemoryNote
-	(*MemoryPullRequest)(nil),      // 57: keleustes.node.v1.MemoryPullRequest
-	(*MemoryPage)(nil),             // 58: keleustes.node.v1.MemoryPage
-	(*A2AEnvelope)(nil),            // 59: keleustes.node.v1.A2AEnvelope
-	(*A2ASendResult)(nil),          // 60: keleustes.node.v1.A2ASendResult
-	(*A2AReceiveRequest)(nil),      // 61: keleustes.node.v1.A2AReceiveRequest
-	(*StateRequest)(nil),           // 62: keleustes.node.v1.StateRequest
-	(*TeleportPart)(nil),           // 63: keleustes.node.v1.TeleportPart
-	(*TeleportHeader)(nil),         // 64: keleustes.node.v1.TeleportHeader
-	(*TeleportReceipt)(nil),        // 65: keleustes.node.v1.TeleportReceipt
-	(*TeleportRequest)(nil),        // 66: keleustes.node.v1.TeleportRequest
-	(*NodesRequest)(nil),           // 67: keleustes.node.v1.NodesRequest
-	(*NodeList)(nil),               // 68: keleustes.node.v1.NodeList
-	(*NodeSummary)(nil),            // 69: keleustes.node.v1.NodeSummary
-	(*DispatchRequest)(nil),        // 70: keleustes.node.v1.DispatchRequest
-	(*DispatchTicket)(nil),         // 71: keleustes.node.v1.DispatchTicket
-	(*WatchRequest)(nil),           // 72: keleustes.node.v1.WatchRequest
-	(*DispatchStatus)(nil),         // 73: keleustes.node.v1.DispatchStatus
-	(*PeerPrompt)(nil),             // 74: keleustes.node.v1.PeerPrompt
-	(*AttentionRequest)(nil),       // 75: keleustes.node.v1.AttentionRequest
-	(*AttentionReceipt)(nil),       // 76: keleustes.node.v1.AttentionReceipt
-	(*AttentionDecided)(nil),       // 77: keleustes.node.v1.AttentionDecided
-	(*Harness)(nil),                // 78: keleustes.node.v1.Harness
-	(*A2APeersRequest)(nil),        // 79: keleustes.node.v1.A2APeersRequest
-	(*A2APeer)(nil),                // 80: keleustes.node.v1.A2APeer
-	(*A2APeerList)(nil),            // 81: keleustes.node.v1.A2APeerList
-	(*ScreenUp)(nil),               // 82: keleustes.node.v1.ScreenUp
-	(*ScreenOpen)(nil),             // 83: keleustes.node.v1.ScreenOpen
-	(*ScreenSize)(nil),             // 84: keleustes.node.v1.ScreenSize
-	(*ScreenExit)(nil),             // 85: keleustes.node.v1.ScreenExit
-	(*ScreenDown)(nil),             // 86: keleustes.node.v1.ScreenDown
-	(*ScheduleItem)(nil),           // 87: keleustes.node.v1.ScheduleItem
-	(*SchedulePullRequest)(nil),    // 88: keleustes.node.v1.SchedulePullRequest
-	(*SchedulePage)(nil),           // 89: keleustes.node.v1.SchedulePage
-	(*ScheduleBatch)(nil),          // 90: keleustes.node.v1.ScheduleBatch
-	(*SchedulePushResult)(nil),     // 91: keleustes.node.v1.SchedulePushResult
-	(*LibraryRef)(nil),             // 92: keleustes.node.v1.LibraryRef
-	(*LibraryFetch)(nil),           // 93: keleustes.node.v1.LibraryFetch
-	(*LibraryDoc)(nil),             // 94: keleustes.node.v1.LibraryDoc
-	(*LibraryFile)(nil),            // 95: keleustes.node.v1.LibraryFile
-	(*LibraryReceipt)(nil),         // 96: keleustes.node.v1.LibraryReceipt
-	(*LibraryInventory)(nil),       // 97: keleustes.node.v1.LibraryInventory
-	(*LibraryVerdicts)(nil),        // 98: keleustes.node.v1.LibraryVerdicts
-	(*LibraryVerdict)(nil),         // 99: keleustes.node.v1.LibraryVerdict
-	(*ForgePart)(nil),              // 100: keleustes.node.v1.ForgePart
-	(*ForgeRequest)(nil),           // 101: keleustes.node.v1.ForgeRequest
-	(*ForgeFiled)(nil),             // 102: keleustes.node.v1.ForgeFiled
-	(*LibraryScanReport)(nil),      // 103: keleustes.node.v1.LibraryScanReport
-	(*HarnessCaveat)(nil),          // 104: keleustes.node.v1.HarnessCaveat
-	(*HarnessTiming)(nil),          // 105: keleustes.node.v1.HarnessTiming
-	(*PlanLimit)(nil),              // 106: keleustes.node.v1.PlanLimit
-	(*BudgetPush)(nil),             // 107: keleustes.node.v1.BudgetPush
-	(*KnowledgeSearchRequest)(nil), // 108: keleustes.node.v1.KnowledgeSearchRequest
-	(*KnowledgeHit)(nil),           // 109: keleustes.node.v1.KnowledgeHit
-	(*KnowledgeSearchResult)(nil),  // 110: keleustes.node.v1.KnowledgeSearchResult
-	(*InitDraftRequest)(nil),       // 111: keleustes.node.v1.InitDraftRequest
-	(*InitDraftResult)(nil),        // 112: keleustes.node.v1.InitDraftResult
-	nil,                            // 113: keleustes.node.v1.Dispatch.MemberModelsEntry
-	nil,                            // 114: keleustes.node.v1.Dispatch.PrefsSetEntry
-	nil,                            // 115: keleustes.node.v1.Dispatch.OptionsEntry
+	(*Attachment)(nil),             // 44: keleustes.node.v1.Attachment
+	(*AttachmentRequest)(nil),      // 45: keleustes.node.v1.AttachmentRequest
+	(*AttachmentPart)(nil),         // 46: keleustes.node.v1.AttachmentPart
+	(*Answer)(nil),                 // 47: keleustes.node.v1.Answer
+	(*Command)(nil),                // 48: keleustes.node.v1.Command
+	(*InboxAck)(nil),               // 49: keleustes.node.v1.InboxAck
+	(*AuditBatch)(nil),             // 50: keleustes.node.v1.AuditBatch
+	(*AuditStreamRequest)(nil),     // 51: keleustes.node.v1.AuditStreamRequest
+	(*AuditStreamHead)(nil),        // 52: keleustes.node.v1.AuditStreamHead
+	(*AuditLine)(nil),              // 53: keleustes.node.v1.AuditLine
+	(*KanbanItem)(nil),             // 54: keleustes.node.v1.KanbanItem
+	(*KanbanPullRequest)(nil),      // 55: keleustes.node.v1.KanbanPullRequest
+	(*KanbanPage)(nil),             // 56: keleustes.node.v1.KanbanPage
+	(*KanbanBatch)(nil),            // 57: keleustes.node.v1.KanbanBatch
+	(*KanbanPushResult)(nil),       // 58: keleustes.node.v1.KanbanPushResult
+	(*MemoryNote)(nil),             // 59: keleustes.node.v1.MemoryNote
+	(*MemoryPullRequest)(nil),      // 60: keleustes.node.v1.MemoryPullRequest
+	(*MemoryPage)(nil),             // 61: keleustes.node.v1.MemoryPage
+	(*A2AEnvelope)(nil),            // 62: keleustes.node.v1.A2AEnvelope
+	(*A2ASendResult)(nil),          // 63: keleustes.node.v1.A2ASendResult
+	(*A2AReceiveRequest)(nil),      // 64: keleustes.node.v1.A2AReceiveRequest
+	(*StateRequest)(nil),           // 65: keleustes.node.v1.StateRequest
+	(*TeleportPart)(nil),           // 66: keleustes.node.v1.TeleportPart
+	(*TeleportHeader)(nil),         // 67: keleustes.node.v1.TeleportHeader
+	(*TeleportReceipt)(nil),        // 68: keleustes.node.v1.TeleportReceipt
+	(*TeleportRequest)(nil),        // 69: keleustes.node.v1.TeleportRequest
+	(*NodesRequest)(nil),           // 70: keleustes.node.v1.NodesRequest
+	(*NodeList)(nil),               // 71: keleustes.node.v1.NodeList
+	(*NodeSummary)(nil),            // 72: keleustes.node.v1.NodeSummary
+	(*DispatchRequest)(nil),        // 73: keleustes.node.v1.DispatchRequest
+	(*DispatchTicket)(nil),         // 74: keleustes.node.v1.DispatchTicket
+	(*WatchRequest)(nil),           // 75: keleustes.node.v1.WatchRequest
+	(*DispatchStatus)(nil),         // 76: keleustes.node.v1.DispatchStatus
+	(*PeerPrompt)(nil),             // 77: keleustes.node.v1.PeerPrompt
+	(*AttentionRequest)(nil),       // 78: keleustes.node.v1.AttentionRequest
+	(*AttentionReceipt)(nil),       // 79: keleustes.node.v1.AttentionReceipt
+	(*AttentionDecided)(nil),       // 80: keleustes.node.v1.AttentionDecided
+	(*Harness)(nil),                // 81: keleustes.node.v1.Harness
+	(*A2APeersRequest)(nil),        // 82: keleustes.node.v1.A2APeersRequest
+	(*A2APeer)(nil),                // 83: keleustes.node.v1.A2APeer
+	(*A2APeerList)(nil),            // 84: keleustes.node.v1.A2APeerList
+	(*ScreenUp)(nil),               // 85: keleustes.node.v1.ScreenUp
+	(*ScreenOpen)(nil),             // 86: keleustes.node.v1.ScreenOpen
+	(*ScreenSize)(nil),             // 87: keleustes.node.v1.ScreenSize
+	(*ScreenExit)(nil),             // 88: keleustes.node.v1.ScreenExit
+	(*ScreenDown)(nil),             // 89: keleustes.node.v1.ScreenDown
+	(*ScheduleItem)(nil),           // 90: keleustes.node.v1.ScheduleItem
+	(*SchedulePullRequest)(nil),    // 91: keleustes.node.v1.SchedulePullRequest
+	(*SchedulePage)(nil),           // 92: keleustes.node.v1.SchedulePage
+	(*ScheduleBatch)(nil),          // 93: keleustes.node.v1.ScheduleBatch
+	(*SchedulePushResult)(nil),     // 94: keleustes.node.v1.SchedulePushResult
+	(*LibraryRef)(nil),             // 95: keleustes.node.v1.LibraryRef
+	(*LibraryFetch)(nil),           // 96: keleustes.node.v1.LibraryFetch
+	(*LibraryDoc)(nil),             // 97: keleustes.node.v1.LibraryDoc
+	(*LibraryFile)(nil),            // 98: keleustes.node.v1.LibraryFile
+	(*LibraryReceipt)(nil),         // 99: keleustes.node.v1.LibraryReceipt
+	(*LibraryInventory)(nil),       // 100: keleustes.node.v1.LibraryInventory
+	(*LibraryVerdicts)(nil),        // 101: keleustes.node.v1.LibraryVerdicts
+	(*LibraryVerdict)(nil),         // 102: keleustes.node.v1.LibraryVerdict
+	(*ForgePart)(nil),              // 103: keleustes.node.v1.ForgePart
+	(*ForgeRequest)(nil),           // 104: keleustes.node.v1.ForgeRequest
+	(*ForgeFiled)(nil),             // 105: keleustes.node.v1.ForgeFiled
+	(*LibraryScanReport)(nil),      // 106: keleustes.node.v1.LibraryScanReport
+	(*HarnessCaveat)(nil),          // 107: keleustes.node.v1.HarnessCaveat
+	(*HarnessTiming)(nil),          // 108: keleustes.node.v1.HarnessTiming
+	(*PlanLimit)(nil),              // 109: keleustes.node.v1.PlanLimit
+	(*BudgetPush)(nil),             // 110: keleustes.node.v1.BudgetPush
+	(*KnowledgeSearchRequest)(nil), // 111: keleustes.node.v1.KnowledgeSearchRequest
+	(*KnowledgeHit)(nil),           // 112: keleustes.node.v1.KnowledgeHit
+	(*KnowledgeSearchResult)(nil),  // 113: keleustes.node.v1.KnowledgeSearchResult
+	(*InitDraftRequest)(nil),       // 114: keleustes.node.v1.InitDraftRequest
+	(*InitDraftResult)(nil),        // 115: keleustes.node.v1.InitDraftResult
+	nil,                            // 116: keleustes.node.v1.Dispatch.MemberModelsEntry
+	nil,                            // 117: keleustes.node.v1.Dispatch.PrefsSetEntry
+	nil,                            // 118: keleustes.node.v1.Dispatch.OptionsEntry
 }
 var file_keleustes_node_v1_node_proto_depIdxs = []int32{
 	13,  // 0: keleustes.node.v1.JoinRequest.host:type_name -> keleustes.node.v1.HostAdvert
@@ -10429,153 +10683,157 @@ var file_keleustes_node_v1_node_proto_depIdxs = []int32{
 	10,  // 2: keleustes.node.v1.NodeFrame.heartbeat:type_name -> keleustes.node.v1.Heartbeat
 	13,  // 3: keleustes.node.v1.NodeFrame.host:type_name -> keleustes.node.v1.HostAdvert
 	7,   // 4: keleustes.node.v1.NodeFrame.status:type_name -> keleustes.node.v1.HostStatus
-	75,  // 5: keleustes.node.v1.NodeFrame.attention:type_name -> keleustes.node.v1.AttentionRequest
+	78,  // 5: keleustes.node.v1.NodeFrame.attention:type_name -> keleustes.node.v1.AttentionRequest
 	6,   // 6: keleustes.node.v1.ServerFrame.welcome:type_name -> keleustes.node.v1.Welcome
 	11,  // 7: keleustes.node.v1.ServerFrame.ping:type_name -> keleustes.node.v1.Ping
 	12,  // 8: keleustes.node.v1.ServerFrame.revoked:type_name -> keleustes.node.v1.Revoked
 	19,  // 9: keleustes.node.v1.ServerFrame.dispatch:type_name -> keleustes.node.v1.Dispatch
 	25,  // 10: keleustes.node.v1.ServerFrame.job:type_name -> keleustes.node.v1.Job
 	18,  // 11: keleustes.node.v1.ServerFrame.control:type_name -> keleustes.node.v1.FactoryControl
-	77,  // 12: keleustes.node.v1.ServerFrame.attention_decided:type_name -> keleustes.node.v1.AttentionDecided
+	80,  // 12: keleustes.node.v1.ServerFrame.attention_decided:type_name -> keleustes.node.v1.AttentionDecided
 	18,  // 13: keleustes.node.v1.Welcome.control:type_name -> keleustes.node.v1.FactoryControl
 	8,   // 14: keleustes.node.v1.HostStatus.workers:type_name -> keleustes.node.v1.WorkerStatus
 	9,   // 15: keleustes.node.v1.HostStatus.crew_runs:type_name -> keleustes.node.v1.CrewRunStatus
-	106, // 16: keleustes.node.v1.HostStatus.plan_limits:type_name -> keleustes.node.v1.PlanLimit
+	109, // 16: keleustes.node.v1.HostStatus.plan_limits:type_name -> keleustes.node.v1.PlanLimit
 	14,  // 17: keleustes.node.v1.HostAdvert.capabilities:type_name -> keleustes.node.v1.Capabilities
-	92,  // 18: keleustes.node.v1.HostAdvert.inventory:type_name -> keleustes.node.v1.LibraryRef
+	95,  // 18: keleustes.node.v1.HostAdvert.inventory:type_name -> keleustes.node.v1.LibraryRef
 	17,  // 19: keleustes.node.v1.HostAdvert.agent_routes:type_name -> keleustes.node.v1.AgentRoute
-	78,  // 20: keleustes.node.v1.HostAdvert.harnesses:type_name -> keleustes.node.v1.Harness
+	81,  // 20: keleustes.node.v1.HostAdvert.harnesses:type_name -> keleustes.node.v1.Harness
 	16,  // 21: keleustes.node.v1.Capabilities.models:type_name -> keleustes.node.v1.ProviderModels
 	15,  // 22: keleustes.node.v1.Capabilities.forges:type_name -> keleustes.node.v1.ForgeLogin
 	27,  // 23: keleustes.node.v1.Dispatch.vault:type_name -> keleustes.node.v1.VaultGrant
 	21,  // 24: keleustes.node.v1.Dispatch.trigger:type_name -> keleustes.node.v1.Trigger
 	22,  // 25: keleustes.node.v1.Dispatch.budget:type_name -> keleustes.node.v1.WorkerBudget
-	113, // 26: keleustes.node.v1.Dispatch.member_models:type_name -> keleustes.node.v1.Dispatch.MemberModelsEntry
+	116, // 26: keleustes.node.v1.Dispatch.member_models:type_name -> keleustes.node.v1.Dispatch.MemberModelsEntry
 	23,  // 27: keleustes.node.v1.Dispatch.clone:type_name -> keleustes.node.v1.CloneSpec
 	24,  // 28: keleustes.node.v1.Dispatch.control:type_name -> keleustes.node.v1.CrewControl
-	92,  // 29: keleustes.node.v1.Dispatch.library:type_name -> keleustes.node.v1.LibraryRef
-	114, // 30: keleustes.node.v1.Dispatch.prefs_set:type_name -> keleustes.node.v1.Dispatch.PrefsSetEntry
-	115, // 31: keleustes.node.v1.Dispatch.options:type_name -> keleustes.node.v1.Dispatch.OptionsEntry
-	107, // 32: keleustes.node.v1.Dispatch.budget_push:type_name -> keleustes.node.v1.BudgetPush
+	95,  // 29: keleustes.node.v1.Dispatch.library:type_name -> keleustes.node.v1.LibraryRef
+	117, // 30: keleustes.node.v1.Dispatch.prefs_set:type_name -> keleustes.node.v1.Dispatch.PrefsSetEntry
+	118, // 31: keleustes.node.v1.Dispatch.options:type_name -> keleustes.node.v1.Dispatch.OptionsEntry
+	110, // 32: keleustes.node.v1.Dispatch.budget_push:type_name -> keleustes.node.v1.BudgetPush
 	20,  // 33: keleustes.node.v1.Dispatch.adhoc:type_name -> keleustes.node.v1.AdhocWorker
-	27,  // 34: keleustes.node.v1.Job.vault:type_name -> keleustes.node.v1.VaultGrant
-	29,  // 35: keleustes.node.v1.VaultGrant.secrets:type_name -> keleustes.node.v1.VaultSecret
-	28,  // 36: keleustes.node.v1.VaultGrant.mcp:type_name -> keleustes.node.v1.McpSecret
-	32,  // 37: keleustes.node.v1.SessionUpsert.pending_ask:type_name -> keleustes.node.v1.PendingAsk
-	34,  // 38: keleustes.node.v1.SessionUpsert.accepts:type_name -> keleustes.node.v1.SessionAccepts
-	35,  // 39: keleustes.node.v1.SessionUpsert.git:type_name -> keleustes.node.v1.GitFacts
-	36,  // 40: keleustes.node.v1.SessionUpsert.usage:type_name -> keleustes.node.v1.ModelUsage
-	106, // 41: keleustes.node.v1.SessionUpsert.plan_limits:type_name -> keleustes.node.v1.PlanLimit
-	31,  // 42: keleustes.node.v1.SessionUpsert.checkpoints:type_name -> keleustes.node.v1.Checkpoint
-	33,  // 43: keleustes.node.v1.PendingAsk.options:type_name -> keleustes.node.v1.AskOption
-	38,  // 44: keleustes.node.v1.SessionEntries.entries:type_name -> keleustes.node.v1.Entry
-	36,  // 45: keleustes.node.v1.SessionEnd.usage:type_name -> keleustes.node.v1.ModelUsage
-	105, // 46: keleustes.node.v1.SessionEnd.timing:type_name -> keleustes.node.v1.HarnessTiming
-	43,  // 47: keleustes.node.v1.InboxItem.prompt:type_name -> keleustes.node.v1.Prompt
-	44,  // 48: keleustes.node.v1.InboxItem.answer:type_name -> keleustes.node.v1.Answer
-	45,  // 49: keleustes.node.v1.InboxItem.command:type_name -> keleustes.node.v1.Command
-	50,  // 50: keleustes.node.v1.AuditBatch.lines:type_name -> keleustes.node.v1.AuditLine
-	51,  // 51: keleustes.node.v1.KanbanPage.items:type_name -> keleustes.node.v1.KanbanItem
-	51,  // 52: keleustes.node.v1.KanbanBatch.items:type_name -> keleustes.node.v1.KanbanItem
-	51,  // 53: keleustes.node.v1.KanbanPushResult.accepted:type_name -> keleustes.node.v1.KanbanItem
-	51,  // 54: keleustes.node.v1.KanbanPushResult.conflicts:type_name -> keleustes.node.v1.KanbanItem
-	56,  // 55: keleustes.node.v1.MemoryPage.notes:type_name -> keleustes.node.v1.MemoryNote
-	64,  // 56: keleustes.node.v1.TeleportPart.header:type_name -> keleustes.node.v1.TeleportHeader
-	92,  // 57: keleustes.node.v1.TeleportHeader.needs:type_name -> keleustes.node.v1.LibraryRef
-	69,  // 58: keleustes.node.v1.NodeList.nodes:type_name -> keleustes.node.v1.NodeSummary
-	19,  // 59: keleustes.node.v1.DispatchRequest.spec:type_name -> keleustes.node.v1.Dispatch
-	104, // 60: keleustes.node.v1.Harness.caveats:type_name -> keleustes.node.v1.HarnessCaveat
-	80,  // 61: keleustes.node.v1.A2APeerList.peers:type_name -> keleustes.node.v1.A2APeer
-	83,  // 62: keleustes.node.v1.ScreenUp.open:type_name -> keleustes.node.v1.ScreenOpen
-	84,  // 63: keleustes.node.v1.ScreenUp.size:type_name -> keleustes.node.v1.ScreenSize
-	85,  // 64: keleustes.node.v1.ScreenUp.exit:type_name -> keleustes.node.v1.ScreenExit
-	84,  // 65: keleustes.node.v1.ScreenOpen.size:type_name -> keleustes.node.v1.ScreenSize
-	84,  // 66: keleustes.node.v1.ScreenDown.resize:type_name -> keleustes.node.v1.ScreenSize
-	87,  // 67: keleustes.node.v1.SchedulePage.items:type_name -> keleustes.node.v1.ScheduleItem
-	87,  // 68: keleustes.node.v1.ScheduleBatch.items:type_name -> keleustes.node.v1.ScheduleItem
-	87,  // 69: keleustes.node.v1.SchedulePushResult.accepted:type_name -> keleustes.node.v1.ScheduleItem
-	87,  // 70: keleustes.node.v1.SchedulePushResult.conflicts:type_name -> keleustes.node.v1.ScheduleItem
-	92,  // 71: keleustes.node.v1.LibraryFetch.ref:type_name -> keleustes.node.v1.LibraryRef
-	92,  // 72: keleustes.node.v1.LibraryDoc.ref:type_name -> keleustes.node.v1.LibraryRef
-	95,  // 73: keleustes.node.v1.LibraryDoc.files:type_name -> keleustes.node.v1.LibraryFile
-	92,  // 74: keleustes.node.v1.LibraryReceipt.stored:type_name -> keleustes.node.v1.LibraryRef
-	92,  // 75: keleustes.node.v1.LibraryInventory.items:type_name -> keleustes.node.v1.LibraryRef
-	99,  // 76: keleustes.node.v1.LibraryVerdicts.verdicts:type_name -> keleustes.node.v1.LibraryVerdict
-	92,  // 77: keleustes.node.v1.LibraryVerdict.ref:type_name -> keleustes.node.v1.LibraryRef
-	101, // 78: keleustes.node.v1.ForgePart.request:type_name -> keleustes.node.v1.ForgeRequest
-	92,  // 79: keleustes.node.v1.LibraryScanReport.found:type_name -> keleustes.node.v1.LibraryRef
-	109, // 80: keleustes.node.v1.KnowledgeSearchResult.hits:type_name -> keleustes.node.v1.KnowledgeHit
-	1,   // 81: keleustes.node.v1.Node.Join:input_type -> keleustes.node.v1.JoinRequest
-	3,   // 82: keleustes.node.v1.Node.Link:input_type -> keleustes.node.v1.NodeFrame
-	30,  // 83: keleustes.node.v1.Sessions.Upsert:input_type -> keleustes.node.v1.SessionUpsert
-	37,  // 84: keleustes.node.v1.Sessions.Append:input_type -> keleustes.node.v1.SessionEntries
-	40,  // 85: keleustes.node.v1.Sessions.End:input_type -> keleustes.node.v1.SessionEnd
-	41,  // 86: keleustes.node.v1.Sessions.Inbox:input_type -> keleustes.node.v1.InboxRequest
-	46,  // 87: keleustes.node.v1.Sessions.Ack:input_type -> keleustes.node.v1.InboxAck
-	47,  // 88: keleustes.node.v1.Sessions.Audit:input_type -> keleustes.node.v1.AuditBatch
-	48,  // 89: keleustes.node.v1.Sessions.AuditHead:input_type -> keleustes.node.v1.AuditStreamRequest
-	52,  // 90: keleustes.node.v1.Board.KanbanPull:input_type -> keleustes.node.v1.KanbanPullRequest
-	54,  // 91: keleustes.node.v1.Board.KanbanPush:input_type -> keleustes.node.v1.KanbanBatch
-	57,  // 92: keleustes.node.v1.Board.MemoryPull:input_type -> keleustes.node.v1.MemoryPullRequest
-	56,  // 93: keleustes.node.v1.Board.MemoryPush:input_type -> keleustes.node.v1.MemoryNote
-	59,  // 94: keleustes.node.v1.Board.A2ASend:input_type -> keleustes.node.v1.A2AEnvelope
-	61,  // 95: keleustes.node.v1.Board.A2AReceive:input_type -> keleustes.node.v1.A2AReceiveRequest
-	62,  // 96: keleustes.node.v1.Board.State:input_type -> keleustes.node.v1.StateRequest
-	75,  // 97: keleustes.node.v1.Board.Attention:input_type -> keleustes.node.v1.AttentionRequest
-	79,  // 98: keleustes.node.v1.Board.A2APeers:input_type -> keleustes.node.v1.A2APeersRequest
-	88,  // 99: keleustes.node.v1.Board.SchedulePull:input_type -> keleustes.node.v1.SchedulePullRequest
-	90,  // 100: keleustes.node.v1.Board.SchedulePush:input_type -> keleustes.node.v1.ScheduleBatch
-	26,  // 101: keleustes.node.v1.Jobs.Complete:input_type -> keleustes.node.v1.JobResult
-	63,  // 102: keleustes.node.v1.Teleport.Upload:input_type -> keleustes.node.v1.TeleportPart
-	66,  // 103: keleustes.node.v1.Teleport.Download:input_type -> keleustes.node.v1.TeleportRequest
-	100, // 104: keleustes.node.v1.Forge.File:input_type -> keleustes.node.v1.ForgePart
-	93,  // 105: keleustes.node.v1.Library.Fetch:input_type -> keleustes.node.v1.LibraryFetch
-	94,  // 106: keleustes.node.v1.Library.Backup:input_type -> keleustes.node.v1.LibraryDoc
-	97,  // 107: keleustes.node.v1.Library.Reconcile:input_type -> keleustes.node.v1.LibraryInventory
-	103, // 108: keleustes.node.v1.Library.ScanReport:input_type -> keleustes.node.v1.LibraryScanReport
-	82,  // 109: keleustes.node.v1.Screen.Stream:input_type -> keleustes.node.v1.ScreenUp
-	67,  // 110: keleustes.node.v1.Fleet.Nodes:input_type -> keleustes.node.v1.NodesRequest
-	70,  // 111: keleustes.node.v1.Fleet.Request:input_type -> keleustes.node.v1.DispatchRequest
-	72,  // 112: keleustes.node.v1.Fleet.Watch:input_type -> keleustes.node.v1.WatchRequest
-	74,  // 113: keleustes.node.v1.Fleet.Prompt:input_type -> keleustes.node.v1.PeerPrompt
-	2,   // 114: keleustes.node.v1.Node.Join:output_type -> keleustes.node.v1.JoinResponse
-	4,   // 115: keleustes.node.v1.Node.Link:output_type -> keleustes.node.v1.ServerFrame
-	0,   // 116: keleustes.node.v1.Sessions.Upsert:output_type -> keleustes.node.v1.Ok
-	39,  // 117: keleustes.node.v1.Sessions.Append:output_type -> keleustes.node.v1.AppendResult
-	0,   // 118: keleustes.node.v1.Sessions.End:output_type -> keleustes.node.v1.Ok
-	42,  // 119: keleustes.node.v1.Sessions.Inbox:output_type -> keleustes.node.v1.InboxItem
-	0,   // 120: keleustes.node.v1.Sessions.Ack:output_type -> keleustes.node.v1.Ok
-	0,   // 121: keleustes.node.v1.Sessions.Audit:output_type -> keleustes.node.v1.Ok
-	49,  // 122: keleustes.node.v1.Sessions.AuditHead:output_type -> keleustes.node.v1.AuditStreamHead
-	53,  // 123: keleustes.node.v1.Board.KanbanPull:output_type -> keleustes.node.v1.KanbanPage
-	55,  // 124: keleustes.node.v1.Board.KanbanPush:output_type -> keleustes.node.v1.KanbanPushResult
-	58,  // 125: keleustes.node.v1.Board.MemoryPull:output_type -> keleustes.node.v1.MemoryPage
-	56,  // 126: keleustes.node.v1.Board.MemoryPush:output_type -> keleustes.node.v1.MemoryNote
-	60,  // 127: keleustes.node.v1.Board.A2ASend:output_type -> keleustes.node.v1.A2ASendResult
-	59,  // 128: keleustes.node.v1.Board.A2AReceive:output_type -> keleustes.node.v1.A2AEnvelope
-	18,  // 129: keleustes.node.v1.Board.State:output_type -> keleustes.node.v1.FactoryControl
-	76,  // 130: keleustes.node.v1.Board.Attention:output_type -> keleustes.node.v1.AttentionReceipt
-	81,  // 131: keleustes.node.v1.Board.A2APeers:output_type -> keleustes.node.v1.A2APeerList
-	89,  // 132: keleustes.node.v1.Board.SchedulePull:output_type -> keleustes.node.v1.SchedulePage
-	91,  // 133: keleustes.node.v1.Board.SchedulePush:output_type -> keleustes.node.v1.SchedulePushResult
-	0,   // 134: keleustes.node.v1.Jobs.Complete:output_type -> keleustes.node.v1.Ok
-	65,  // 135: keleustes.node.v1.Teleport.Upload:output_type -> keleustes.node.v1.TeleportReceipt
-	63,  // 136: keleustes.node.v1.Teleport.Download:output_type -> keleustes.node.v1.TeleportPart
-	102, // 137: keleustes.node.v1.Forge.File:output_type -> keleustes.node.v1.ForgeFiled
-	94,  // 138: keleustes.node.v1.Library.Fetch:output_type -> keleustes.node.v1.LibraryDoc
-	96,  // 139: keleustes.node.v1.Library.Backup:output_type -> keleustes.node.v1.LibraryReceipt
-	98,  // 140: keleustes.node.v1.Library.Reconcile:output_type -> keleustes.node.v1.LibraryVerdicts
-	0,   // 141: keleustes.node.v1.Library.ScanReport:output_type -> keleustes.node.v1.Ok
-	86,  // 142: keleustes.node.v1.Screen.Stream:output_type -> keleustes.node.v1.ScreenDown
-	68,  // 143: keleustes.node.v1.Fleet.Nodes:output_type -> keleustes.node.v1.NodeList
-	71,  // 144: keleustes.node.v1.Fleet.Request:output_type -> keleustes.node.v1.DispatchTicket
-	73,  // 145: keleustes.node.v1.Fleet.Watch:output_type -> keleustes.node.v1.DispatchStatus
-	71,  // 146: keleustes.node.v1.Fleet.Prompt:output_type -> keleustes.node.v1.DispatchTicket
-	114, // [114:147] is the sub-list for method output_type
-	81,  // [81:114] is the sub-list for method input_type
-	81,  // [81:81] is the sub-list for extension type_name
-	81,  // [81:81] is the sub-list for extension extendee
-	0,   // [0:81] is the sub-list for field type_name
+	44,  // 34: keleustes.node.v1.Dispatch.attachments:type_name -> keleustes.node.v1.Attachment
+	27,  // 35: keleustes.node.v1.Job.vault:type_name -> keleustes.node.v1.VaultGrant
+	29,  // 36: keleustes.node.v1.VaultGrant.secrets:type_name -> keleustes.node.v1.VaultSecret
+	28,  // 37: keleustes.node.v1.VaultGrant.mcp:type_name -> keleustes.node.v1.McpSecret
+	32,  // 38: keleustes.node.v1.SessionUpsert.pending_ask:type_name -> keleustes.node.v1.PendingAsk
+	34,  // 39: keleustes.node.v1.SessionUpsert.accepts:type_name -> keleustes.node.v1.SessionAccepts
+	35,  // 40: keleustes.node.v1.SessionUpsert.git:type_name -> keleustes.node.v1.GitFacts
+	36,  // 41: keleustes.node.v1.SessionUpsert.usage:type_name -> keleustes.node.v1.ModelUsage
+	109, // 42: keleustes.node.v1.SessionUpsert.plan_limits:type_name -> keleustes.node.v1.PlanLimit
+	31,  // 43: keleustes.node.v1.SessionUpsert.checkpoints:type_name -> keleustes.node.v1.Checkpoint
+	33,  // 44: keleustes.node.v1.PendingAsk.options:type_name -> keleustes.node.v1.AskOption
+	38,  // 45: keleustes.node.v1.SessionEntries.entries:type_name -> keleustes.node.v1.Entry
+	36,  // 46: keleustes.node.v1.SessionEnd.usage:type_name -> keleustes.node.v1.ModelUsage
+	108, // 47: keleustes.node.v1.SessionEnd.timing:type_name -> keleustes.node.v1.HarnessTiming
+	43,  // 48: keleustes.node.v1.InboxItem.prompt:type_name -> keleustes.node.v1.Prompt
+	47,  // 49: keleustes.node.v1.InboxItem.answer:type_name -> keleustes.node.v1.Answer
+	48,  // 50: keleustes.node.v1.InboxItem.command:type_name -> keleustes.node.v1.Command
+	44,  // 51: keleustes.node.v1.Prompt.attachments:type_name -> keleustes.node.v1.Attachment
+	53,  // 52: keleustes.node.v1.AuditBatch.lines:type_name -> keleustes.node.v1.AuditLine
+	54,  // 53: keleustes.node.v1.KanbanPage.items:type_name -> keleustes.node.v1.KanbanItem
+	54,  // 54: keleustes.node.v1.KanbanBatch.items:type_name -> keleustes.node.v1.KanbanItem
+	54,  // 55: keleustes.node.v1.KanbanPushResult.accepted:type_name -> keleustes.node.v1.KanbanItem
+	54,  // 56: keleustes.node.v1.KanbanPushResult.conflicts:type_name -> keleustes.node.v1.KanbanItem
+	59,  // 57: keleustes.node.v1.MemoryPage.notes:type_name -> keleustes.node.v1.MemoryNote
+	67,  // 58: keleustes.node.v1.TeleportPart.header:type_name -> keleustes.node.v1.TeleportHeader
+	95,  // 59: keleustes.node.v1.TeleportHeader.needs:type_name -> keleustes.node.v1.LibraryRef
+	72,  // 60: keleustes.node.v1.NodeList.nodes:type_name -> keleustes.node.v1.NodeSummary
+	19,  // 61: keleustes.node.v1.DispatchRequest.spec:type_name -> keleustes.node.v1.Dispatch
+	107, // 62: keleustes.node.v1.Harness.caveats:type_name -> keleustes.node.v1.HarnessCaveat
+	83,  // 63: keleustes.node.v1.A2APeerList.peers:type_name -> keleustes.node.v1.A2APeer
+	86,  // 64: keleustes.node.v1.ScreenUp.open:type_name -> keleustes.node.v1.ScreenOpen
+	87,  // 65: keleustes.node.v1.ScreenUp.size:type_name -> keleustes.node.v1.ScreenSize
+	88,  // 66: keleustes.node.v1.ScreenUp.exit:type_name -> keleustes.node.v1.ScreenExit
+	87,  // 67: keleustes.node.v1.ScreenOpen.size:type_name -> keleustes.node.v1.ScreenSize
+	87,  // 68: keleustes.node.v1.ScreenDown.resize:type_name -> keleustes.node.v1.ScreenSize
+	90,  // 69: keleustes.node.v1.SchedulePage.items:type_name -> keleustes.node.v1.ScheduleItem
+	90,  // 70: keleustes.node.v1.ScheduleBatch.items:type_name -> keleustes.node.v1.ScheduleItem
+	90,  // 71: keleustes.node.v1.SchedulePushResult.accepted:type_name -> keleustes.node.v1.ScheduleItem
+	90,  // 72: keleustes.node.v1.SchedulePushResult.conflicts:type_name -> keleustes.node.v1.ScheduleItem
+	95,  // 73: keleustes.node.v1.LibraryFetch.ref:type_name -> keleustes.node.v1.LibraryRef
+	95,  // 74: keleustes.node.v1.LibraryDoc.ref:type_name -> keleustes.node.v1.LibraryRef
+	98,  // 75: keleustes.node.v1.LibraryDoc.files:type_name -> keleustes.node.v1.LibraryFile
+	95,  // 76: keleustes.node.v1.LibraryReceipt.stored:type_name -> keleustes.node.v1.LibraryRef
+	95,  // 77: keleustes.node.v1.LibraryInventory.items:type_name -> keleustes.node.v1.LibraryRef
+	102, // 78: keleustes.node.v1.LibraryVerdicts.verdicts:type_name -> keleustes.node.v1.LibraryVerdict
+	95,  // 79: keleustes.node.v1.LibraryVerdict.ref:type_name -> keleustes.node.v1.LibraryRef
+	104, // 80: keleustes.node.v1.ForgePart.request:type_name -> keleustes.node.v1.ForgeRequest
+	95,  // 81: keleustes.node.v1.LibraryScanReport.found:type_name -> keleustes.node.v1.LibraryRef
+	112, // 82: keleustes.node.v1.KnowledgeSearchResult.hits:type_name -> keleustes.node.v1.KnowledgeHit
+	1,   // 83: keleustes.node.v1.Node.Join:input_type -> keleustes.node.v1.JoinRequest
+	3,   // 84: keleustes.node.v1.Node.Link:input_type -> keleustes.node.v1.NodeFrame
+	30,  // 85: keleustes.node.v1.Sessions.Upsert:input_type -> keleustes.node.v1.SessionUpsert
+	37,  // 86: keleustes.node.v1.Sessions.Append:input_type -> keleustes.node.v1.SessionEntries
+	40,  // 87: keleustes.node.v1.Sessions.End:input_type -> keleustes.node.v1.SessionEnd
+	41,  // 88: keleustes.node.v1.Sessions.Inbox:input_type -> keleustes.node.v1.InboxRequest
+	49,  // 89: keleustes.node.v1.Sessions.Ack:input_type -> keleustes.node.v1.InboxAck
+	50,  // 90: keleustes.node.v1.Sessions.Audit:input_type -> keleustes.node.v1.AuditBatch
+	51,  // 91: keleustes.node.v1.Sessions.AuditHead:input_type -> keleustes.node.v1.AuditStreamRequest
+	45,  // 92: keleustes.node.v1.Sessions.FetchAttachment:input_type -> keleustes.node.v1.AttachmentRequest
+	55,  // 93: keleustes.node.v1.Board.KanbanPull:input_type -> keleustes.node.v1.KanbanPullRequest
+	57,  // 94: keleustes.node.v1.Board.KanbanPush:input_type -> keleustes.node.v1.KanbanBatch
+	60,  // 95: keleustes.node.v1.Board.MemoryPull:input_type -> keleustes.node.v1.MemoryPullRequest
+	59,  // 96: keleustes.node.v1.Board.MemoryPush:input_type -> keleustes.node.v1.MemoryNote
+	62,  // 97: keleustes.node.v1.Board.A2ASend:input_type -> keleustes.node.v1.A2AEnvelope
+	64,  // 98: keleustes.node.v1.Board.A2AReceive:input_type -> keleustes.node.v1.A2AReceiveRequest
+	65,  // 99: keleustes.node.v1.Board.State:input_type -> keleustes.node.v1.StateRequest
+	78,  // 100: keleustes.node.v1.Board.Attention:input_type -> keleustes.node.v1.AttentionRequest
+	82,  // 101: keleustes.node.v1.Board.A2APeers:input_type -> keleustes.node.v1.A2APeersRequest
+	91,  // 102: keleustes.node.v1.Board.SchedulePull:input_type -> keleustes.node.v1.SchedulePullRequest
+	93,  // 103: keleustes.node.v1.Board.SchedulePush:input_type -> keleustes.node.v1.ScheduleBatch
+	26,  // 104: keleustes.node.v1.Jobs.Complete:input_type -> keleustes.node.v1.JobResult
+	66,  // 105: keleustes.node.v1.Teleport.Upload:input_type -> keleustes.node.v1.TeleportPart
+	69,  // 106: keleustes.node.v1.Teleport.Download:input_type -> keleustes.node.v1.TeleportRequest
+	103, // 107: keleustes.node.v1.Forge.File:input_type -> keleustes.node.v1.ForgePart
+	96,  // 108: keleustes.node.v1.Library.Fetch:input_type -> keleustes.node.v1.LibraryFetch
+	97,  // 109: keleustes.node.v1.Library.Backup:input_type -> keleustes.node.v1.LibraryDoc
+	100, // 110: keleustes.node.v1.Library.Reconcile:input_type -> keleustes.node.v1.LibraryInventory
+	106, // 111: keleustes.node.v1.Library.ScanReport:input_type -> keleustes.node.v1.LibraryScanReport
+	85,  // 112: keleustes.node.v1.Screen.Stream:input_type -> keleustes.node.v1.ScreenUp
+	70,  // 113: keleustes.node.v1.Fleet.Nodes:input_type -> keleustes.node.v1.NodesRequest
+	73,  // 114: keleustes.node.v1.Fleet.Request:input_type -> keleustes.node.v1.DispatchRequest
+	75,  // 115: keleustes.node.v1.Fleet.Watch:input_type -> keleustes.node.v1.WatchRequest
+	77,  // 116: keleustes.node.v1.Fleet.Prompt:input_type -> keleustes.node.v1.PeerPrompt
+	2,   // 117: keleustes.node.v1.Node.Join:output_type -> keleustes.node.v1.JoinResponse
+	4,   // 118: keleustes.node.v1.Node.Link:output_type -> keleustes.node.v1.ServerFrame
+	0,   // 119: keleustes.node.v1.Sessions.Upsert:output_type -> keleustes.node.v1.Ok
+	39,  // 120: keleustes.node.v1.Sessions.Append:output_type -> keleustes.node.v1.AppendResult
+	0,   // 121: keleustes.node.v1.Sessions.End:output_type -> keleustes.node.v1.Ok
+	42,  // 122: keleustes.node.v1.Sessions.Inbox:output_type -> keleustes.node.v1.InboxItem
+	0,   // 123: keleustes.node.v1.Sessions.Ack:output_type -> keleustes.node.v1.Ok
+	0,   // 124: keleustes.node.v1.Sessions.Audit:output_type -> keleustes.node.v1.Ok
+	52,  // 125: keleustes.node.v1.Sessions.AuditHead:output_type -> keleustes.node.v1.AuditStreamHead
+	46,  // 126: keleustes.node.v1.Sessions.FetchAttachment:output_type -> keleustes.node.v1.AttachmentPart
+	56,  // 127: keleustes.node.v1.Board.KanbanPull:output_type -> keleustes.node.v1.KanbanPage
+	58,  // 128: keleustes.node.v1.Board.KanbanPush:output_type -> keleustes.node.v1.KanbanPushResult
+	61,  // 129: keleustes.node.v1.Board.MemoryPull:output_type -> keleustes.node.v1.MemoryPage
+	59,  // 130: keleustes.node.v1.Board.MemoryPush:output_type -> keleustes.node.v1.MemoryNote
+	63,  // 131: keleustes.node.v1.Board.A2ASend:output_type -> keleustes.node.v1.A2ASendResult
+	62,  // 132: keleustes.node.v1.Board.A2AReceive:output_type -> keleustes.node.v1.A2AEnvelope
+	18,  // 133: keleustes.node.v1.Board.State:output_type -> keleustes.node.v1.FactoryControl
+	79,  // 134: keleustes.node.v1.Board.Attention:output_type -> keleustes.node.v1.AttentionReceipt
+	84,  // 135: keleustes.node.v1.Board.A2APeers:output_type -> keleustes.node.v1.A2APeerList
+	92,  // 136: keleustes.node.v1.Board.SchedulePull:output_type -> keleustes.node.v1.SchedulePage
+	94,  // 137: keleustes.node.v1.Board.SchedulePush:output_type -> keleustes.node.v1.SchedulePushResult
+	0,   // 138: keleustes.node.v1.Jobs.Complete:output_type -> keleustes.node.v1.Ok
+	68,  // 139: keleustes.node.v1.Teleport.Upload:output_type -> keleustes.node.v1.TeleportReceipt
+	66,  // 140: keleustes.node.v1.Teleport.Download:output_type -> keleustes.node.v1.TeleportPart
+	105, // 141: keleustes.node.v1.Forge.File:output_type -> keleustes.node.v1.ForgeFiled
+	97,  // 142: keleustes.node.v1.Library.Fetch:output_type -> keleustes.node.v1.LibraryDoc
+	99,  // 143: keleustes.node.v1.Library.Backup:output_type -> keleustes.node.v1.LibraryReceipt
+	101, // 144: keleustes.node.v1.Library.Reconcile:output_type -> keleustes.node.v1.LibraryVerdicts
+	0,   // 145: keleustes.node.v1.Library.ScanReport:output_type -> keleustes.node.v1.Ok
+	89,  // 146: keleustes.node.v1.Screen.Stream:output_type -> keleustes.node.v1.ScreenDown
+	71,  // 147: keleustes.node.v1.Fleet.Nodes:output_type -> keleustes.node.v1.NodeList
+	74,  // 148: keleustes.node.v1.Fleet.Request:output_type -> keleustes.node.v1.DispatchTicket
+	76,  // 149: keleustes.node.v1.Fleet.Watch:output_type -> keleustes.node.v1.DispatchStatus
+	74,  // 150: keleustes.node.v1.Fleet.Prompt:output_type -> keleustes.node.v1.DispatchTicket
+	117, // [117:151] is the sub-list for method output_type
+	83,  // [83:117] is the sub-list for method input_type
+	83,  // [83:83] is the sub-list for extension type_name
+	83,  // [83:83] is the sub-list for extension extendee
+	0,   // [0:83] is the sub-list for field type_name
 }
 
 func init() { file_keleustes_node_v1_node_proto_init() }
@@ -10605,13 +10863,13 @@ func file_keleustes_node_v1_node_proto_init() {
 		(*InboxItem_Answer)(nil),
 		(*InboxItem_Command)(nil),
 	}
-	file_keleustes_node_v1_node_proto_msgTypes[82].OneofWrappers = []any{
+	file_keleustes_node_v1_node_proto_msgTypes[85].OneofWrappers = []any{
 		(*ScreenUp_Open)(nil),
 		(*ScreenUp_Output)(nil),
 		(*ScreenUp_Size)(nil),
 		(*ScreenUp_Exit)(nil),
 	}
-	file_keleustes_node_v1_node_proto_msgTypes[86].OneofWrappers = []any{
+	file_keleustes_node_v1_node_proto_msgTypes[89].OneofWrappers = []any{
 		(*ScreenDown_Resize)(nil),
 		(*ScreenDown_Pause)(nil),
 	}
@@ -10621,7 +10879,7 @@ func file_keleustes_node_v1_node_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_keleustes_node_v1_node_proto_rawDesc), len(file_keleustes_node_v1_node_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   116,
+			NumMessages:   119,
 			NumExtensions: 0,
 			NumServices:   9,
 		},

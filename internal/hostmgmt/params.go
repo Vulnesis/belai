@@ -27,6 +27,17 @@ var (
 	keyRE     = regexp.MustCompile(`^[a-z][a-z0-9_]*(\.[A-Za-z0-9_:.-]+)*$`)
 )
 
+var uuidRE = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// pUUID takes a UUID, such as a sensor profile id: the enroll API refuses
+// anything else, so a wrong value fails at preview, before any root step.
+func pUUID(_ *call, v string) (string, error) {
+	if !uuidRE.MatchString(v) {
+		return "", errors.New("takes an id such as a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+	}
+	return strings.ToLower(v), nil
+}
+
 func pIdent(_ *call, v string) (string, error) {
 	if !identRE.MatchString(v) || strings.HasPrefix(v, "-") {
 		return "", errors.New("not an identifier")

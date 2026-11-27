@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/checkpoint"
+	"github.com/vulnetix/belai/internal/headless"
 	"github.com/vulnetix/belai/internal/rolemanager"
 	"github.com/vulnetix/belai/internal/run"
 	"github.com/vulnetix/belai/internal/sanitize"
@@ -92,13 +94,23 @@ type relayReview struct {
 }
 
 // auditAction records one console action and its outcome. Ids and words only.
-func auditAction(a *Actions, name, status string) {
+func auditAction(a *Actions, name, status string) { auditFacts(a, name, status, "", nil) }
+
+// auditFacts is auditAction with the action's own facts (ids and counts, on
+// the audit allowlist). item is the Keleustes inbox item the action came in,
+// which Keleustes audits with the person or agent who queued it.
+func auditFacts(a *Actions, name, status, item string, facts map[string]string) {
 	sid := ""
 	if a != nil {
 		sid = a.SessionID
 	}
-	audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorWeb, SessionID: sid, Outcome: status,
-		Data: map[string]string{"dispatch": "session_action", "action": name, "status": status}})
+	data := map[string]string{"dispatch": "session_action", "action": name, "status": status}
+	for k, v := range facts {
+		if _, taken := data[k]; !taken && v != "" {
+			data[k] = v
+		}
+	}
+	audit.Emit(audit.Fact{Kind: audit.HostDispatch, ActorKind: audit.ActorWeb, SessionID: sid, ItemID: item, Outcome: status, Data: data})
 }
 
 // actionState is what an action may change in the session loop.
@@ -215,44 +227,42 @@ func runAction(ctx context.Context, o SessionOptions, c sessionsync.RemoteComman
 		if t == nil {
 			return refuse(c.Action + ": file checkpoints are off in this session")
 		}
-		var id string
+		var info checkpoint.Info
 		if c.Action == "undo" {
 			if text != "" {
 				return refuse("undo takes no argument")
 			}
-			info, ok := t.Latest()
-			if !ok {
+			var ok bool
+			if info, ok = t.Latest(); !ok {
 				return refuse("undo: nothing to undo")
 			}
-			id = info.ID
 		} else {
 			if text == "" || strings.ContainsAny(text, " \t") {
 				return refuse("rewind names one checkpoint")
 			}
-			id = text
-			if !slices.ContainsFunc(t.List(), func(i checkpoint.Info) bool { return i.ID == id }) {
+			list := t.List()
+			i := slices.IndexFunc(list, func(i checkpoint.Info) bool { return i.ID == text })
+			if i < 0 {
 				return refuse("this session has no such checkpoint")
 			}
+			info = list[i]
 		}
-		plan, err := t.Plan(id)
-		if err != nil {
-			return refuse(sanitize.Line(err.Error(), 200))
+		r, why := restoreTo(o, c, t, info, c.Action == "rewind")
+		if why != "" {
+			return refuse(why)
 		}
-		if len(plan.Changes) == 0 {
-			return refuse(c.Action + ": the files already match that checkpoint")
+		if r.history != nil {
+			// A handoff drafted from the old conversation no longer fits it.
+			if st.relay != nil {
+				closeRelay(bridge, st.relay, "the conversation was rewound")
+				st.relay = nil
+			}
+			st.history = r.history
 		}
-		res, err := t.Apply(plan)
-		if err != nil {
-			return refuse(sanitize.Line(err.Error(), 200))
-		}
-		msg := fmt.Sprintf("console: %s %s: restored %d, removed %d", c.Action, id, res.Restored, res.Deleted)
-		if res.Skipped > 0 {
-			msg += fmt.Sprintf(", left %d", res.Skipped)
-		}
-		o.Log.System(msg)
 		publishCheckpoints(o)
 		o.Mirror.Nudge()
-		ackAction(o, c, sessionsync.AckAccepted, "")
+		auditFacts(a, c.Action, sessionsync.AckAccepted, c.ID, r.facts)
+		ackCheckout(o, c.ID, sessionsync.AckAccepted, "")
 	case "commit":
 		if a.Commit == nil {
 			return refuse("this session cannot commit")
@@ -291,6 +301,115 @@ func runAction(ctx context.Context, o SessionOptions, c sessionsync.RemoteComman
 		ackAction(o, c, sessionsync.AckAccepted, "")
 	}
 	return st
+}
+
+// restored is what a console undo or rewind changed: the conversation that
+// replaces the session's (nil when it stays) and the facts for audit.
+type restored struct {
+	history []run.Turn
+	facts   map[string]string
+}
+
+// restoreTo is the console's undo and rewind. Both put the files back to
+// checkpoint info. A rewind also returns the conversation to just before that
+// checkpoint's prompt, as the TUI's /rewind "both" does and with the same
+// code: session.RewindPoint picks the point, a branch marker moves the
+// transcript there (the file only grows, so the mirror and Keleustes see the
+// marker and every line after it parents to the chosen point), and the
+// conversation is rebuilt from the chain the way a resume rebuilds it. A
+// checkpoint with no prompt to return to (a safety copy) puts back the files
+// only, as the TUI offers only "code" for it. An undo is files only, like the
+// TUI's /undo. It returns the refusal, or "".
+func restoreTo(o SessionOptions, c sessionsync.RemoteCommand, t *checkpoint.Tracker, info checkpoint.Info, rewind bool) (restored, string) {
+	var (
+		w       = o.Log.Writer()
+		entries []session.Entry
+		prompt  session.Entry
+		leaf    string
+		convOK  bool
+	)
+	if rewind && w != nil {
+		if es, err := w.Entries(); err == nil {
+			entries = es
+			prompt, leaf, convOK = session.RewindPoint(es, info.Entry)
+		}
+	}
+	plan, err := t.Plan(info.ID)
+	if err != nil {
+		return restored{}, sanitize.Line(err.Error(), 200)
+	}
+	if len(plan.Changes) == 0 && !convOK {
+		return restored{}, c.Action + ": the files already match that checkpoint"
+	}
+	facts := map[string]string{"checkpoint": info.ID, "conversation": "unchanged"}
+	var res checkpoint.Result
+	if len(plan.Changes) > 0 {
+		if res, err = t.Apply(plan); err != nil {
+			return restored{}, sanitize.Line(err.Error(), 200)
+		}
+		facts["restored"] = strconv.Itoa(res.Restored)
+		facts["removed"] = strconv.Itoa(res.Deleted)
+		facts["left"] = strconv.Itoa(res.Skipped)
+		facts["safety"] = res.Safety
+	}
+	files := fmt.Sprintf("restored %d, removed %d", res.Restored, res.Deleted)
+	if res.Skipped > 0 {
+		files += fmt.Sprintf(", left %d", res.Skipped)
+	}
+	if !convOK {
+		line := fmt.Sprintf("console: %s %s: %s", c.Action, info.ID, files)
+		if rewind {
+			line += "; the conversation stays (that checkpoint has no prompt to return to)"
+		}
+		o.Log.System(line)
+		return restored{facts: facts}, ""
+	}
+
+	// The conversation: the entries on the chain now that leave it.
+	from := w.Last()
+	before := session.ActivePath(entries)
+	marker := w.Branch(leaf)
+	after, err := w.Entries()
+	if marker == "" || err != nil {
+		why := "rewind: the files were put back, but the conversation could not return to that point"
+		o.Log.System("console: " + why)
+		publishCheckpoints(o)
+		return restored{}, why
+	}
+	path := session.ActivePath(after)
+	kept := make(map[string]bool, len(path))
+	for _, e := range path {
+		kept[e.ID] = true
+	}
+	left, leftTurns := 0, 0
+	for _, e := range before {
+		if !kept[e.ID] {
+			left++
+			if e.Type == "user" {
+				leftTurns++
+			}
+		}
+	}
+	history := headless.TurnsFromEntries(path)
+	facts["conversation"] = "rewound"
+	facts["from"] = from
+	facts["to"] = leaf
+	facts["rewound"] = strconv.Itoa(left)
+	facts["prompts"] = strconv.Itoa(leftTurns)
+	// The provenance line: what was rewound, by which console command, so the
+	// transcript says why the conversation moved. Ids and counts only; the
+	// prompt that goes back for editing is the prompt_entry line itself.
+	meta := map[string]any{"kind": "rewind", "source": "console", "command_id": c.ID, "checkpoint": info.ID,
+		"prompt_entry": prompt.ID, "from_entry": from, "to_entry": leaf, "branch_entry": marker,
+		"entries_rewound": left, "prompts_rewound": leftTurns,
+		"files_restored": res.Restored, "files_removed": res.Deleted, "files_left": res.Skipped}
+	if res.Safety != "" {
+		meta["safety_checkpoint"] = res.Safety
+	}
+	w.Entry(session.Entry{Type: "system", Role: "system", Meta: meta,
+		Content: fmt.Sprintf("console: rewind %s: %s; the conversation returns to before: %s (%d prompts left it)",
+			info.ID, files, sanitize.Line(info.Label, 80), leftTurns)})
+	return restored{history: history, facts: facts}, ""
 }
 
 // continueFrom writes text as the summary the conversation continues from (a

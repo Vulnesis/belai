@@ -90,9 +90,9 @@ func TestEventKeysClosed(t *testing.T) {
 }
 
 func TestDataKeysAllowlist(t *testing.T) {
-	want := []string{"action", "attempt", "candidate", "candidates", "change", "class", "commit", "control", "count", "decision", "digest", "dispatch", "ecosystem", "exit", "files", "forge", "from", "gate",
-		"hops", "id", "justification", "kind", "list", "message_id", "met", "os", "package", "passes", "path", "peer", "plan", "plan_run", "pr", "preview", "previous", "profile", "reason",
-		"regressed", "retries", "rule", "run", "schedule", "severity", "state", "status", "step", "suite", "surface", "target", "to", "tokens", "tool", "total", "version", "worker", "workflow"}
+	want := []string{"action", "attempt", "candidate", "candidates", "change", "checkpoint", "class", "commit", "control", "conversation", "count", "decision", "digest", "dispatch", "ecosystem", "exit", "files", "forge", "from", "gate",
+		"hops", "id", "justification", "kind", "left", "list", "message_id", "met", "os", "package", "passes", "path", "peer", "plan", "plan_run", "pr", "preview", "previous", "profile", "prompts", "reason",
+		"regressed", "removed", "restored", "retries", "rewound", "rule", "run", "safety", "schedule", "severity", "state", "status", "step", "suite", "surface", "target", "to", "tokens", "tool", "total", "version", "worker", "workflow"}
 	if got := DataKeys(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("data keys = %v\nwant       %v", got, want)
 	}

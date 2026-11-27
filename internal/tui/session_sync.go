@@ -318,6 +318,12 @@ func (a *App) handleRemotePrompt(p sessionsync.RemotePrompt) tea.Cmd {
 		a.syncer.Ack(p.ID, sessionsync.AckRefused, "the session is no longer active on the host", "")
 		return nil
 	}
+	// Keleustes attachments (#53) are taken by `belai rc` sessions only; a
+	// terminal session refuses the prompt rather than drop them silently.
+	if len(p.Attachments) > 0 {
+		a.syncer.Ack(p.ID, sessionsync.AckRefused, "a terminal session takes no attachments; attach them here with @", "")
+		return nil
+	}
 	if a.remoteBusy() {
 		a.remoteQueue = append(a.remoteQueue, p)
 		a.syncer.Ack(p.ID, sessionsync.AckQueued, "", "")
