@@ -89,7 +89,7 @@ func LatestRelease(ctx context.Context, client *http.Client, getenv func(string)
 	if client == nil {
 		client = &http.Client{Timeout: 10 * time.Second}
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/repos/Vulnetix/cli/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, base+"/repos/Vulnesis/cli/releases/latest", nil)
 	if err != nil {
 		return Version{}, "", err
 	}

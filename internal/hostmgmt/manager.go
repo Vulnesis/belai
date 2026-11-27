@@ -190,7 +190,7 @@ type Options struct {
 	// LookPath finds a recipe's program (exec.LookPath).
 	LookPath func(string) (string, error)
 	// HTTP downloads release assets. CLIReleases and BelaiReleases are the
-	// release download bases ("https://github.com/Vulnetix/cli/releases/download").
+	// release download bases ("https://github.com/Vulnesis/cli/releases/download").
 	HTTP          *http.Client
 	CLIReleases   string
 	BelaiReleases string
@@ -253,10 +253,10 @@ func New(o Options) (*Manager, error) {
 		o.HTTP = &http.Client{Timeout: 10 * time.Minute}
 	}
 	if o.CLIReleases == "" {
-		o.CLIReleases = loopbackOverride(os.Getenv("VULNETIX_E2E_RELEASES"), "https://github.com/Vulnetix/cli/releases/download")
+		o.CLIReleases = loopbackOverride(os.Getenv("VULNETIX_E2E_RELEASES"), "https://github.com/Vulnesis/cli/releases/download")
 	}
 	if o.BelaiReleases == "" {
-		o.BelaiReleases = loopbackOverride(os.Getenv("BELAI_E2E_RELEASES"), "https://github.com/Vulnetix/belai/releases/download")
+		o.BelaiReleases = loopbackOverride(os.Getenv("BELAI_E2E_RELEASES"), "https://github.com/Vulnesis/belai/releases/download")
 	}
 	if o.GOOS == "" {
 		o.GOOS, o.GOARCH = runtime.GOOS, runtime.GOARCH
