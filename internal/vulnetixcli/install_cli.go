@@ -56,7 +56,7 @@ func PlanInstall(goos string, lookPath func(string) (string, error)) (InstallPla
 	case "windows":
 		if _, err := lookPath("scoop"); err == nil {
 			return InstallPlan{Manager: InstallScoop, Steps: []InstallStep{
-				{Argv: []string{"scoop", "bucket", "add", "vulnetix", "https://github.com/Vulnetix/scoop-bucket"}},
+				{Argv: []string{"scoop", "bucket", "add", "vulnetix", "https://github.com/Vulnesis/scoop-bucket"}},
 				{Argv: []string{"scoop", "install", "vulnetix"}},
 			}}, true
 		}

@@ -86,7 +86,7 @@ func TestRepoCloneFallsBackAndRefusesAnOccupiedTarget(t *testing.T) {
 
 // A release base from the environment is kept only on a loopback address.
 func TestLoopbackOverride(t *testing.T) {
-	const def = "https://github.com/Vulnetix/belai/releases/download"
+	const def = "https://github.com/Vulnesis/belai/releases/download"
 	for raw, want := range map[string]string{
 		"":                                 def,
 		"http://127.0.0.1:9999/rel/":       "http://127.0.0.1:9999/rel",
