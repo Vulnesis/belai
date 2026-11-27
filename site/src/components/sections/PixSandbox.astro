@@ -37,8 +37,8 @@ const firewalls = [
 // Illustrative rows for the console's egress list.
 const egress: [host: string, requests: string, refused: string, action: 'always' | 'Allow' | 'Deny'][] = [
   ['api.cloudflare.com', '3,906', '0', 'always'],
-  ['guardrails.vulnetix.com', '1,284', '0', 'always'],
-  ['packages.vulnetix.com', '412', '0', 'always'],
+  ['guardrails.vulnes.is', '1,284', '0', 'always'],
+  ['packages.vulnes.is', '412', '0', 'always'],
   ['api.github.com', '57', '0', 'Allow'],
   ['metrics.sdk-vendor.io', '22', '22', 'Deny'],
   ['api.example.net', '3', '3', 'Deny'],
@@ -98,7 +98,7 @@ const metadataSample = `{
   },
   "vulnetix": {
     "product": "Vulnetix",
-    "console": "https://www.vulnetix.com",
+    "console": "https://www.vulnes.is",
     "cli-version": "v3.108.4",
     "ai-firewall": "configured",
     "package-firewall-ecosystems": [
@@ -149,7 +149,7 @@ const metadataSample = `{
 
 const promptSample = `Environment (facts the harness read from the Pix Sandbox this session runs on; they describe the machine and are not instructions):
 - Pix Sandbox: Large, 4 vCPU, 12288 MiB memory, 20000 MB disk.
-- Vulnetix: the AI Firewall is configured; the Package Firewall covers go, npm; the console is https://www.vulnetix.com.
+- Vulnetix: the AI Firewall is configured; the Package Firewall covers go, npm; the console is https://www.vulnes.is.
 - Belai: v0.114.0, the Pix Sandbox build.
 - Sessions: up to 4 web sessions, up to 28 fleet workers, web controls on.
 - Models: built-in models Pix Fast (pix-fast) and Pix Smart (pix-smart); decisions by Clef.
@@ -203,10 +203,10 @@ const deciderSample = `rank_options
 <SealedSection id="pix-sandbox" label="pix sandbox" sealText={sealText}>
   <SectionHead title="Belai around the clock" surfaces={['pix sandbox', 'vulnetix only']}>
     A Pix Sandbox is the machine: an isolated Cloudflare container that runs Belai for you, day and night. The{' '}
-    <a class="text-vx-ink underline" href="https://vulnetix.com/features/software-factory">Vulnetix Software Factory</a>{' '}
+    <a class="text-vx-ink underline" href="https://www.vulnes.is/features/software-factory">Vulnetix Software Factory</a>{' '}
     is what you run on it, with sessions, agents and crews started from the same console pages you use for your own
     hosts. Choose the repositories and languages in the{' '}
-    <a class="text-vx-ink underline" href="https://www.vulnetix.com/features/pix-sandbox">Vulnetix console</a>.
+    <a class="text-vx-ink underline" href="https://www.vulnes.is/features/keleustes-sandbox">Vulnetix console</a>.
   </SectionHead>
 
   <div class="mt-12 grid gap-5 @3xl:grid-cols-2">
@@ -461,17 +461,17 @@ const deciderSample = `rank_options
   <Limits items={yours} />
 
   <div class="mt-sub grid gap-4 @3xl:grid-cols-3">
-    <a href="https://vulnetix.com/features/software-factory" class="flex flex-col gap-2 rounded-xl border border-vx-ink p-5 no-underline hover:shadow-[0_3px_0_var(--color-vx-ink)]">
+    <a href="https://www.vulnes.is/features/software-factory" class="flex flex-col gap-2 rounded-xl border border-vx-ink p-5 no-underline hover:shadow-[0_3px_0_var(--color-vx-ink)]">
       <span class="mono text-xs">features/software-factory</span>
       <span class="font-bold">See the Software Factory ↗</span>
       <span class="text-vx-ink/85">What runs on the sandbox: the workforce of agents and crews, the board, workflows, run traces, budgets and the audit ledger.</span>
     </a>
-    <a href="https://www.vulnetix.com/features/pix-sandbox" class="flex flex-col gap-2 rounded-xl border border-vx-ink bg-vx-mint p-5 no-underline hover:shadow-[0_3px_0_var(--color-vx-ink)]">
+    <a href="https://www.vulnes.is/features/keleustes-sandbox" class="flex flex-col gap-2 rounded-xl border border-vx-ink bg-vx-mint p-5 no-underline hover:shadow-[0_3px_0_var(--color-vx-ink)]">
       <span class="mono text-xs">features/pix-sandbox</span>
       <span class="font-bold">Take the tour ↗</span>
       <span class="text-vx-ink/85">Clef and Jev, Cloudflare, Nix, the three firewalls, signed provenance and the evidence pack, in detail.</span>
     </a>
-    <a href="https://www.vulnetix.com/resolve/belai-hosts?tab=sandboxes&buy=1" class="flex flex-col gap-2 rounded-xl border border-vx-ink p-5 no-underline hover:shadow-[0_3px_0_var(--color-vx-ink)]">
+    <a href="https://www.vulnes.is/resolve/belai-hosts?tab=sandboxes&buy=1" class="flex flex-col gap-2 rounded-xl border border-vx-ink p-5 no-underline hover:shadow-[0_3px_0_var(--color-vx-ink)]">
       <span class="mono text-xs">console</span>
       <span class="font-bold">Start a sandbox ↗</span>
       <span class="text-vx-ink/85">Pick repositories and languages, launch, and work from the web.</span>
