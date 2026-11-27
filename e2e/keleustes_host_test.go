@@ -122,6 +122,19 @@ type hostProduct struct {
 	Version       string `json:"version"`
 	Authenticated bool   `json:"authenticated"`
 	Running       bool   `json:"running"`
+	Checks        []struct {
+		ID string `json:"id"`
+	} `json:"checks"`
+}
+
+// sensorLocked reports the sensor's "protection" check: its profile is locked.
+func sensorLocked(i hostInventory) bool {
+	for _, c := range i.product("sensor").Checks {
+		if c.ID == "protection" {
+			return true
+		}
+	}
+	return false
 }
 
 type hostRepo struct {
@@ -391,9 +404,25 @@ func TestKeleustesHostManagement(t *testing.T) {
 		rootRun(t, user, run.HandoffCommand)
 		k.act(t, node, "product_probe", "--param", "product=sensor")
 		k.inventoryWhen(t, node, 120*time.Second, func(i hostInventory) bool { return i.product("sensor").State == "active" })
-		_, run = k.provision(t, node, "product_uninstall", "product=sensor")
+		// A locked profile needs a one-time code the console makes for this
+		// device. Without one, the refusal is the result to check.
+		uninstall := []string{"product=sensor"}
+		code := os.Getenv("VULNETIX_E2E_SENSOR_UNINSTALL_CODE")
+		if code != "" {
+			uninstall = append(uninstall, "code="+code)
+		}
+		_, run = k.provision(t, node, "product_uninstall", uninstall...)
 		if run.State != "needs_human" || run.HandoffReason != "needs_root" {
 			t.Fatalf("uninstall = %+v", run)
+		}
+		if code == "" && sensorLocked(k.inventory(t, node)) {
+			cmd := exec.Command("sh", "-c", strings.ReplaceAll(run.HandoffCommand, "sudo ", ""))
+			cmd.Env = append(os.Environ(), "HOME="+user)
+			out, err := cmd.CombinedOutput()
+			if err == nil || !strings.Contains(string(out), "locked") {
+				t.Fatalf("a locked sensor uninstalled without a code: %v %s", err, out)
+			}
+			t.Skip("the profile is locked: set VULNETIX_E2E_SENSOR_UNINSTALL_CODE (console, this device) to finish the uninstall")
 		}
 		rootRun(t, user, run.HandoffCommand)
 		k.act(t, node, "product_probe", "--param", "product=sensor")

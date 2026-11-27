@@ -165,3 +165,37 @@ func TestHomeRel(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestSensorLockedProtection(t *testing.T) {
+	bin := t.TempDir()
+	locked := strings.Replace(sensorJSON, `"protection":"standard"`, `"protection":"locked"`, 1)
+	stub(t, bin, "vulnetix-sensor", `"status -o json") echo '`+locked+`'; exit 3;;`)
+	st := testProber(t, bin).Probe(context.Background(), Sensor, true)
+	found := false
+	for _, c := range st.Checks {
+		found = found || (c.GetId() == "protection" && strings.Contains(c.GetHint(), "code"))
+	}
+	if !found {
+		t.Fatalf("checks = %v, want the locked protection check", st.Checks)
+	}
+	bin2 := t.TempDir()
+	stub(t, bin2, "vulnetix-sensor", `"status -o json") echo '`+sensorJSON+`'; exit 3;;`)
+	for _, c := range testProber(t, bin2).Probe(context.Background(), Sensor, true).Checks {
+		if c.GetId() == "protection" {
+			t.Fatal("a standard profile reports the locked check")
+		}
+	}
+}
+
+func TestSensorTextLocked(t *testing.T) {
+	bin := t.TempDir()
+	stub(t, bin, "vulnetix-sensor", `"--version") echo "vulnetix-sensor 4.26.8";;
+"status") printf 'enrolled     true\nprofile      Maintainers (p-1)\nprotection   locked\nmode         guard\nservice      active, enabled\n';;`)
+	st := testProber(t, bin).Probe(context.Background(), Sensor, true)
+	for _, c := range st.Checks {
+		if c.GetId() == "protection" {
+			return
+		}
+	}
+	t.Fatalf("checks = %v, want the locked protection check from the text status", st.Checks)
+}

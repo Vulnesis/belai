@@ -90,7 +90,7 @@ func init() {
 		"product_install": {class: ClassProvision, params: ps("product!", pProduct, "method", pEnum("brew", "scoop", "direct"),
 			"version", pVersion, "profile", pUUID), plan: planProductInstall, run: runSteps},
 		"product_upgrade":   {class: ClassProvision, params: ps("product!", pProduct), plan: planProductUpgrade, run: runSteps},
-		"product_uninstall": {class: ClassProvision, params: ps("product!", pProduct), plan: planProductUninstall, run: runSteps},
+		"product_uninstall": {class: ClassProvision, params: ps("product!", pProduct, "code", pUninstallCode), plan: planProductUninstall, run: runSteps},
 		"product_configure": {class: ClassProvision, params: ps("product!", pProduct, "on", pIdentList, "purge", pBool,
 			"remove_credentials", pBool, "scope", pEnum("user", "project"), "path", pOfferedDir), plan: planProductConfigure, run: runSteps},
 		"product_auth":  {class: ClassProvision, params: ps("product!", pEnum(products.CLI)), plan: planProductAuth, run: runProductAuth},

@@ -70,13 +70,25 @@ func TestInboxPromptAttachments(t *testing.T) {
 		in.Prompts[0].Attachments[0].Name != "notes.md" {
 		t.Fatalf("prompts = %+v", in.Prompts)
 	}
-	select {
-	case a := <-f.acks:
-		if a.GetItemId() != "p2" || a.GetStatus() != "refused" || !strings.Contains(a.GetDetail(), "SHA-256") {
-			t.Errorf("ack = %v", a)
+	// p2 may arrive in a later batch than p1 (a loaded machine), and it is
+	// checked, and refused, only when a batch carries it: keep reading.
+	deadline := time.Now().Add(10 * time.Second)
+	for refused := false; !refused; {
+		select {
+		case a := <-f.acks:
+			if a.GetItemId() != "p2" || a.GetStatus() != "refused" || !strings.Contains(a.GetDetail(), "SHA-256") {
+				t.Fatalf("ack = %v", a)
+			}
+			refused = true
+		default:
+			if time.Now().After(deadline) {
+				t.Fatal("the mismatched attachment was not refused")
+			}
+			got, _ := be.InboxBatchA2A(context.Background(), "", "s1", 200*time.Millisecond, -1)
+			if len(got.Prompts) > 0 {
+				t.Fatalf("a refused prompt reached the session: %+v", got.Prompts)
+			}
 		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("the mismatched attachment was not refused")
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()

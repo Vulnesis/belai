@@ -186,8 +186,19 @@ func planProductUninstall(_ context.Context, c *call) (*Plan, string) {
 		}
 		return pl, ""
 	case products.Sensor:
-		pl.Handoff = &Handoff{Command: "sudo vulnetix-sensor uninstall", Reason: "needs_root"}
+		// A locked profile refuses uninstall without a one-time code from the
+		// console. It appears only in the hand-off command the person runs
+		// (one device, one use, a day at most); params say one was given.
+		cmd := "sudo vulnetix-sensor uninstall"
+		if code := c.p["code"]; code != "" {
+			cmd += " --code " + code
+			pl.Params["code"] = "given"
+		}
+		pl.Handoff = &Handoff{Command: cmd, Reason: "needs_root"}
 		return pl, ""
+	}
+	if c.p["code"] != "" {
+		return nil, "code is for the sensor only"
 	}
 	return nil, "use product_configure to turn that product off on the host"
 }

@@ -66,6 +66,9 @@ func (p *Prober) probeSensor(ctx context.Context) *nodev1.ProductStatus {
 	if doc.Guard.Active || doc.Guard.Enabled {
 		st.Units = append(st.Units, SensorGuardUnit+": "+unitWords(doc.Guard.Active, doc.Guard.Enabled))
 	}
+	if doc.Protection == "locked" {
+		st.Checks = append(st.Checks, check("protection", "info", "locked: uninstall needs a code from the console"))
+	}
 	switch {
 	case doc.Service.Active:
 		st.State = "active"
@@ -99,6 +102,8 @@ func (p *Prober) sensorText(ctx context.Context, path string, st *nodev1.Product
 			doc.Enrolled = val == "true"
 		case "mode":
 			doc.Mode = val
+		case "protection":
+			doc.Protection = val
 		case "service":
 			active, enabled, _ := strings.Cut(val, ",")
 			doc.Service.Active = strings.TrimSpace(active) == "active"
