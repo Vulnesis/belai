@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"errors"
+	"math"
 	"slices"
+	"strconv"
 	"testing"
 
 	"github.com/vulnetix/belai/internal/config"
@@ -76,5 +78,19 @@ func TestRunReviewJobAnswersFindingsAndNeverPosts(t *testing.T) {
 	r, _ = newReviewRun(t, &scriptedReviewer{err: errors.New("provider down")}, reviewArgs{}, review.Target{Kind: review.KindWorkdir}, config.Settings{})
 	if _, _, err := runReviewJob(context.Background(), r.opts, r.target); err == nil {
 		t.Error("a failed review turn did not fail the job")
+	}
+}
+
+func TestNonNegClampsIntoUint32(t *testing.T) {
+	for in, want := range map[int]uint32{-5: 0, 0: 0, 42: 42, math.MaxUint32: math.MaxUint32} {
+		if got := nonNeg(in); got != want {
+			t.Errorf("nonNeg(%d) = %d, want %d", in, got, want)
+		}
+	}
+	if strconv.IntSize == 64 {
+		big := int(int64(math.MaxUint32) + 1)
+		if got := nonNeg(big); got != math.MaxUint32 {
+			t.Errorf("nonNeg(%d) = %d, want the uint32 max", big, got)
+		}
 	}
 }

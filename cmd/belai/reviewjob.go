@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 
 	"github.com/vulnetix/belai/internal/bgagent"
 	"github.com/vulnetix/belai/internal/factorylink"
@@ -100,9 +101,13 @@ func reviewResultPB(r review.Result) *nodev1.ReviewResult {
 	return out
 }
 
+// nonNeg clamps a count or line number into the proto's uint32.
 func nonNeg(n int) uint32 {
 	if n < 0 {
 		return 0
+	}
+	if uint64(n) > math.MaxUint32 {
+		return math.MaxUint32
 	}
 	return uint32(n)
 }
