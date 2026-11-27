@@ -60,22 +60,32 @@ func (d *Daemon) parseInitDraft(payload string) (dir, provider, model, why strin
 			return "", "", "", "the draft request names a model in the wrong shape"
 		}
 	}
-	cwd, repo := req.GetCwd(), req.GetRepo()
+	dir, why = d.offeredRepoDir(req.GetCwd(), req.GetRepo())
+	if why != "" {
+		return "", "", "", why
+	}
+	return dir, provider, model, ""
+}
+
+// offeredRepoDir resolves a job's directory: an offered directory named by
+// cwd, or the one whose origin (or base name) is repo. Nothing else is
+// reachable through a job.
+func (d *Daemon) offeredRepoDir(cwd, repo string) (string, string) {
 	if repo != "" && !initRepoName.MatchString(repo) {
-		return "", "", "", "the repository is not owner/name"
+		return "", "the repository is not owner/name"
 	}
 	for _, offered := range d.dirs() {
 		switch {
 		case cwd != "" && offered.Path == cwd:
-			return offered.Path, provider, model, ""
+			return offered.Path, ""
 		case cwd == "" && repo != "" && repoMatches(offered.Path, repo):
-			return offered.Path, provider, model, ""
+			return offered.Path, ""
 		}
 	}
 	if cwd == "" && repo == "" {
-		return "", "", "", "the draft request names a directory or a repository"
+		return "", "the request names a directory or a repository"
 	}
-	return "", "", "", "this host offers no such repository"
+	return "", "this host offers no such repository"
 }
 
 // repoMatches reports whether dir is a checkout of owner/name: its origin
