@@ -5,10 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/vulnetix/belai/internal/agentprofile"
 	"github.com/vulnetix/belai/internal/audit"
 	"github.com/vulnetix/belai/internal/factorylink"
+	"github.com/vulnetix/belai/internal/factorylink/nodev1"
+	"github.com/vulnetix/belai/internal/libinstall"
 	"github.com/vulnetix/belai/internal/sanitize"
 	"github.com/vulnetix/belai/internal/session"
 	"github.com/vulnetix/belai/internal/sessionsync"
@@ -171,4 +175,74 @@ func needsFor(profile string, crews []agentprofile.Crew) []factorylink.TeleportN
 		}
 	}
 	return factorylink.CleanTeleportNeeds(out)
+}
+
+// TeleportFetcher reads one document a teleport needs
+// (factorylink.Client.LibraryFetchTeleport).
+type TeleportFetcher func(ctx context.Context, teleportID string, ref *nodev1.LibraryRef) (*nodev1.LibraryDoc, error)
+
+// InstallTeleportNeeds puts on this host, the teleport's target, the
+// profiles and crews the session needs that it lacks (docs/teleport.md step
+// 5): each one is fetched from Keleustes with Library.Fetch(teleport id) and
+// validated as its kind exactly as a library_install dispatch validates it,
+// profiles before crews so a crew's members exist. A need this host already
+// holds is left as it is (never overwritten), and one the library lacks (no
+// id in the header) is only named. Every outcome is audited; the notices are
+// for the user, one per need.
+func InstallTeleportNeeds(ctx context.Context, fetch TeleportFetcher, teleportID string, needs []factorylink.TeleportNeed) []string {
+	needs = factorylink.CleanTeleportNeeds(needs)
+	sort.SliceStable(needs, func(a, b int) bool { return needs[a].Kind == "profile" && needs[b].Kind != "profile" })
+	ctx, cancel := context.WithTimeout(ctx, libraryTimeout)
+	defer cancel()
+	var notes []string
+	for _, n := range needs {
+		what := n.Kind + " " + sanitize.Line(n.Name, 64)
+		status, why := installTeleportNeed(ctx, fetch, teleportID, n)
+		audit.Emit(audit.Fact{Kind: audit.HostTeleport, ActorKind: audit.ActorWeb, ItemID: sanitize.Ident(teleportID, 64), Outcome: "need_" + status,
+			Data: map[string]string{"kind": n.Kind, "profile": sanitize.Line(n.Name, 64), "status": status, "reason": why}})
+		switch status {
+		case "present":
+			notes = append(notes, what+" is already on this host")
+		case "missing":
+			notes = append(notes, what+" is not in the Keleustes library; the session runs without it")
+		case "installed":
+			notes = append(notes, why)
+		default:
+			notes = append(notes, what+" was not installed: "+why)
+		}
+	}
+	return notes
+}
+
+// installTeleportNeed is one need: its status ("present", "missing",
+// "installed", "refused") and, when installed, what was done, otherwise why
+// not.
+func installTeleportNeed(ctx context.Context, fetch TeleportFetcher, teleportID string, n factorylink.TeleportNeed) (string, string) {
+	if n.Kind == "profile" {
+		if _, err := agentprofile.Load(n.Name); err == nil {
+			return "present", ""
+		}
+	} else if _, err := agentprofile.LoadCrew(n.Name); err == nil {
+		return "present", ""
+	}
+	if n.ID == "" {
+		return "missing", ""
+	}
+	doc, err := fetch(ctx, teleportID, &nodev1.LibraryRef{Kind: n.Kind, Id: n.ID, Name: n.Name, Version: n.Version})
+	if err != nil {
+		return "refused", "could not read it from Keleustes: " + reason(err.Error())
+	}
+	if want := n.SHA256; want != "" && doc.GetRef().GetSha256() != "" && !strings.EqualFold(doc.GetRef().GetSha256(), want) {
+		return "refused", "it is not the version the teleport named"
+	}
+	var what, why string
+	if n.Kind == "profile" {
+		what, why = installProfileDoc(doc, false, teleportID)
+	} else {
+		what, why = installCrewDoc(libinstall.Installer{}, doc.GetDoc(), n.Name, false)
+	}
+	if why != "" {
+		return "refused", why
+	}
+	return "installed", what
 }

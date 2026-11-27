@@ -100,6 +100,53 @@ func profileDoc(p agentprofile.AgentProfile) ([]byte, error) {
 	return json.Marshal(a)
 }
 
+// installProfileDoc validates a fetched profile document as a profile, checks
+// the files it carries whole, and saves both. via names the dispatch or
+// teleport it came for (audit). It returns what it did, or why not.
+func installProfileDoc(doc *nodev1.LibraryDoc, overwrite bool, via string) (string, string) {
+	p, err := profileFromDoc(doc.GetDoc())
+	if err != nil {
+		return "", "the profile is not valid here: " + reason(err.Error())
+	}
+	// The files the agent carries are checked whole before anything is
+	// saved, and written into the profile's own directory after.
+	files, why := profileFiles(doc.GetFiles())
+	if why != "" {
+		return "", why
+	}
+	if why := libinstall.Conflict(p, overwrite); why != "" {
+		return "", why
+	}
+	if _, err := agentprofile.SaveReplacing(p); err != nil {
+		return "", "could not save the profile: " + reason(err.Error())
+	}
+	if len(files) == 0 {
+		return "installed profile " + sanitize.Line(p.Name, 64), ""
+	}
+	saved, err := agentprofile.Load(p.Name)
+	if err != nil {
+		return "", "could not read the saved profile: " + reason(err.Error())
+	}
+	if err := agentfiles.Install(saved.ID, files); err != nil {
+		return "", "the profile's files are not ones this host will write: " + reason(err.Error())
+	}
+	auditProfileFiles(via, p.Name, files)
+	return fmt.Sprintf("installed profile %s, with %d file%s", sanitize.Line(p.Name, 64), len(files), plural(len(files), "", "s")), ""
+}
+
+// installCrewDoc validates a fetched crew document and saves it through the
+// shared installer when it is the crew named.
+func installCrewDoc(in libinstall.Installer, body []byte, name string, overwrite bool) (string, string) {
+	c, err := crewFromDoc(body)
+	if err != nil {
+		return "", reason(err.Error())
+	}
+	if c.Name != strings.TrimSpace(name) {
+		return "", "the crew is not the one the dispatch named"
+	}
+	return in.SaveCrew(c, overwrite)
+}
+
 // factoryLibrary installs or backs up each item a library dispatch names.
 // It stops at the first refusal, saying which item and why.
 func (d *Daemon) factoryLibrary(ctx context.Context, fd *nodev1.Dispatch) (string, string) {
@@ -139,49 +186,15 @@ func (d *Daemon) libraryInstall(ctx context.Context, fd *nodev1.Dispatch, ref *n
 	}
 	body := doc.GetDoc()
 	if ref.GetKind() == "profile" {
-		p, err := profileFromDoc(body)
-		if err != nil {
-			return "", "the profile is not valid here: " + reason(err.Error())
-		}
-		// The files the agent carries are checked whole before anything is
-		// saved, and written into the profile's own directory after.
-		files, why := profileFiles(doc.GetFiles())
-		if why != "" {
-			return "", why
-		}
-		if why := libinstall.Conflict(p, fd.GetOverwrite()); why != "" {
-			return "", why
-		}
-		if _, err := agentprofile.SaveReplacing(p); err != nil {
-			return "", "could not save the profile: " + reason(err.Error())
-		}
-		if len(files) == 0 {
-			return "installed profile " + sanitize.Line(p.Name, 64), ""
-		}
-		saved, err := agentprofile.Load(p.Name)
-		if err != nil {
-			return "", "could not read the saved profile: " + reason(err.Error())
-		}
-		if err := agentfiles.Install(saved.ID, files); err != nil {
-			return "", "the profile's files are not ones this host will write: " + reason(err.Error())
-		}
-		auditProfileFiles(fd.GetId(), p.Name, files)
-		return fmt.Sprintf("installed profile %s, with %d file%s", sanitize.Line(p.Name, 64), len(files), plural(len(files), "", "s")), ""
+		return installProfileDoc(doc, fd.GetOverwrite(), fd.GetId())
 	}
 	if ref.GetKind() == "crew" {
-		c, err := crewFromDoc(body)
-		if err != nil {
-			return "", reason(err.Error())
-		}
-		if c.Name != strings.TrimSpace(ref.GetName()) {
-			return "", "the crew is not the one the dispatch named"
-		}
 		// The shared installer; it tells the automatic sync what it wrote.
 		in := libinstall.Installer{}
 		if d.libsync != nil {
 			in.Saved = d.markSynced
 		}
-		return in.SaveCrew(c, fd.GetOverwrite())
+		return installCrewDoc(in, body, ref.GetName(), fd.GetOverwrite())
 	}
 	kind, _ := d.libraryKind(ref.GetKind())
 	// A hook bundle carries its scripts: each file must come with the hash

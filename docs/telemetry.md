@@ -84,6 +84,19 @@ A header value `env:NAME` is read from the environment. The standard
 with JSON encoding, posted to `<endpoint>/v1/traces` and
 `<endpoint>/v1/metrics`.
 
+### Set from Keleustes
+
+A Keleustes console may set export per node with `config_set` (host
+management at `--keleustes-manage=config` or higher): the keys
+`telemetry.otlp_endpoint` (an `http://` or `https://` collector URL with no
+user info, query or fragment; empty turns export off), `telemetry.traces` and
+`telemetry.metrics` (`true` or `false`), and `telemetry.headers.<Name>`,
+whose value must be `env:NAME`, an environment variable on the host. A
+literal header value is refused, so a collector's key never passes through
+Keleustes or lands in the settings file; empty removes the header. A literal
+header the host's owner wrote by hand is shown to the console as
+`(set on host)`. Each change is audited on both sides like any `config_set`.
+
 The project layer cannot set `telemetry` at all. A repository choosing where
 your session facts are sent would be an exfiltration path, so `resolve.go`
 drops the whole key from project settings.

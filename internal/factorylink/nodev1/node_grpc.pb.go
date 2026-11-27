@@ -1464,11 +1464,15 @@ const (
 // Library distribution (WP-E). A document is answered only for a delivered
 // dispatch (or teleport) addressed to the calling node that names it.
 type LibraryClient interface {
+	// With teleport_id (no dispatch_id): a profile or crew the teleport's
+	// stored needs name, for the node the teleport is addressed to while it
+	// is ready or delivered and not expired.
 	Fetch(ctx context.Context, in *LibraryFetch, opts ...grpc.CallOption) (*LibraryDoc, error)
 	// A host's copy, for a library_backup dispatch.
 	Backup(ctx context.Context, in *LibraryDoc, opts ...grpc.CallOption) (*LibraryReceipt, error)
 	// Automatic sync: the host's hashes in, one verdict per item out.
-	// Never "install" for kind hook or mcp.
+	// Never "install" for kind hook or mcp. Keleustes may queue the backup
+	// or install itself (LibraryVerdict.dispatch_id).
 	Reconcile(ctx context.Context, in *LibraryInventory, opts ...grpc.CallOption) (*LibraryVerdicts, error)
 	// What a library_scan dispatch found: names, paths and hashes only.
 	ScanReport(ctx context.Context, in *LibraryScanReport, opts ...grpc.CallOption) (*Ok, error)
@@ -1529,11 +1533,15 @@ func (c *libraryClient) ScanReport(ctx context.Context, in *LibraryScanReport, o
 // Library distribution (WP-E). A document is answered only for a delivered
 // dispatch (or teleport) addressed to the calling node that names it.
 type LibraryServer interface {
+	// With teleport_id (no dispatch_id): a profile or crew the teleport's
+	// stored needs name, for the node the teleport is addressed to while it
+	// is ready or delivered and not expired.
 	Fetch(context.Context, *LibraryFetch) (*LibraryDoc, error)
 	// A host's copy, for a library_backup dispatch.
 	Backup(context.Context, *LibraryDoc) (*LibraryReceipt, error)
 	// Automatic sync: the host's hashes in, one verdict per item out.
-	// Never "install" for kind hook or mcp.
+	// Never "install" for kind hook or mcp. Keleustes may queue the backup
+	// or install itself (LibraryVerdict.dispatch_id).
 	Reconcile(context.Context, *LibraryInventory) (*LibraryVerdicts, error)
 	// What a library_scan dispatch found: names, paths and hashes only.
 	ScanReport(context.Context, *LibraryScanReport) (*Ok, error)

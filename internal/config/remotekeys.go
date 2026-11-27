@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"regexp"
 	"slices"
 	"strconv"
@@ -39,7 +40,23 @@ const (
 	RemoteInt   RemoteType = "int"
 	RemoteWord  RemoteType = "word"
 	RemoteIdent RemoteType = "ident"
+	// RemoteURL is an http(s) collector URL with no credentials, query or
+	// fragment; empty clears it.
+	RemoteURL RemoteType = "url"
+	// RemoteEnvRef names a host environment variable ("env:NAME"); empty
+	// removes the entry. A secret's value never goes through a console.
+	RemoteEnvRef RemoteType = "env_ref"
 )
+
+// TelemetryHeaderPrefix starts the key of one OTLP export header
+// (telemetry.headers.<Name>, docs/telemetry.md#keleustes).
+const TelemetryHeaderPrefix = "telemetry.headers."
+
+// telemetryHeaderName is the shape of an HTTP header name a console may set.
+var telemetryHeaderName = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9-]{0,63}$`)
+
+// envRef is "env:NAME" with an environment variable name.
+var envRef = regexp.MustCompile(`^env:[A-Z_][A-Z0-9_]{0,63}$`)
 
 // RemoteKey is one row of the table.
 type RemoteKey struct {
@@ -78,6 +95,11 @@ var remoteKeys = []RemoteKey{
 	{Key: "sync.hooks", Type: RemoteBool, Mode: RemoteTighten, Tight: false},
 	{Key: "a2a.enabled", Type: RemoteBool, Mode: RemoteTighten, Tight: false, Always: true},
 	{Key: "a2a.filter", Type: RemoteWord, Mode: RemoteTighten, Words: []string{A2AFilterAll, A2AFilterRepo, A2AFilterOff}, Always: true},
+	// OpenTelemetry export (docs/telemetry.md): facts only, never content.
+	// Headers are the telemetry.headers.<Name> family (LookupRemoteKey).
+	{Key: "telemetry.otlp_endpoint", Type: RemoteURL, Mode: RemoteSet},
+	{Key: "telemetry.traces", Type: RemoteBool, Mode: RemoteSet},
+	{Key: "telemetry.metrics", Type: RemoteBool, Mode: RemoteSet},
 }
 
 // RemoteKeys lists the table in a stable order.
@@ -94,7 +116,21 @@ func LookupRemoteKey(key string) (RemoteKey, bool) {
 			return k, true
 		}
 	}
+	if name, ok := strings.CutPrefix(key, TelemetryHeaderPrefix); ok && telemetryHeaderName.MatchString(name) {
+		return RemoteKey{Key: key, Type: RemoteEnvRef, Mode: RemoteSet}, true
+	}
 	return RemoteKey{}, false
+}
+
+// remoteURL checks a collector URL: http or https, a host, nothing else
+// that could carry a credential (user info, query, fragment).
+func remoteURL(raw string) bool {
+	if len(raw) > 128 {
+		return false
+	}
+	u, err := url.Parse(raw)
+	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Hostname() != "" &&
+		u.User == nil && u.RawQuery == "" && !u.ForceQuery && u.Fragment == "" && u.Opaque == ""
 }
 
 // neverRemotePrefixes are refused whatever else is true: they route keys to
@@ -173,6 +209,26 @@ func RemoteValue(s Settings, key string) (string, bool) {
 	case "a2a.filter":
 		return s.A2AFilter(), true
 	}
+	t := s.Telemetry
+	if t == nil {
+		t = &TelemetrySettings{}
+	}
+	switch key {
+	case "telemetry.otlp_endpoint":
+		return t.OTLPEndpoint, true
+	case "telemetry.traces":
+		return b(t.Traces == nil || *t.Traces), true
+	case "telemetry.metrics":
+		return b(t.Metrics == nil || *t.Metrics), true
+	}
+	if name, ok := strings.CutPrefix(key, TelemetryHeaderPrefix); ok {
+		v := t.Headers[name]
+		if v != "" && !envRef.MatchString(v) {
+			// A literal the host's owner wrote stays on the host.
+			v = "(set on host)"
+		}
+		return v, true
+	}
 	return "", false
 }
 
@@ -201,6 +257,17 @@ func (k RemoteKey) ParseRemote(raw string) (string, error) {
 	case RemoteIdent:
 		if !remoteIdent.MatchString(raw) {
 			return "", fmt.Errorf("%s takes an identifier", k.Key)
+		}
+		return raw, nil
+	case RemoteURL:
+		raw = strings.TrimRight(raw, "/")
+		if raw != "" && !remoteURL(raw) {
+			return "", fmt.Errorf("%s takes an http:// or https:// collector URL without credentials, query or fragment", k.Key)
+		}
+		return raw, nil
+	case RemoteEnvRef:
+		if raw != "" && !envRef.MatchString(raw) {
+			return "", fmt.Errorf("%s names a host environment variable (env:NAME); a secret value is never set remotely", sanitizeKey(k.Key))
 		}
 		return raw, nil
 	}
@@ -325,5 +392,26 @@ func setRemote(s *Settings, key, v string) {
 		a2a().Enabled = bp()
 	case "a2a.filter":
 		a2a().Filter = v
+	}
+	if s.Telemetry == nil && strings.HasPrefix(key, "telemetry.") {
+		s.Telemetry = &TelemetrySettings{}
+	}
+	switch key {
+	case "telemetry.otlp_endpoint":
+		s.Telemetry.OTLPEndpoint = v
+	case "telemetry.traces":
+		s.Telemetry.Traces = bp()
+	case "telemetry.metrics":
+		s.Telemetry.Metrics = bp()
+	}
+	if name, ok := strings.CutPrefix(key, TelemetryHeaderPrefix); ok {
+		if v == "" {
+			delete(s.Telemetry.Headers, name)
+			return
+		}
+		if s.Telemetry.Headers == nil {
+			s.Telemetry.Headers = map[string]string{}
+		}
+		s.Telemetry.Headers[name] = v
 	}
 }

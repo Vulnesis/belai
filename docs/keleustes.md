@@ -486,10 +486,25 @@ paths become its knowledge paths. The install is audited `host.dispatch`
 The automatic sync runs in factory mode as a reconcile: every five minutes,
 while the factory is not stopped, the daemon sends the hashes of the profiles,
 crews and items whose sync switch is on with `Library.Reconcile` (no document)
-and reads one verdict per item. When something is to back up or install it
-asks the owner once an hour (attention `action`, subject `library`); the
-owner's `library_backup` or `library_install` then moves the document. Each
-pass is a `host.dispatch` fact (`library_reconcile`) with counts only.
+and reads one verdict per item. Keleustes's automatic sync (on unless its
+owner turns it off) queues the `library_backup` for a `push` and the
+`library_install` (with overwrite) for an `install` itself and names it in the
+verdict's `dispatch_id`; that dispatch arrives and is checked like any other.
+Hooks and MCP servers never move this way. A `push` or `install` with no
+dispatch asks the owner once an hour (attention `action`, subject `library`);
+the owner's `library_backup` or `library_install` then moves the document.
+Each pass is a `host.dispatch` fact (`library_reconcile`) with counts only.
+
+A teleport's target fetches the profile and crews the session needs itself:
+`belai -teleport <teleport-id>` downloads the bundle saying so
+(`TeleportRequest.fetch_needs`), then reads each need it lacks with
+`Library.Fetch` naming the teleport id, which Keleustes answers only for the
+node the teleport is addressed to, while it is ready or delivered, for a need
+it stored with the teleport, and never under the kill switch or the A2A
+blackout. Each document is validated exactly as a `library_install` one; a
+need already on the host is never overwritten. Each outcome is a
+`host.teleport` fact (`need_installed`, `need_present`, `need_missing`,
+`need_refused`).
 
 ## Library scan and import
 

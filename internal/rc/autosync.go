@@ -512,10 +512,12 @@ func crewDocument(c agentprofile.Crew) ([]byte, bool) {
 // Library.Reconcile, one verdict per item: current, push (the library lacks
 // it), install (the library is ahead of an unchanged copy), diverged, or
 // listed (a catalogue entry). A document moves only for a dispatch that names
-// it, so the loop sends hashes and nothing else, and asks the Keleustes owner
-// (attention "action") when something is to push or install; the owner's
-// library_backup or library_install then does it. Each pass is audited with
-// counts only, and no pass runs while the factory is stopped.
+// it, so the loop sends hashes and nothing else. Keleustes's automatic sync
+// queues the library_backup or library_install itself and names it in the
+// verdict's dispatch_id; that dispatch arrives like any other and is checked
+// the same way (hooks and MCP servers never move so). A push or install with
+// no dispatch asks the Keleustes owner (attention "action"). Each pass is
+// audited with counts only, and no pass runs while the factory is stopped.
 
 // factoryReconcileEvery is how often a factory-mode host reconciles; a
 // variable so a test can shorten it.
@@ -530,6 +532,8 @@ type libraryReconciler interface {
 // reconcileCounts are one pass's verdicts by kind.
 type reconcileCounts struct {
 	total, current, push, install, diverged, other int
+	// queued are push and install verdicts Keleustes queued a dispatch for.
+	queued int
 }
 
 // factoryReconcileLoop runs factoryReconcile every factoryReconcileEvery
@@ -584,13 +588,21 @@ func (d *Daemon) factoryReconcile(ctx context.Context, rec libraryReconciler) (r
 	}
 	for _, v := range verdicts {
 		c.total++
+		// A verdict Keleustes queued a dispatch for moves with that
+		// dispatch (the owner's automatic sync), so it asks nobody.
+		id := v.GetDispatchId()
+		queued := id != "" && sanitize.Ident(id, 64) == id
 		switch v.GetVerdict() {
 		case "current":
 			c.current++
-		case "push":
-			c.push++
-		case "install":
-			c.install++
+		case "push", "install":
+			if queued {
+				c.queued++
+			} else if v.GetVerdict() == "push" {
+				c.push++
+			} else {
+				c.install++
+			}
 		case "diverged":
 			c.diverged++
 		default:
@@ -598,6 +610,9 @@ func (d *Daemon) factoryReconcile(ctx context.Context, rec libraryReconciler) (r
 		}
 	}
 	emit(jobOK)
+	if c.queued > 0 {
+		d.logf("library reconcile: Keleustes queued %d to move of %d", c.queued, c.total)
+	}
 	if c.push+c.install > 0 {
 		d.logf("library reconcile: %d to back up, %d to install, %d diverged of %d", c.push, c.install, c.diverged, c.total)
 		// One request for the library, filed at most once an hour (factoryAttention).
