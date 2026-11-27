@@ -33,7 +33,7 @@ const (
 	// Origin is the site the links point at.
 	Origin = "https://www.vulnes.is"
 	// AdvisoryRepoURL is the public GCVE advisory repository.
-	AdvisoryRepoURL = "https://github.com/Vulnetix/advisory-database"
+	AdvisoryRepoURL = "https://github.com/Vulnesis/advisory-database"
 	// MaxVulnLinks caps the Vulnerability lines of one message.
 	MaxVulnLinks = 10
 )
@@ -56,7 +56,7 @@ type Context struct {
 	SessionID   string   `json:"sessionId,omitempty"`
 	FindingUUID string   `json:"findingUuid,omitempty"`
 	VulnIDs     []string `json:"vulnIds,omitempty"`
-	// AdvisoryPath is the record's path inside Vulnetix/advisory-database.
+	// AdvisoryPath is the record's path inside Vulnesis/advisory-database.
 	AdvisoryPath string `json:"advisoryPath,omitempty"`
 	Origin       string `json:"origin,omitempty"`
 }
