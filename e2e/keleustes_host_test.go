@@ -127,6 +127,37 @@ type hostProduct struct {
 	} `json:"checks"`
 }
 
+// sensorDeviceID reads the device id the sensor logged when it enrolled
+// ("sensor: enrolled device <uuid>"), or "" when the journal has none.
+func sensorDeviceID(t *testing.T) string {
+	t.Helper()
+	out, _ := exec.Command("journalctl", "-u", "vulnetix-sensor", "--no-pager", "-o", "cat").CombinedOutput()
+	id := ""
+	for _, line := range strings.Split(string(out), "\n") {
+		if _, rest, ok := strings.Cut(line, "enrolled device "); ok {
+			id = strings.Fields(rest)[0]
+		}
+	}
+	return id
+}
+
+// waitForCode names the device and waits for its uninstall code in file.
+func waitForCode(t *testing.T, file, device string, limit time.Duration) string {
+	t.Helper()
+	t.Logf("sensor device %s is enrolled on a locked profile: make an uninstall code for it in the console and write it to %s", device, file)
+	deadline := time.Now().Add(limit)
+	for time.Now().Before(deadline) {
+		if b, err := os.ReadFile(file); err == nil {
+			if c := strings.TrimSpace(string(b)); c != "" {
+				return c
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+	t.Fatalf("no uninstall code in %s within %s", file, limit)
+	return ""
+}
+
 // sensorLocked reports the sensor's "protection" check: its profile is locked.
 func sensorLocked(i hostInventory) bool {
 	for _, c := range i.product("sensor").Checks {
@@ -408,6 +439,12 @@ func TestKeleustesHostManagement(t *testing.T) {
 		// device. Without one, the refusal is the result to check.
 		uninstall := []string{"product=sensor"}
 		code := os.Getenv("VULNETIX_E2E_SENSOR_UNINSTALL_CODE")
+		// The code is for this run's device, which only exists now (a
+		// re-enroll clears any earlier code). With a code file named, the step
+		// names the device and waits for a person to write its code there.
+		if file := os.Getenv("VULNETIX_E2E_SENSOR_UNINSTALL_CODE_FILE"); code == "" && file != "" && sensorLocked(k.inventory(t, node)) {
+			code = waitForCode(t, file, sensorDeviceID(t), 30*time.Minute)
+		}
 		if code != "" {
 			uninstall = append(uninstall, "code="+code)
 		}
