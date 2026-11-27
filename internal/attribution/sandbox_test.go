@@ -18,7 +18,7 @@ func writeAttr(t *testing.T, body string) string {
 }
 
 func TestLoadReadsThePersonAndTheSignOff(t *testing.T) {
-	p := writeAttr(t, "Co-authored-by: Ada Lovelace <ada@example.com>\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>\n")
+	p := writeAttr(t, "Co-authored-by: Ada Lovelace <ada@example.com>\nSigned-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\n")
 	c, ok := Load(p)
 	if !ok || c.Bot != Pix || c.Human == nil || c.Human.Name != "Ada Lovelace" || c.Human.Email != "ada@example.com" {
 		t.Fatalf("got %+v ok=%v", c, ok)
@@ -26,7 +26,7 @@ func TestLoadReadsThePersonAndTheSignOff(t *testing.T) {
 }
 
 func TestLoadTreatsABotCoAuthorAsNoPerson(t *testing.T) {
-	p := writeAttr(t, "Co-authored-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>\n")
+	p := writeAttr(t, "Co-authored-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\nSigned-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\n")
 	c, ok := Load(p)
 	if !ok || c.Human != nil {
 		t.Fatalf("got %+v ok=%v", c, ok)
@@ -44,11 +44,11 @@ func TestOutsideASandboxNothingIsAdded(t *testing.T) {
 }
 
 func TestMessageInsideASandbox(t *testing.T) {
-	t.Setenv(FileEnv, writeAttr(t, "Co-authored-by: Ada Lovelace <ada@example.com>\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>\n"))
+	t.Setenv(FileEnv, writeAttr(t, "Co-authored-by: Ada Lovelace <ada@example.com>\nSigned-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\n"))
 	got := Message("fix: x\n\nbody", "ses_1", "CVE-2021-44228")
 	for _, want := range []string{
 		"Co-authored-by: Ada Lovelace <ada@example.com>",
-		"Signed-off-by: Vulnesis [bot] <security@vulnetix.com>",
+		"Signed-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>",
 		"Session: https://www.vulnes.is/resolve/factory-session?id=ses_1",
 		"Vulnerability: https://www.vulnes.is/vdb/CVE-2021-44228",
 	} {
@@ -63,7 +63,7 @@ func TestMessageInsideASandbox(t *testing.T) {
 
 func TestMissingAndShellArgs(t *testing.T) {
 	c := Context{Bot: Pix}
-	if !Missing("feat: x", c) || Missing("feat: x\n\nSigned-off-by: Vulnesis [bot] <security@vulnetix.com>", c) {
+	if !Missing("feat: x", c) || Missing("feat: x\n\nSigned-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>", c) {
 		t.Fatal("Missing")
 	}
 	args := ShellTrailerArgs(Context{Bot: Pix, Human: &Human{Name: "Ada O'Neil", Email: "ada@example.com"}})
