@@ -12,9 +12,17 @@ import (
 	"github.com/vulnetix/belai/internal/harness"
 )
 
+// script installs an executable stub. It writes a hidden temporary file and
+// renames it into place, so a detector scanning dir concurrently (Watch) never
+// execs the stub while it is still open for writing, which fails with
+// "text file busy" (ETXTBSY).
 func script(t *testing.T, dir, name, body string) {
 	t.Helper()
-	if err := os.WriteFile(filepath.Join(dir, name), []byte("#!/bin/sh\n"+body+"\n"), 0o755); err != nil {
+	tmp := filepath.Join(dir, "."+name+".tmp")
+	if err := os.WriteFile(tmp, []byte("#!/bin/sh\n"+body+"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(tmp, filepath.Join(dir, name)); err != nil {
 		t.Fatal(err)
 	}
 }
