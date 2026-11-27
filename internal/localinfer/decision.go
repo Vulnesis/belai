@@ -117,13 +117,18 @@ func DecisionArgs(o DecisionServerOptions) []string {
 
 var buildRe = regexp.MustCompile(`build[: ]+(\d+)`)
 
+// VersionTimeout bounds `llama-server --version`. Tests whose fake server is
+// the race-built test binary raise it: on a loaded machine that start alone
+// can pass 5s, and an unread build is let through to the launch.
+var VersionTimeout = 5 * time.Second
+
 // Version returns llama-server's build number (0 when it cannot be read) and
 // the first line of its version output.
 func Version(ctx context.Context, bin Binary) (int, string) {
 	if bin.Path == "" {
 		return 0, ""
 	}
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, VersionTimeout)
 	defer cancel()
 	out, _ := exec.CommandContext(ctx, bin.Path, "--version").CombinedOutput()
 	text := strings.TrimSpace(string(out))

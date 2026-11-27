@@ -38,6 +38,19 @@ func pUUID(_ *call, v string) (string, error) {
 	return strings.ToLower(v), nil
 }
 
+var uninstallCodeRE = regexp.MustCompile(`^[A-Z2-7]{4}-?[A-Z2-7]{4}-?[A-Z2-7]{4}$`)
+
+// pUninstallCode takes a sensor uninstall code as the console shows it
+// (XXXX-XXXX-XXXX, base32): one-time, for one device, valid for a day.
+func pUninstallCode(_ *call, v string) (string, error) {
+	v = strings.ToUpper(strings.ReplaceAll(strings.TrimSpace(v), " ", ""))
+	if !uninstallCodeRE.MatchString(v) {
+		return "", errors.New("takes an uninstall code such as ABCD-EFGH-2345")
+	}
+	v = strings.ReplaceAll(v, "-", "")
+	return v[0:4] + "-" + v[4:8] + "-" + v[8:12], nil
+}
+
 func pIdent(_ *call, v string) (string, error) {
 	if !identRE.MatchString(v) || strings.HasPrefix(v, "-") {
 		return "", errors.New("not an identifier")

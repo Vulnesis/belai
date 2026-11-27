@@ -828,3 +828,27 @@ func TestProductAuthSigV4Grant(t *testing.T) {
 		t.Fatal("the audit log carries the secret")
 	}
 }
+
+func TestSensorUninstallCode(t *testing.T) {
+	e := newEnv(t, LevelProvision)
+	act := func(p map[string]string) *nodev1.HostActionUpdate {
+		return last(e.act(&nodev1.HostAction{Kind: "product_uninstall", DryRun: true, Params: p}))
+	}
+	plain := act(map[string]string{"product": "sensor"})
+	if !strings.Contains(plain.GetPreviewJson(), `"sudo vulnetix-sensor uninstall"`) {
+		t.Fatalf("no code = %s %s", plain.GetState(), plain.GetPreviewJson())
+	}
+	coded := act(map[string]string{"product": "sensor", "code": "abcd efgh2345"})
+	pj := coded.GetPreviewJson()
+	if !strings.Contains(pj, "sudo vulnetix-sensor uninstall --code ABCD-EFGH-2345") || !strings.Contains(pj, `"code":"given"`) {
+		t.Fatalf("code = %s %s %s", coded.GetState(), coded.GetError(), pj)
+	}
+	for _, bad := range []string{"ABCD-EFGH-234", "ABCD-EFGH-2341", "ABCD;EFGH-2345", "-rf"} {
+		if u := act(map[string]string{"product": "sensor", "code": bad}); u.GetState() != stateRefused {
+			t.Errorf("code %q = %s, want refused", bad, u.GetState())
+		}
+	}
+	if u := act(map[string]string{"product": "package_firewall", "code": "ABCD-EFGH-2345"}); u.GetState() != stateRefused {
+		t.Errorf("a code for another product = %s, want refused", u.GetState())
+	}
+}

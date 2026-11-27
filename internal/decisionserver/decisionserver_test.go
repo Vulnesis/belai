@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/vulnetix/belai/internal/decisions"
+	"github.com/vulnetix/belai/internal/localinfer"
 	"github.com/vulnetix/belai/internal/testenv"
 )
 
@@ -114,6 +115,11 @@ func fakeLlamaOnPath(t *testing.T) string {
 	}
 	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Setenv("DECISIONSERVER_FAKE", "1")
+	// The fake is this race-built test binary: its --version can pass the
+	// production 5s bound under a full `just check`.
+	old := localinfer.VersionTimeout
+	localinfer.VersionTimeout = time.Minute
+	t.Cleanup(func() { localinfer.VersionTimeout = old })
 	launches := filepath.Join(t.TempDir(), "launches")
 	t.Setenv("DECISIONSERVER_LAUNCHES", launches)
 	return launches
@@ -192,7 +198,7 @@ func TestEnsureRefusesAnOldBuildForClef(t *testing.T) {
 	}
 	t.Setenv("DECISIONSERVER_BUILD", "10964")
 	_, err := Ensure(context.Background(), m, Options{ModelPath: weights, Deadline: 10 * time.Second})
-	if !errors.Is(err, ErrUpgrade) || !strings.Contains(err.Error(), "10964") || !strings.Contains(Describe(err), "11371") {
+	if err == nil || !errors.Is(err, ErrUpgrade) || !strings.Contains(err.Error(), "10964") || !strings.Contains(Describe(err), "11371") {
 		t.Fatalf("err = %v (%s)", err, Describe(err))
 	}
 	if b, _ := os.ReadFile(launches); len(b) != 0 {
