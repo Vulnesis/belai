@@ -146,6 +146,12 @@ for at most four rounds. It never touches the main loop's history, and the
 main turn is not interrupted. The answer goes back as a `reply`; the calls it
 made are recorded on the `a2a_reply_out` entry's `meta.calls`.
 
+The endpoint opens, and announces the session, before the session itself is
+built, so a message can arrive while the session is still starting. It waits
+for the session (up to two minutes) and is answered in a side-turn once the
+session is ready. Only a session that never starts, or one that ends first,
+answers with the fixed harness reply that its side-turn failed.
+
 The sender receives the reply as a classified attachment that quotes its own
 question, under a directive naming the ids: mid-loop at the next round, or as
 a turn of its own when the session is idle (like a finished background
