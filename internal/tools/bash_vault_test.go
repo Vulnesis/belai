@@ -193,8 +193,16 @@ func TestBashExplainsTheNotPixIdentityRefusal(t *testing.T) {
 	if strings.Count(res.Content, pixIdentityHint) != 1 || !strings.HasSuffix(res.Content, "\n"+pixIdentityHint) {
 		t.Fatalf("want the hint once, last: %q", res.Content)
 	}
-	if !strings.Contains(pixIdentityHint, "Pix [bot] <security@vulnetix.com>") || !strings.Contains(pixIdentityHint, "GIT_AUTHOR_*") {
+	if !strings.Contains(pixIdentityHint, "Vulnesis [bot] <security@vulnes.is>") || !strings.Contains(pixIdentityHint, "signing key") || !strings.Contains(pixIdentityHint, "GIT_AUTHOR_*") {
 		t.Fatalf("hint text: %q", pixIdentityHint)
+	}
+	// The owner-key path refuses with not_user_identity; the same hint follows.
+	res, err = b.Execute(context.Background(), map[string]any{"command": `echo "pix-git-sign: not signed (not_user_identity)" >&2; exit 1`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(res.Content, pixIdentityHint) != 1 {
+		t.Fatalf("want the hint once for not_user_identity: %q", res.Content)
 	}
 	res, err = b.Execute(context.Background(), map[string]any{"command": "echo committed"})
 	if err != nil {

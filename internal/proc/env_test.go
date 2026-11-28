@@ -58,13 +58,13 @@ func TestScrubEnvKeepingKeepsOnlyTheNamedCredentials(t *testing.T) {
 	}
 }
 
-// The Pix sandbox sets the committer to the Pix identity in the environment, so
+// The Keleustes sandbox sets the committer to its signing identity in the environment, so
 // a commit the model makes with -c user.name still signs. Scrubbing must not
 // drop it.
 func TestScrubEnvOfKeepsTheCommitterIdentity(t *testing.T) {
 	env := []string{
-		"GIT_COMMITTER_NAME=Pix [bot]",
-		"GIT_COMMITTER_EMAIL=security@vulnetix.com",
+		"GIT_COMMITTER_NAME=Vulnesis [bot]",
+		"GIT_COMMITTER_EMAIL=security@vulnes.is",
 		"GIT_AUTHOR_NAME=Someone",
 	}
 	got := strings.Join(ScrubEnvOf(env), "\n")
