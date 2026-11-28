@@ -49,6 +49,8 @@ jobs:
   # Coverage is reported, not gated: the percentage is a proxy, not a target.
   # It runs as its own job because a full coverage run takes over ten minutes
   # and would otherwise lengthen the race job above. Same command as `just cover`.
+  # -timeout 20m as in the race job: the e2e package alone took 637 to 820 seconds
+  # under coverage on 2026-11-28 and hit go test's default 10 minute limit.
   coverage:
     runs-on: [self-hosted, vulnesis-cf-large]
     steps:
@@ -62,7 +64,7 @@ jobs:
           cache: true
 
       - name: go test -coverprofile
-        run: go test -coverprofile=coverage.txt -covermode=atomic ./...
+        run: go test -timeout 20m -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Coverage summary
         run: |

@@ -212,7 +212,7 @@ bench DATASET MODEL ATTEMPTS="3" *ARGS: build-bench
 
 # Write coverage.txt and print the per-function summary.
 cover:
-    go test -coverprofile=coverage.txt -covermode=atomic ./...
+    go test -timeout 20m -coverprofile=coverage.txt -covermode=atomic ./...
     go tool cover -func=coverage.txt | tail -20
 
 # Open the coverage report in a browser.
