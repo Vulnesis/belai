@@ -120,9 +120,9 @@ One entry for each commit the harness makes:
 ```json
 {"type":"commit","role":"system","timestamp":1790000000000,
  "meta":{"sha":"0123456789abcdef0123456789abcdef01234567",
-         "author_name":"Pix [bot]","author_email":"security@vulnetix.com",
-         "committer_name":"Pix [bot]","committer_email":"security@vulnetix.com",
-         "trailers":[{"key":"Signed-off-by","value":"Pix [bot] <security@vulnetix.com>"},
+         "author_name":"vulnesis[bot]","author_email":"176591487+vulnesis[bot]@users.noreply.github.com",
+         "committer_name":"Vulnesis [bot]","committer_email":"security@vulnes.is",
+         "trailers":[{"key":"Signed-off-by","value":"vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>"},
                      {"key":"Co-authored-by","value":"Chris L <chris@vulnetix.com>"}],
          "branch":"belai/k-0363e1"}}
 ```

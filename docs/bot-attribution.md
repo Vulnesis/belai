@@ -22,12 +22,19 @@ website's shared cases.
   merge-conflict comment) carries the link lines only (`attribution.Links`: Session, Finding,
   Vulnerability, Advisory). `Co-authored-by` and `Signed-off-by` belong to commits alone.
 - The worker contract tells the model that trailers are added for it and are not to be written, edited or removed.
-- **The committer stays Pix.** The sandbox's commit signer signs only a commit whose committer is
-  `Pix [bot] <security@vulnetix.com>` and refuses any other (`not_pix_identity`). The sandbox sets
-  `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL`, which outrank `-c user.name` and `-c user.email`, and
-  `proc.ScrubEnvOf` passes them to every command. `fleet.identityEnv` never supplies a committer the
-  environment already names (it still supplies an author on a machine with no identity). When a Bash
-  command's output holds `not_pix_identity`, the harness appends one line: the committer must stay Pix
-  [bot]; do not pass `-c user.name`/`-c user.email` or `GIT_COMMITTER_*`; set only `GIT_AUTHOR_*` to
-  credit someone else.
+- **The committer stays the sandbox's signing identity.** A Keleustes sandbox commits one of two ways
+  (website `.repo/pix-sandbox-git-signing.md`):
+  - by default the author is `vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>`, so GitHub
+    credits the bot, and the committer is `Vulnesis [bot] <security@vulnes.is>`, signed by the platform key
+    so GitHub shows it Verified; any other committer is refused (`not_pix_identity`);
+  - when the sandbox owner has a ready signing key in their Secrets Vault, the owner is author and
+    committer and their own key signs; any other committer is refused (`not_user_identity`).
+
+  The sandbox sets `GIT_COMMITTER_NAME` and `GIT_COMMITTER_EMAIL` to that committer, which outrank
+  `-c user.name` and `-c user.email`, and `proc.ScrubEnvOf` passes them to every command.
+  `fleet.identityEnv` never supplies a committer the environment already names (it still supplies an
+  author on a machine with no identity). When a Bash command's output holds `not_pix_identity` or
+  `not_user_identity`, the harness appends one line: the sandbox signs only as the committer in
+  `GIT_COMMITTER_*` (Vulnesis [bot] by default, or the owner with their own key); do not pass
+  `-c user.name`/`-c user.email` or `GIT_COMMITTER_*`; set only `GIT_AUTHOR_*` to credit someone else.
 - Not covered: `internal/teleport/changes/push.go` commits as `teleport@vulnetix.invalid`, which is not Pix.

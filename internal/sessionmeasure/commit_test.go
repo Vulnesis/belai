@@ -11,8 +11,8 @@ import (
 const sha = "0123456789abcdef0123456789abcdef01234567"
 
 func TestParseLog(t *testing.T) {
-	out := sha + "\x1fPix [bot]\x1fsecurity@vulnetix.com\x1fChris L\x1fchris@vulnetix.com\x1e" +
-		"Signed-off-by: Pix [bot] <security@vulnetix.com>\n" +
+	out := sha + "\x1fvulnesis[bot]\x1f176591487+vulnesis[bot]@users.noreply.github.com\x1fChris L\x1fchris@vulnetix.com\x1e" +
+		"Signed-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\n" +
 		"Co-authored-by: Chris L <chris@vulnetix.com>\n" +
 		"\n" +
 		"Belai-Session: abc-123\n"
@@ -21,10 +21,10 @@ func TestParseLog(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := Commit{
-		SHA: sha, AuthorName: "Pix [bot]", AuthorEmail: "security@vulnetix.com",
+		SHA: sha, AuthorName: "vulnesis[bot]", AuthorEmail: "176591487+vulnesis[bot]@users.noreply.github.com",
 		CommitterName: "Chris L", CommitterEmail: "chris@vulnetix.com", Branch: "belai/k-0363e1",
 		Trailers: []Trailer{
-			{"Signed-off-by", "Pix [bot] <security@vulnetix.com>"},
+			{"Signed-off-by", "vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>"},
 			{"Co-authored-by", "Chris L <chris@vulnetix.com>"},
 			{"Belai-Session", "abc-123"},
 		},
@@ -99,8 +99,8 @@ func TestReadRealCommit(t *testing.T) {
 	}
 	run(nil, "init", "-q", "-b", "work")
 	run(nil, "config", "commit.gpgsign", "false")
-	run([]string{"GIT_AUTHOR_NAME=Pix [bot]", "GIT_AUTHOR_EMAIL=security@vulnetix.com", "GIT_COMMITTER_NAME=Chris L", "GIT_COMMITTER_EMAIL=chris@vulnetix.com"},
-		"commit", "--no-gpg-sign", "-q", "--allow-empty", "-m", "feat: x\n\nbody text\n\nSigned-off-by: Pix [bot] <security@vulnetix.com>\nCo-authored-by: Chris L <chris@vulnetix.com>")
+	run([]string{"GIT_AUTHOR_NAME=vulnesis[bot]", "GIT_AUTHOR_EMAIL=176591487+vulnesis[bot]@users.noreply.github.com", "GIT_COMMITTER_NAME=Chris L", "GIT_COMMITTER_EMAIL=chris@vulnetix.com"},
+		"commit", "--no-gpg-sign", "-q", "--allow-empty", "-m", "feat: x\n\nbody text\n\nSigned-off-by: vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>\nCo-authored-by: Chris L <chris@vulnetix.com>")
 
 	git := func(ctx context.Context, args ...string) (string, error) {
 		out, err := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...).Output()
@@ -110,11 +110,11 @@ func TestReadRealCommit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.SHA != run(nil, "rev-parse", "HEAD") || got.AuthorName != "Pix [bot]" || got.AuthorEmail != "security@vulnetix.com" ||
+	if got.SHA != run(nil, "rev-parse", "HEAD") || got.AuthorName != "vulnesis[bot]" || got.AuthorEmail != "176591487+vulnesis[bot]@users.noreply.github.com" ||
 		got.CommitterName != "Chris L" || got.CommitterEmail != "chris@vulnetix.com" || got.Branch != "work" {
 		t.Fatalf("Read = %+v", got)
 	}
-	wantTrailers := []Trailer{{"Signed-off-by", "Pix [bot] <security@vulnetix.com>"}, {"Co-authored-by", "Chris L <chris@vulnetix.com>"}}
+	wantTrailers := []Trailer{{"Signed-off-by", "vulnesis[bot] <176591487+vulnesis[bot]@users.noreply.github.com>"}, {"Co-authored-by", "Chris L <chris@vulnetix.com>"}}
 	if !reflect.DeepEqual(got.Trailers, wantTrailers) {
 		t.Fatalf("trailers = %+v", got.Trailers)
 	}

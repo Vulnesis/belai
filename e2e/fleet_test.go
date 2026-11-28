@@ -2,7 +2,9 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +14,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/vulnetix/belai/internal/kanban"
 	"github.com/vulnetix/belai/internal/testutil"
@@ -242,19 +245,37 @@ func (e *fleetEnv) git(args ...string) string {
 	return strings.TrimSpace(string(out))
 }
 
+// belaiCommandLimit bounds one belai command. A command that needs longer is hung.
+const belaiCommandLimit = 2 * time.Minute
+
 // belai runs the binary in the repository with the fleet's isolated state.
+//
+// WaitDelay stops Wait from waiting on output pipes a child process inherited:
+// a worker or daemon belai started holds the pipe open after belai itself has
+// exited, and without it `belai agent ps` in TestScheduledAgentRunsThroughTheDaemon
+// blocked in Wait until the package hit go test's 10 minute limit (belai PR 205,
+// coverage job). The context ends a belai that hangs itself, with what it printed.
 func (e *fleetEnv) belai(args ...string) (string, string, int) {
 	e.t.Helper()
 	var out, errb bytes.Buffer
-	cmd := exec.Command(belaiBin, args...)
+	ctx, cancel := context.WithTimeout(context.Background(), belaiCommandLimit)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, belaiBin, args...)
 	cmd.Dir = e.repo
 	cmd.Env = append(os.Environ(), "BELAI_BASE_URL="+e.url, e.keyEnv+"=test",
 		"BELAI_HOME="+e.home, "BELAI_WORKTREES_DIR="+e.wt)
 	cmd.Stdout, cmd.Stderr = &out, &errb
+	cmd.WaitDelay = 5 * time.Second
 	code := 0
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() != nil {
+			e.t.Fatalf("belai %v: still running after %s\nstdout: %s\nstderr: %s", args, belaiCommandLimit, out.String(), errb.String())
+		}
 		ee, ok := err.(*exec.ExitError)
 		if !ok {
+			if errors.Is(err, exec.ErrWaitDelay) {
+				return out.String(), errb.String(), cmd.ProcessState.ExitCode()
+			}
 			e.t.Fatalf("run belai: %v", err)
 		}
 		code = ee.ExitCode()

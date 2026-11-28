@@ -256,20 +256,35 @@ func (b *Bash) ExecuteStream(ctx context.Context, args map[string]any, sink Sink
 			content += "\n" + sandboxNote(policy)
 		}
 	}
-	if strings.Contains(content, pixIdentityRefusal) {
+	if hasPixIdentityRefusal(content) {
 		content += "\n" + pixIdentityHint
 	}
 
 	return BashResult(content), nil
 }
 
-// pixIdentityRefusal is what the Pix sandbox's commit signer prints when a
-// commit's committer is not the Pix identity (website/sandbox-worker git-sign).
-const pixIdentityRefusal = "not_pix_identity"
+// pixIdentityRefusals are what the Keleustes sandbox's commit signer prints when a
+// commit's committer is not the sandbox's signing identity (website sandbox-worker
+// git-sign.ts): not_pix_identity under the platform key, not_user_identity under
+// the owner's own key.
+var pixIdentityRefusals = []string{"not_pix_identity", "not_user_identity"}
 
 // pixIdentityHint follows that refusal, in the harness's words, so the model
-// credits a person through the author and leaves the committer alone.
-const pixIdentityHint = "commit identity: the committer must stay Pix [bot] <security@vulnetix.com>; do not pass -c user.name/-c user.email or GIT_COMMITTER_*, set only GIT_AUTHOR_* to credit someone else."
+// credits a person through the author and leaves the committer alone. The
+// sandbox sets the committer in GIT_COMMITTER_*: by default Vulnesis [bot]
+// <security@vulnes.is>, with vulnesis[bot] as the author, signed by the
+// platform key; when the owner has a signing key in their vault, the owner,
+// signed by that key.
+const pixIdentityHint = "commit identity: the sandbox signs only as the committer in GIT_COMMITTER_NAME/GIT_COMMITTER_EMAIL (Vulnesis [bot] <security@vulnes.is> by default, or the sandbox owner when their own signing key is in the vault); do not pass -c user.name/-c user.email or GIT_COMMITTER_*, set only GIT_AUTHOR_* to credit someone else."
+
+func hasPixIdentityRefusal(content string) bool {
+	for _, r := range pixIdentityRefusals {
+		if strings.Contains(content, r) {
+			return true
+		}
+	}
+	return false
+}
 
 func exitCode(err error) int {
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() != 0 {
